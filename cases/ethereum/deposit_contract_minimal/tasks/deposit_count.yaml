@@ -1,0 +1,8 @@
+task_id: deposit_count
+statement_id: deposit_increments_deposit_count_spec
+difficulty: easy
+category: state-transition
+track: proof-only
+allowed_files:
+  - cases/ethereum/deposit_contract_minimal/verity/Specs.lean
+  - Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean

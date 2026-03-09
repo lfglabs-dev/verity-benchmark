@@ -1,0 +1,11 @@
+project: unlink_xyz
+case_id: placeholder
+upstream_repo: https://github.com/unlink-xyz/monorepo
+upstream_commit: null
+original_contract_path: TBD
+selected_functions: []
+benchmark_status: blocked
+source_language: solidity
+verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
+lean_toolchain: leanprover/lean4:v4.22.0
+notes: Referenced repository was not resolvable during setup, so no candidate contract was pinned.

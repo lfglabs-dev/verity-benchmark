@@ -1,0 +1,8 @@
+task_id: no_overclaim
+statement_id: claimUsdc_preserves_round_bound_spec
+difficulty: easy
+category: accounting
+track: proof-only
+allowed_files:
+  - cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean
+  - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean

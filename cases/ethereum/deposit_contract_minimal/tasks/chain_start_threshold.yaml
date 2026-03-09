@@ -1,0 +1,8 @@
+task_id: chain_start_threshold
+statement_id: deposit_starts_chain_at_threshold_spec
+difficulty: medium
+category: bounds
+track: proof-only
+allowed_files:
+  - cases/ethereum/deposit_contract_minimal/verity/Specs.lean
+  - Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean

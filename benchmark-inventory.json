@@ -1,0 +1,79 @@
+{
+  "benchmark": "verity-benchmark",
+  "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+  "lean_toolchain": "leanprover/lean4:v4.22.0",
+  "cases": [
+    {
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "status": "ready",
+      "source_language": "solidity",
+      "selected_contract": "StreamRecoveryClaim",
+      "selected_functions": ["claimUsdc", "_claimUsdc"],
+      "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
+      "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12"
+    },
+    {
+      "case_id": "ethereum/deposit_contract_minimal",
+      "status": "ready",
+      "source_language": "vyper",
+      "selected_contract": "validator_registration.v.py",
+      "selected_functions": ["deposit"],
+      "upstream_repo": "https://github.com/ethereum/deposit_contract",
+      "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8"
+    },
+    {
+      "case_id": "ethereum/beacon_roots_predeploy",
+      "status": "blocked",
+      "source_language": "spec",
+      "selected_contract": "EIP-4788 Beacon block root in the EVM",
+      "selected_functions": ["get", "set"],
+      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
+      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95"
+    },
+    {
+      "case_id": "zama/erc7984",
+      "status": "blocked",
+      "source_language": "solidity",
+      "selected_contract": "ERC7984",
+      "selected_functions": ["confidentialTransfer", "confidentialTransferFrom"],
+      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-confidential-contracts",
+      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8"
+    },
+    {
+      "case_id": "nexus_mutual/placeholder",
+      "status": "blocked",
+      "source_language": "solidity",
+      "selected_contract": "TBD",
+      "selected_functions": [],
+      "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
+      "upstream_commit": "070972503a471b6e14d01213aca4cf41e156c215"
+    },
+    {
+      "case_id": "kleros/placeholder",
+      "status": "blocked",
+      "source_language": "solidity",
+      "selected_contract": "TBD",
+      "selected_functions": [],
+      "upstream_repo": "https://github.com/kleros/kleros-v2",
+      "upstream_commit": "982af06592f1c48747481ab39999b776f05cac36"
+    },
+    {
+      "case_id": "unlink_xyz/placeholder",
+      "status": "blocked",
+      "source_language": "solidity",
+      "selected_contract": "TBD process contract",
+      "selected_functions": [],
+      "upstream_repo": "https://github.com/unlink-xyz/monorepo",
+      "upstream_commit": null
+    },
+    {
+      "case_id": "usual/placeholder",
+      "status": "private",
+      "source_language": "solidity",
+      "selected_contract": "TBD",
+      "selected_functions": [],
+      "upstream_repo": null,
+      "upstream_commit": null
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+import Benchmark.Cases.Ethereum.DepositContractMinimal.Contract

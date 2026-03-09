@@ -1,0 +1,11 @@
+project: usual
+case_id: placeholder
+upstream_repo: null
+upstream_commit: null
+original_contract_path: TBD
+selected_functions: []
+benchmark_status: private
+source_language: solidity
+verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
+lean_toolchain: leanprover/lean4:v4.22.0
+notes: Pending private repository access and target selection.

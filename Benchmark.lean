@@ -1,0 +1,2 @@
+import Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile
+import Benchmark.Cases.Ethereum.DepositContractMinimal.Compile
