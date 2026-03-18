@@ -1,0 +1,34 @@
+manifest_kind: task
+schema_version: 1
+task_id: full_deposit_preserves_partial_gap
+case_id: ethereum/deposit_contract_minimal
+split: active
+family_id: ethereum
+implementation_id: deposit_contract
+source_ref: https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py
+task_interface_version: 1
+statement_id: full_deposit_preserves_partial_gap
+property_class: accounting_conservation
+difficulty: medium
+category: accounting
+track: proof-only
+translation_status: translated
+spec_status: frozen
+proof_status: partial
+spec_target: Benchmark.Cases.Ethereum.DepositContractMinimal.Specs
+proof_target: Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs
+evaluation_engine: lean_build
+evaluation_target_kind: proof
+evaluation_target: Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs
+evaluation_declaration: full_deposit_preserves_partial_gap
+allowed_files:
+  - cases/ethereum/deposit_contract_minimal/tasks/full_deposit_preserves_partial_gap.yaml
+  - cases/ethereum/deposit_contract_minimal/verity/Specs.lean
+  - Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean
+  - Benchmark/Cases/Ethereum/DepositContractMinimal/Proofs.lean
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task treats the difference between all deposits and full deposits as the
+  "partial deposit" mass. A full-sized deposit increments both counters in
+  lockstep, so that gap must remain unchanged.
+unsupported_feature_codes: []

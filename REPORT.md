@@ -8,7 +8,7 @@ This report is generated from the benchmark manifests.
 - Implementations: 6
 - Active cases: 4
 - Buildable active cases: 4
-- Active tasks: 12
+- Active tasks: 13
 - Backlog cases: 2
 
 ## Buildable active cases
@@ -16,7 +16,7 @@ This report is generated from the benchmark manifests.
 ### `ethereum/deposit_contract_minimal`
 - Family / implementation: `ethereum` / `deposit_contract`
 - Stage: `build_green`
-- Status dimensions: translation=`translated`, spec=`frozen`, proof=`not_started`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`partial`
 - Lean target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Compile`
 - Source ref: `https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py`
 - Selected functions: `deposit`
@@ -72,6 +72,14 @@ This report is generated from the benchmark manifests.
 - Statement id: `deposit_increments_deposit_count_spec`
 - Evaluation: engine=`lean_build`, target_kind=`spec`, target=`Benchmark.Cases.Ethereum.DepositContractMinimal.Specs`, declaration=`deposit_increments_deposit_count_spec`
 - Spec target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Specs`
+
+### `ethereum/deposit_contract_minimal/full_deposit_preserves_partial_gap`
+- Track / property class: `proof-only` / `accounting_conservation`
+- Readiness: translation=`ready`, spec=`ready`, proof=`ready`, evaluation=`ready`
+- Statement id: `full_deposit_preserves_partial_gap`
+- Evaluation: engine=`lean_build`, target_kind=`proof`, target=`Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`, declaration=`full_deposit_preserves_partial_gap`
+- Spec target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Specs`
+- Proof target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`
 
 ### `kleros/sortition_trees/draw_interval_matches_weights`
 - Track / property class: `proof-only` / `weighted_selection`

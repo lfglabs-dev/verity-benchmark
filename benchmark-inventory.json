@@ -14,10 +14,10 @@
     "implementation_count": 6,
     "active_case_count": 4,
     "backlog_case_count": 2,
-    "active_task_count": 12,
+    "active_task_count": 13,
     "backlog_task_count": 0,
     "buildable_case_count": 4,
-    "runnable_task_count": 12,
+    "runnable_task_count": 13,
     "case_stage_counts": {
       "build_green": 4,
       "candidate": 2
@@ -32,14 +32,15 @@
     },
     "proof_status_counts": {
       "blocked": 2,
-      "not_started": 4
+      "not_started": 3,
+      "partial": 1
     },
     "task_track_counts": {
-      "proof-only": 12
+      "proof-only": 13
     },
     "task_property_class_counts": {
       "accounting_bound": 1,
-      "accounting_conservation": 1,
+      "accounting_conservation": 2,
       "authorization_state": 1,
       "mapping_consistency": 1,
       "monotonic_counter": 1,
@@ -272,7 +273,7 @@
       "stage": "build_green",
       "translation_status": "translated",
       "spec_status": "frozen",
-      "proof_status": "not_started",
+      "proof_status": "partial",
       "source_language": "vyper",
       "upstream_repo": "https://github.com/ethereum/deposit_contract",
       "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8",
@@ -297,7 +298,7 @@
       "abstraction_notes": "The benchmark keeps the threshold and counter state transitions while abstracting away Merkle tree updates, SSZ hashing, and event emission.",
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
-      "proof_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs"
+      "proof_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs"
     },
     {
       "case_id": "kleros/sortition_trees",
@@ -585,6 +586,50 @@
         "translation": "ready",
         "spec": "ready",
         "proof": "planned",
+        "evaluation": "ready"
+      }
+    },
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/full_deposit_preserves_partial_gap",
+      "task_id": "full_deposit_preserves_partial_gap",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/full_deposit_preserves_partial_gap.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 1,
+      "track": "proof-only",
+      "property_class": "accounting_conservation",
+      "category": "accounting",
+      "difficulty": "medium",
+      "statement_id": "full_deposit_preserves_partial_gap",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "allowed_files": [
+        "cases/ethereum/deposit_contract_minimal/tasks/full_deposit_preserves_partial_gap.yaml",
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Proofs.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task treats the difference between all deposits and full deposits as the \"partial deposit\" mass. A full-sized deposit increments both counters in lockstep, so that gap must remain unchanged.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
+      "proof_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "proof",
+        "target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+        "declaration": "full_deposit_preserves_partial_gap"
+      },
+      "readiness": {
+        "translation": "ready",
+        "spec": "ready",
+        "proof": "ready",
         "evaluation": "ready"
       }
     },
@@ -1012,5 +1057,5 @@
     }
   ],
   "backlog_tasks": [],
-  "generated_at": "2026-03-18T16:31:22.129405+00:00"
+  "generated_at": "2026-03-18T16:41:12.421632+00:00"
 }
