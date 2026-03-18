@@ -1,10 +1,12 @@
 project: kleros
 case_id: placeholder
+schema_version: 1
+stage: candidate
 upstream_repo: https://github.com/kleros/kleros-v2
 upstream_commit: 982af06592f1c48747481ab39999b776f05cac36
 original_contract_path: TBD
 selected_functions: []
-benchmark_status: blocked
+failure_reason: selection_pending
 source_language: solidity
 verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
 lean_toolchain: leanprover/lean4:v4.22.0

@@ -2,3 +2,4 @@
 .lean/
 build/
 lake-packages/
+results/*.json

@@ -1,10 +1,12 @@
 project: usual
 case_id: placeholder
+schema_version: 1
+stage: candidate
 upstream_repo: null
 upstream_commit: null
 original_contract_path: TBD
 selected_functions: []
-benchmark_status: private
+failure_reason: private_access
 source_language: solidity
 verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
 lean_toolchain: leanprover/lean4:v4.22.0

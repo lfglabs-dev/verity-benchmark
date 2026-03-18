@@ -1,79 +1,178 @@
 {
   "benchmark": "verity-benchmark",
-  "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-  "lean_toolchain": "leanprover/lean4:v4.22.0",
+  "manifest_schema_version": 1,
+  "inventory_source": {
+    "active": "cases/*/*/case.yaml",
+    "backlog": "backlog/*/*/case.yaml"
+  },
+  "summary": {
+    "active_cases": 4,
+    "backlog_cases": 4,
+    "buildable_cases": 2,
+    "stages": {
+      "build_green": 2,
+      "candidate": 4,
+      "scoped": 2
+    }
+  },
   "cases": [
     {
-      "case_id": "paladin_votes/stream_recovery_claim_usdc",
-      "status": "ready",
-      "source_language": "solidity",
-      "selected_contract": "StreamRecoveryClaim",
-      "selected_functions": ["claimUsdc", "_claimUsdc"],
-      "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
-      "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12"
+      "case_id": "ethereum/beacon_roots_predeploy",
+      "suite": "active",
+      "schema_version": 1,
+      "stage": "scoped",
+      "source_language": "spec",
+      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
+      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95",
+      "original_contract_path": "EIPS/eip-4788.md",
+      "selected_functions": [
+        "get",
+        "set"
+      ],
+      "lean_target": null,
+      "failure_reason": "missing_implementation_artifact",
+      "notes": "Candidate selected, but the benchmark currently lacks a pinned implementation artifact beyond the EIP text.",
+      "manifest_path": "cases/ethereum/beacon_roots_predeploy/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
       "case_id": "ethereum/deposit_contract_minimal",
-      "status": "ready",
+      "suite": "active",
+      "schema_version": 1,
+      "stage": "build_green",
       "source_language": "vyper",
-      "selected_contract": "validator_registration.v.py",
-      "selected_functions": ["deposit"],
       "upstream_repo": "https://github.com/ethereum/deposit_contract",
-      "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8"
+      "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8",
+      "original_contract_path": "deposit_contract/contracts/validator_registration.v.py",
+      "selected_functions": [
+        "deposit"
+      ],
+      "lean_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Compile",
+      "failure_reason": null,
+      "notes": "Counter-oriented slice of the deposit path. Merkle tree, SSZ hashing, and log emission are omitted so the benchmark can focus on threshold-driven state updates.",
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/case.yaml",
+      "buildable": true,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
-      "case_id": "ethereum/beacon_roots_predeploy",
-      "status": "blocked",
-      "source_language": "spec",
-      "selected_contract": "EIP-4788 Beacon block root in the EVM",
-      "selected_functions": ["get", "set"],
-      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
-      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95"
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "stage": "build_green",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
+      "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12",
+      "original_contract_path": "src/StreamRecoveryClaim.sol",
+      "selected_functions": [
+        "claimUsdc",
+        "_claimUsdc"
+      ],
+      "lean_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile",
+      "failure_reason": null,
+      "notes": "Single-round accounting slice of the USDC claim path. Merkle verification is abstracted as a boolean witness and token transfer side effects are omitted.",
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/case.yaml",
+      "buildable": true,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
       "case_id": "zama/erc7984",
-      "status": "blocked",
+      "suite": "active",
+      "schema_version": 1,
+      "stage": "scoped",
       "source_language": "solidity",
-      "selected_contract": "ERC7984",
-      "selected_functions": ["confidentialTransfer", "confidentialTransferFrom"],
       "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-confidential-contracts",
-      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8"
+      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8",
+      "original_contract_path": "contracts/token/ERC7984/ERC7984.sol",
+      "selected_functions": [
+        "confidentialTransfer",
+        "confidentialTransferFrom"
+      ],
+      "lean_target": null,
+      "failure_reason": "missing_verity_feature",
+      "notes": "Selected as requested, but blocked because the contract depends on encrypted euint64 values and FHE-specific runtime semantics that are not benchmarked in this v1 scaffold.",
+      "manifest_path": "cases/zama/erc7984/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
+    }
+  ],
+  "backlog": [
+    {
+      "case_id": "kleros/placeholder",
+      "suite": "backlog",
+      "schema_version": 1,
+      "stage": "candidate",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/kleros/kleros-v2",
+      "upstream_commit": "982af06592f1c48747481ab39999b776f05cac36",
+      "original_contract_path": "TBD",
+      "selected_functions": [],
+      "lean_target": null,
+      "failure_reason": "selection_pending",
+      "notes": "Waiting for protocol-side contract/function selection.",
+      "manifest_path": "backlog/kleros/placeholder/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
       "case_id": "nexus_mutual/placeholder",
-      "status": "blocked",
+      "suite": "backlog",
+      "schema_version": 1,
+      "stage": "candidate",
       "source_language": "solidity",
-      "selected_contract": "TBD",
-      "selected_functions": [],
       "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
-      "upstream_commit": "070972503a471b6e14d01213aca4cf41e156c215"
-    },
-    {
-      "case_id": "kleros/placeholder",
-      "status": "blocked",
-      "source_language": "solidity",
-      "selected_contract": "TBD",
+      "upstream_commit": "070972503a471b6e14d01213aca4cf41e156c215",
+      "original_contract_path": "TBD",
       "selected_functions": [],
-      "upstream_repo": "https://github.com/kleros/kleros-v2",
-      "upstream_commit": "982af06592f1c48747481ab39999b776f05cac36"
+      "lean_target": null,
+      "failure_reason": "selection_pending",
+      "notes": "Waiting for protocol-side invariant and target contract selection.",
+      "manifest_path": "backlog/nexus_mutual/placeholder/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
       "case_id": "unlink_xyz/placeholder",
-      "status": "blocked",
+      "suite": "backlog",
+      "schema_version": 1,
+      "stage": "candidate",
       "source_language": "solidity",
-      "selected_contract": "TBD process contract",
-      "selected_functions": [],
       "upstream_repo": "https://github.com/unlink-xyz/monorepo",
-      "upstream_commit": null
+      "upstream_commit": null,
+      "original_contract_path": "TBD",
+      "selected_functions": [],
+      "lean_target": null,
+      "failure_reason": "upstream_unavailable",
+      "notes": "Referenced repository was not resolvable during setup, so no candidate contract was pinned.",
+      "manifest_path": "backlog/unlink_xyz/placeholder/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     },
     {
       "case_id": "usual/placeholder",
-      "status": "private",
+      "suite": "backlog",
+      "schema_version": 1,
+      "stage": "candidate",
       "source_language": "solidity",
-      "selected_contract": "TBD",
-      "selected_functions": [],
       "upstream_repo": null,
-      "upstream_commit": null
+      "upstream_commit": null,
+      "original_contract_path": "TBD",
+      "selected_functions": [],
+      "lean_target": null,
+      "failure_reason": "private_access",
+      "notes": "Pending private repository access and target selection.",
+      "manifest_path": "backlog/usual/placeholder/case.yaml",
+      "buildable": false,
+      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
+      "lean_toolchain": "leanprover/lean4:v4.22.0"
     }
-  ]
+  ],
+  "generated_at": "2026-03-18T07:38:26.822277+00:00"
 }

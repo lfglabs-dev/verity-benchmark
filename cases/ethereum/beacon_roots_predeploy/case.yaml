@@ -1,12 +1,14 @@
 project: ethereum
 case_id: beacon_roots_predeploy
+schema_version: 1
+stage: scoped
 upstream_repo: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md
 upstream_commit: 4f64d1b5040aca16d3f165867c9ee441e4239a95
 original_contract_path: EIPS/eip-4788.md
 selected_functions:
   - get
   - set
-benchmark_status: blocked
+failure_reason: missing_implementation_artifact
 source_language: spec
 verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
 lean_toolchain: leanprover/lean4:v4.22.0

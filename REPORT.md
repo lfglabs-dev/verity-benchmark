@@ -1,42 +1,74 @@
 # Benchmark report
 
-## Ready cases
+This report is generated from the per-case `case.yaml` manifests.
 
-### `paladin_votes/stream_recovery_claim_usdc`
-- Selected contract: `StreamRecoveryClaim`
-- Selected function slice: `claimUsdc` / `_claimUsdc`
-- Frozen specs:
-  - claimant is marked claimed
-  - `roundUsdcClaimed` increases by the computed payout
-  - `totalUsdcAllocated` decreases by the computed payout
-  - post-state keeps `roundUsdcClaimed <= roundUsdcTotal`
-- Simplifications:
-  - specialized to a single active round
-  - Merkle verification becomes a boolean parameter
-  - ERC20 transfer side effects are omitted
+## Summary
+
+- Active cases: 4
+- Buildable active cases: 2
+- Backlog entries: 4
+
+## Buildable active cases
 
 ### `ethereum/deposit_contract_minimal`
-- Selected contract: `validator_registration.v.py`
-- Selected function slice: `deposit`
-- Frozen specs:
-  - `depositCount` increments by one
-  - small deposits do not change `fullDepositCount`
-  - full deposits increment `fullDepositCount`
-  - hitting the threshold sets `chainStarted`
-- Simplifications:
-  - source is Vyper rather than Solidity
-  - SSZ hashing, Merkle tree updates, and logs are omitted
+- Stage: `build_green`
+- Lean target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Compile`
+- Selected functions: `deposit`
+- Source artifact: `deposit_contract/contracts/validator_registration.v.py`
+- Notes: Counter-oriented slice of the deposit path. Merkle tree, SSZ hashing, and log emission are omitted so the benchmark can focus on threshold-driven state updates.
 
-## Blocked or pending cases
+### `paladin_votes/stream_recovery_claim_usdc`
+- Stage: `build_green`
+- Lean target: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile`
+- Selected functions: `claimUsdc`, `_claimUsdc`
+- Source artifact: `src/StreamRecoveryClaim.sol`
+- Notes: Single-round accounting slice of the USDC claim path. Merkle verification is abstracted as a boolean witness and token transfer side effects are omitted.
 
-- `ethereum/beacon_roots_predeploy`: EIP text is known, but this repo does not yet pin a concrete implementation artifact in the benchmark.
-- `zama/erc7984`: selected, but current Verity benchmark slice is blocked on encrypted `euint64` and FHE-specific semantics.
-- `nexus_mutual/placeholder`: blocked until a concrete contract/function target is agreed.
-- `kleros/placeholder`: blocked until a concrete contract/function target is agreed.
-- `unlink_xyz/placeholder`: blocked because the referenced GitHub repository was not resolvable during benchmark setup.
-- `usual/placeholder`: pending private access.
+## Non-buildable active cases
 
-## Compile status
+### `ethereum/beacon_roots_predeploy`
+- Stage: `scoped`
+- Failure reason: `missing_implementation_artifact`
+- Selected functions: `get`, `set`
+- Source artifact: `EIPS/eip-4788.md`
+- Notes: Candidate selected, but the benchmark currently lacks a pinned implementation artifact beyond the EIP text.
 
-- `lake build`: required for all `ready` cases
-- `./scripts/check.sh`: repository-level check command
+### `zama/erc7984`
+- Stage: `scoped`
+- Failure reason: `missing_verity_feature`
+- Selected functions: `confidentialTransfer`, `confidentialTransferFrom`
+- Source artifact: `contracts/token/ERC7984/ERC7984.sol`
+- Notes: Selected as requested, but blocked because the contract depends on encrypted euint64 values and FHE-specific runtime semantics that are not benchmarked in this v1 scaffold.
+
+## Backlog
+
+### `kleros/placeholder`
+- Stage: `candidate`
+- Failure reason: `selection_pending`
+- Source artifact: `TBD`
+- Notes: Waiting for protocol-side contract/function selection.
+
+### `nexus_mutual/placeholder`
+- Stage: `candidate`
+- Failure reason: `selection_pending`
+- Source artifact: `TBD`
+- Notes: Waiting for protocol-side invariant and target contract selection.
+
+### `unlink_xyz/placeholder`
+- Stage: `candidate`
+- Failure reason: `upstream_unavailable`
+- Source artifact: `TBD`
+- Notes: Referenced repository was not resolvable during setup, so no candidate contract was pinned.
+
+### `usual/placeholder`
+- Stage: `candidate`
+- Failure reason: `private_access`
+- Source artifact: `TBD`
+- Notes: Pending private repository access and target selection.
+
+## Commands
+
+- Regenerate metadata: `python3 scripts/generate_metadata.py`
+- Run one case: `./scripts/run_case.sh <project/case_id>`
+- Run active suite: `./scripts/run_all.sh`
+- Run repo check: `./scripts/check.sh`

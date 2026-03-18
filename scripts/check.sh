@@ -2,4 +2,5 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-lake build
+python3 scripts/generate_metadata.py
+./scripts/run_all.sh

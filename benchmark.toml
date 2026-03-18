@@ -1,16 +1,18 @@
 name = "verity-benchmark"
 version = "0.1.0"
 primary_track = "proof-only"
-build_command = "lake build"
+build_command = "./scripts/run_all.sh"
 inventory = "benchmark-inventory.json"
 report = "REPORT.md"
-ready_cases = [
+manifest_glob = "cases/*/*/case.yaml"
+backlog_glob = "backlog/*/*/case.yaml"
+active_cases = [
   "paladin_votes/stream_recovery_claim_usdc",
   "ethereum/deposit_contract_minimal",
-]
-blocked_cases = [
   "ethereum/beacon_roots_predeploy",
   "zama/erc7984",
+]
+backlog_cases = [
   "nexus_mutual/placeholder",
   "kleros/placeholder",
   "unlink_xyz/placeholder",

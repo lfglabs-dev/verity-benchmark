@@ -1,12 +1,14 @@
 project: zama
 case_id: erc7984
+schema_version: 1
+stage: scoped
 upstream_repo: https://github.com/OpenZeppelin/openzeppelin-confidential-contracts
 upstream_commit: d7ecc2c65e38dc5646ef976490cca287c1b1c3c8
 original_contract_path: contracts/token/ERC7984/ERC7984.sol
 selected_functions:
   - confidentialTransfer
   - confidentialTransferFrom
-benchmark_status: blocked
+failure_reason: missing_verity_feature
 source_language: solidity
 verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
 lean_toolchain: leanprover/lean4:v4.22.0

@@ -1,12 +1,14 @@
 project: paladin_votes
 case_id: stream_recovery_claim_usdc
+schema_version: 1
+stage: build_green
 upstream_repo: https://github.com/Figu3/sonic-earn-recovery-system
 upstream_commit: 699cbbc79def374cab9739e451acbbf866293d12
 original_contract_path: src/StreamRecoveryClaim.sol
+lean_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile
 selected_functions:
   - claimUsdc
   - _claimUsdc
-benchmark_status: ready
 source_language: solidity
 verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
 lean_toolchain: leanprover/lean4:v4.22.0
