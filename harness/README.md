@@ -19,15 +19,20 @@ The default benchmark agent now has its own explicit entrypoint:
 - `scripts/run_default_agent.sh <task_ref>` invokes the default-agent runner for one task
 - `scripts/run_default_agent_case.sh <project/case_id>` invokes the same path for each task in one case
 - `scripts/run_default_agent_all.sh` invokes the same path for all active tasks
+- `scripts/run_custom_agent.sh <task_ref>` invokes the same runner on the custom-agent track
+- `scripts/run_custom_agent_case.sh <project/case_id>` invokes the custom-agent track for each task in one case
+- `scripts/run_custom_agent_all.sh` invokes the custom-agent track for all active tasks
 - `harness/agent_runner.py` is the first-class runner for task, case, and suite default-agent execution
 - bundled reusable profiles live in `harness/agents/*.json`
-- the default profile is `default`, which is the repo-owned benchmark agent identity
-- the generic external profile is `openai-compatible`
-- the direct proxy profile is `openai-proxy-fast`
+- the default profile is `default`, which is the repo-owned reference benchmark agent identity on the `reference/default` run path
+- the generic external profile is `openai-compatible`, which is the baseline `custom/openai-compatible` run path
+- the direct proxy profile is `openai-proxy-fast`, which is a pinned `custom/openai-proxy-fast` run path
 - the current transport adapter contract is `openai_compatible`
 - credentials and endpoint selection are injected through env vars where the profile does not pin them
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
-- aggregated case/suite agent-run status is written to `results/agent_summary.json`
+- task artifacts are partitioned under `results/agent_runs/<track>/<run_slug>/...`
+- aggregated case/suite agent-run status is written to `results/agent_summaries/<track>/<run_slug>.json`
+- compatibility aliases remain at `results/agent_runs/*.json` and `results/agent_summary.json` for the repo reference `default` profile
 
 Default OpenAI-compatible env contract:
 
@@ -60,8 +65,11 @@ Useful commands:
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
+- `./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal`
+- `./scripts/run_custom_agent_case.sh ethereum/deposit_contract_minimal`
 - `./scripts/run_default_agent_all.sh`
+- `./scripts/run_custom_agent_all.sh`
 
 Supported task manifest interface fields:
 

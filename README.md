@@ -31,6 +31,9 @@ Repository layout:
 - `scripts/run_default_agent.sh`: explicit default-agent entrypoint for one task
 - `scripts/run_default_agent_case.sh`: explicit default-agent entrypoint for one case
 - `scripts/run_default_agent_all.sh`: explicit default-agent entrypoint for all active tasks
+- `scripts/run_custom_agent.sh`: custom-agent entrypoint for one task through the same adapter path
+- `scripts/run_custom_agent_case.sh`: custom-agent entrypoint for one case through the same adapter path
+- `scripts/run_custom_agent_all.sh`: custom-agent entrypoint for all active tasks through the same adapter path
 - `scripts/check.sh`: repo-level metadata and benchmark check
 - `docs/architecture/task-api.md`: benchmark architecture note for case/task/source roles
 - `schemas/agent-run.schema.json`: schema for default-agent run artifacts
@@ -42,8 +45,9 @@ Design choices:
 - Pinned `source_ref` values are the reproducibility unit; local paths are supporting metadata
 - Tasks can target either a spec declaration or an explicit proof module/declaration
 - The default-agent path is adapter-driven and uses the `openai_compatible` contract for both the repo-default setup and external backends
-- The default-agent path uses named profiles in `harness/agents/` so the repo-owned default agent and external OpenAI-compatible backends share one entrypoint
+- The default-agent path uses named profiles in `harness/agents/` so the repo-owned reference agent and custom OpenAI-compatible backends share one runner
 - The default-agent path is now runner-backed at task, case, and suite scope through `harness/agent_runner.py`
+- Default-agent artifacts are partitioned by `track/run_slug` under `results/agent_runs/` with summaries under `results/agent_summaries/`
 - One selected contract per project unless scope is still ambiguous
 - The active suite is still mostly spec-oriented, but proof manifests now support and exercise explicit proof targets
 - `case.yaml` plus `tasks/*.yaml` are the source of truth for benchmark state
@@ -96,11 +100,22 @@ export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 ./scripts/run_default_agent_all.sh
 ```
 
+Run the custom-agent track through the same adapter path:
+
+```bash
+export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
+export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
+export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
+./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count
+./scripts/run_custom_agent_case.sh ethereum/deposit_contract_minimal
+./scripts/run_custom_agent_all.sh
+```
+
 Bundled default-agent profiles:
 
-- `default`: repo-owned default benchmark agent, pinned to `https://agent-backend.thomas.md/v1` and `builtin/fast`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
-- `openai-compatible`: generic external OpenAI-compatible profile; provide `VERITY_BENCHMARK_AGENT_BASE_URL`, `VERITY_BENCHMARK_AGENT_MODEL`, and `VERITY_BENCHMARK_AGENT_API_KEY`
-- `openai-proxy-fast`: direct pinned proxy profile for `https://agent-backend.thomas.md/v1` and `builtin/fast`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
+- `default`: repo-owned reference benchmark agent on `results/agent_runs/reference/default/`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
+- `openai-compatible`: generic custom-agent profile on `results/agent_runs/custom/openai-compatible/`; provide `VERITY_BENCHMARK_AGENT_BASE_URL`, `VERITY_BENCHMARK_AGENT_MODEL`, and `VERITY_BENCHMARK_AGENT_API_KEY`
+- `openai-proxy-fast`: pinned custom-agent profile on `results/agent_runs/custom/openai-proxy-fast/`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
 
 Run all active tasks:
 

@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "agent_id": "openai-proxy-fast",
+  "track": "custom",
+  "run_slug": "openai-proxy-fast",
   "adapter": "openai_compatible",
   "base_url": "https://agent-backend.thomas.md/v1",
   "base_url_env": "VERITY_BENCHMARK_AGENT_BASE_URL",

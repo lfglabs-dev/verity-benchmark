@@ -24,6 +24,8 @@ AGENT_PROFILES_DIR = ROOT / "harness" / "agents"
 class ResolvedAgentConfig:
     profile: str | None
     agent_id: str
+    track: str
+    run_slug: str
     adapter: str
     config_path: str
     base_url: str
@@ -179,6 +181,39 @@ def normalize_string(value: object) -> str | None:
     return text or None
 
 
+def slugify(value: str) -> str:
+    slug_chars: list[str] = []
+    previous_dash = False
+    for char in value.strip().lower():
+        if char.isalnum():
+            slug_chars.append(char)
+            previous_dash = False
+            continue
+        if not previous_dash:
+            slug_chars.append("-")
+            previous_dash = True
+    slug = "".join(slug_chars).strip("-")
+    return slug or "agent"
+
+
+def resolve_track(config: dict[str, Any], *, profile: str | None) -> str:
+    explicit = normalize_string(config.get("track"))
+    if explicit:
+        return explicit
+    if profile == DEFAULT_PROFILE:
+        return "reference"
+    return "custom"
+
+
+def resolve_run_slug(config: dict[str, Any], *, agent_id: str, profile: str | None) -> str:
+    explicit = normalize_string(config.get("run_slug"))
+    if explicit:
+        return slugify(explicit)
+    if profile:
+        return slugify(profile)
+    return slugify(agent_id)
+
+
 def resolve_field(config: dict[str, Any], field: str, *, required: bool) -> str | None:
     direct_value = normalize_string(config.get(field))
     if direct_value:
@@ -214,6 +249,7 @@ def resolve_headers(config: dict[str, Any]) -> dict[str, str]:
 
 def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = None) -> ResolvedAgentConfig:
     config = load_config(path)
+    agent_id = str(config["agent_id"])
     prompt_files = [str(item) for item in config["system_prompt_files"]]
     missing_files = [item for item in prompt_files if not (ROOT / item).is_file()]
     if missing_files:
@@ -221,7 +257,9 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
 
     return ResolvedAgentConfig(
         profile=profile,
-        agent_id=str(config["agent_id"]),
+        agent_id=agent_id,
+        track=resolve_track(config, profile=profile),
+        run_slug=resolve_run_slug(config, agent_id=agent_id, profile=profile),
         adapter=str(config["adapter"]),
         config_path=str(path.relative_to(ROOT)),
         base_url=(resolve_field(config, "base_url", required=require_secrets) or "").rstrip("/"),
@@ -366,10 +404,30 @@ def extract_text(response: dict[str, Any]) -> str:
     return ""
 
 
-def write_result(task_ref: str, payload: dict[str, Any]) -> Path:
-    AGENT_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    result_path = AGENT_RESULTS_DIR / f"{task_ref.replace('/', '__')}.json"
+def legacy_result_path(task_ref: str) -> Path:
+    return AGENT_RESULTS_DIR / f"{task_ref.replace('/', '__')}.json"
+
+
+def canonical_result_path(task_ref: str, config: ResolvedAgentConfig) -> Path:
+    return AGENT_RESULTS_DIR / config.track / config.run_slug / f"{task_ref.replace('/', '__')}.json"
+
+
+def canonical_summary_path(config: ResolvedAgentConfig) -> Path:
+    return ROOT / "results" / "agent_summaries" / config.track / f"{config.run_slug}.json"
+
+
+def uses_legacy_aliases(config: ResolvedAgentConfig) -> bool:
+    return config.track == "reference" and config.run_slug == DEFAULT_PROFILE
+
+
+def write_result(task_ref: str, config: ResolvedAgentConfig, payload: dict[str, Any]) -> Path:
+    result_path = canonical_result_path(task_ref, config)
+    result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if uses_legacy_aliases(config):
+        legacy_path = legacy_result_path(task_ref)
+        legacy_path.parent.mkdir(parents=True, exist_ok=True)
+        legacy_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return result_path
 
 
@@ -386,6 +444,8 @@ def build_result(task_ref: str, config: ResolvedAgentConfig, messages: list[dict
         "agent": {
             "profile": config.profile,
             "agent_id": config.agent_id,
+            "track": config.track,
+            "run_slug": config.run_slug,
             "adapter": config.adapter,
             "config_path": config.config_path,
             "base_url": config.base_url,
@@ -429,6 +489,8 @@ def describe_command(config_path: Path) -> int:
             {
                 "adapter": config.adapter,
                 "agent_id": config.agent_id,
+                "track": config.track,
+                "run_slug": config.run_slug,
                 "config_path": config.config_path,
                 "base_url": config.base_url or None,
                 "base_url_env": config_data.get("base_url_env"),
@@ -489,14 +551,14 @@ def execute_agent_task(config_path: Path, task_ref: str, dry_run: bool, *, profi
     result = build_result(task_ref, config, messages, dry_run=dry_run)
     if dry_run:
         validate_result_payload(result, task_ref)
-        result_path = write_result(task_ref, result)
+        result_path = write_result(task_ref, config, result)
         return 0, result_path
 
     response = send_chat_completion(config, messages)
     result["response"] = response
     result["response_text"] = extract_text(response)
     validate_result_payload(result, task_ref)
-    result_path = write_result(task_ref, result)
+    result_path = write_result(task_ref, config, result)
     return 0, result_path
 
 
@@ -515,6 +577,8 @@ def profiles_command() -> int:
             {
                 "name": name,
                 "agent_id": config["agent_id"],
+                "track": config.get("track"),
+                "run_slug": config.get("run_slug"),
                 "adapter": config["adapter"],
                 "config_path": config_label(path),
             }

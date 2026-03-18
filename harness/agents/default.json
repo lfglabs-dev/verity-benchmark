@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "agent_id": "verity-benchmark-default",
+  "track": "reference",
+  "run_slug": "default",
   "adapter": "openai_compatible",
   "base_url": "https://agent-backend.thomas.md/v1",
   "base_url_env": "VERITY_BENCHMARK_AGENT_BASE_URL",

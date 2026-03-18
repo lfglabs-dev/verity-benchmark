@@ -43,6 +43,8 @@
       "required": [
         "profile",
         "agent_id",
+        "track",
+        "run_slug",
         "adapter",
         "config_path",
         "base_url",
@@ -62,6 +64,12 @@
           "type": ["string", "null"]
         },
         "agent_id": {
+          "type": "string"
+        },
+        "track": {
+          "enum": ["reference", "custom"]
+        },
+        "run_slug": {
           "type": "string"
         },
         "adapter": {

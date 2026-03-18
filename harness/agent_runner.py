@@ -7,11 +7,11 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from default_agent import config_label, execute_agent_task, resolve_config_path
+from default_agent import canonical_summary_path, config_label, execute_agent_task, resolve_config, resolve_config_path
 from task_runner import ROOT, discover_task_refs
 
 RESULTS_DIR = ROOT / "results"
-AGENT_SUMMARY_PATH = RESULTS_DIR / "agent_summary.json"
+LEGACY_AGENT_SUMMARY_PATH = RESULTS_DIR / "agent_summary.json"
 
 
 def resolve_case_task_refs(case_ref: str, suite: str) -> list[str]:
@@ -27,6 +27,8 @@ def resolve_case_task_refs(case_ref: str, suite: str) -> list[str]:
 
 def run_many(task_refs: list[str], config_path: Path, dry_run: bool, *, profile: str | None, scope: str) -> int:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    resolved_config = resolve_config(config_path, require_secrets=False, profile=profile)
+    summary_path = canonical_summary_path(resolved_config)
     entries: list[dict[str, object]] = []
     exit_code = 0
 
@@ -57,13 +59,19 @@ def run_many(task_refs: list[str], config_path: Path, dry_run: bool, *, profile:
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "scope": scope,
         "dry_run": dry_run,
-        "profile": profile,
+        "profile": resolved_config.profile,
+        "agent_id": resolved_config.agent_id,
+        "track": resolved_config.track,
+        "run_slug": resolved_config.run_slug,
         "config_path": config_label(config_path),
         "total_tasks": len(task_refs),
         "status_counts": dict(sorted(Counter(str(item["status"]) for item in entries).items())),
         "tasks": entries,
     }
-    AGENT_SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if resolved_config.track == "reference" and resolved_config.run_slug == "default":
+        LEGACY_AGENT_SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return exit_code
 
 

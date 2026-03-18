@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "agent_id": "openai-compatible",
+  "track": "custom",
+  "run_slug": "openai-compatible",
   "adapter": "openai_compatible",
   "base_url": null,
   "base_url_env": "VERITY_BENCHMARK_AGENT_BASE_URL",

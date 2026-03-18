@@ -7,6 +7,8 @@
   "required": [
     "schema_version",
     "agent_id",
+    "track",
+    "run_slug",
     "adapter",
     "base_url",
     "base_url_env",
@@ -28,6 +30,12 @@
       "const": 1
     },
     "agent_id": {
+      "type": "string"
+    },
+    "track": {
+      "enum": ["reference", "custom"]
+    },
+    "run_slug": {
       "type": "string"
     },
     "adapter": {
