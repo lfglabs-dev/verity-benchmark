@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://verity-benchmark.local/schemas/agent-config.schema.json",
   "title": "Default Benchmark Agent Config",
+  "description": "Adapter-backed config for the benchmark's default-agent path. The current adapter contract is OpenAI-compatible chat completions.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -34,30 +35,39 @@
       "type": "string"
     },
     "adapter": {
+      "description": "Transport adapter contract used by the default-agent path.",
       "enum": ["openai_compatible"]
     },
     "base_url": {
+      "description": "Pinned OpenAI-compatible API base URL, for example https://agent-backend.thomas.md/v1.",
       "type": ["string", "null"]
     },
     "base_url_env": {
+      "description": "Environment variable that provides the OpenAI-compatible API base URL when base_url is not pinned.",
       "type": ["string", "null"]
     },
     "model": {
+      "description": "Pinned model identifier passed to chat completions, for example builtin/fast.",
       "type": ["string", "null"]
     },
     "model_env": {
+      "description": "Environment variable that provides the model identifier when model is not pinned.",
       "type": ["string", "null"]
     },
     "api_key": {
+      "description": "Pinned bearer token for the OpenAI-compatible backend. Prefer api_key_env for reusable local configs.",
       "type": ["string", "null"]
     },
     "api_key_env": {
+      "description": "Environment variable that provides the bearer token for the OpenAI-compatible backend.",
       "type": ["string", "null"]
     },
     "chat_completions_path": {
+      "description": "Path appended to base_url for chat completions requests.",
       "type": "string"
     },
     "models_path": {
+      "description": "Path appended to base_url for model discovery and probe requests.",
       "type": "string"
     },
     "system_prompt_files": {
@@ -80,15 +90,18 @@
       }
     },
     "header_envs": {
+      "description": "Optional extra HTTP headers resolved from environment variables for proxy-specific routing or auth.",
       "type": "object",
       "additionalProperties": {
         "type": "string"
       }
     },
     "extra_body": {
+      "description": "Optional JSON body merged into every chat-completions request.",
       "type": "object"
     },
     "request_timeout_seconds": {
+      "description": "HTTP timeout for both model probe and chat-completions requests.",
       "type": "integer",
       "minimum": 1
     }

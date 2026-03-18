@@ -25,6 +25,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - credentials and endpoint selection are injected through env vars where the profile does not pin them
 - each connection field is explicit in config: `base_url`, `model`, and `api_key` may be pinned directly or sourced from `*_env`
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
+- each run artifact records the resolved `base_url` and `model` plus the originating `*_env` contract for reproducibility
 - task artifacts are partitioned under `results/agent_runs/<track>/<run_slug>/...`
 - aggregated case/suite agent-run status is written to `results/agent_summaries/<track>/<run_slug>.json`
 - compatibility aliases remain at `results/agent_runs/*.json` and `results/agent_summary.json` for the repo reference `default` profile
@@ -68,9 +69,11 @@ Useful commands:
 - `python3 harness/default_agent.py describe --profile openai-proxy-fast`
 - `python3 harness/default_agent.py describe --config harness/default-agent.example.json`
 - `python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
+- `VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
+- `VERITY_BENCHMARK_AGENT_BASE_URL=https://agent-backend.thomas.md/v1 VERITY_BENCHMARK_AGENT_MODEL=builtin/fast VERITY_BENCHMARK_AGENT_API_KEY=... VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal`

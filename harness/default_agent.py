@@ -29,7 +29,9 @@ class ResolvedAgentConfig:
     adapter: str
     config_path: str
     base_url: str
+    base_url_env: str | None
     model: str
+    model_env: str | None
     api_key: str
     api_key_env: str | None
     chat_completions_path: str
@@ -38,6 +40,8 @@ class ResolvedAgentConfig:
     temperature: float
     max_completion_tokens: int
     headers: dict[str, str]
+    header_envs: dict[str, str]
+    env_contract: dict[str, list[str]]
     extra_body: dict[str, Any]
     request_timeout_seconds: int
 
@@ -184,12 +188,39 @@ def normalize_string(value: object) -> str | None:
 
 def validate_agent_contract(config: dict[str, Any], label: str) -> list[str]:
     errors: list[str] = []
+    for field in ("agent_id", "run_slug"):
+        if not normalize_string(config.get(field)):
+            errors.append(f"{label}: {field!r} must be a non-empty string")
+
     for field in ("base_url", "model", "api_key"):
         direct_value = normalize_string(config.get(field))
         env_name = normalize_string(config.get(f"{field}_env"))
         if direct_value or env_name:
             continue
         errors.append(f"{label}: set either {field!r} or {field + '_env'!r}")
+
+    if config.get("adapter") == "openai_compatible":
+        for field in ("chat_completions_path", "models_path"):
+            value = normalize_string(config.get(field))
+            if not value:
+                errors.append(f"{label}: {field!r} must be a non-empty string")
+            elif not value.startswith("/"):
+                errors.append(f"{label}: {field!r} must start with '/' for openai_compatible adapters")
+
+    prompt_files = config.get("system_prompt_files", [])
+    if isinstance(prompt_files, list):
+        for index, item in enumerate(prompt_files):
+            if not normalize_string(item):
+                errors.append(f"{label}: system_prompt_files[{index}] must be a non-empty string")
+
+    raw_header_envs = config.get("header_envs", {})
+    if isinstance(raw_header_envs, dict):
+        for header_name, env_name in raw_header_envs.items():
+            if not normalize_string(header_name):
+                errors.append(f"{label}: header_envs contains a blank header name")
+            if not normalize_string(env_name):
+                errors.append(f"{label}: header_envs[{header_name!r}] must be a non-empty env var name")
+
     return errors
 
 
@@ -275,7 +306,9 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         adapter=str(config["adapter"]),
         config_path=str(path.relative_to(ROOT)),
         base_url=(resolve_field(config, "base_url", required=require_secrets) or "").rstrip("/"),
+        base_url_env=normalize_string(config.get("base_url_env")),
         model=resolve_field(config, "model", required=require_secrets) or "",
+        model_env=normalize_string(config.get("model_env")),
         api_key=resolve_field(config, "api_key", required=require_secrets) or "",
         api_key_env=normalize_string(config.get("api_key_env")),
         chat_completions_path=str(config["chat_completions_path"]),
@@ -284,6 +317,8 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         temperature=float(config["temperature"]),
         max_completion_tokens=int(config["max_completion_tokens"]),
         headers=resolve_headers(config),
+        header_envs={str(key): str(value) for key, value in dict(config.get("header_envs", {})).items()},
+        env_contract=env_contract(config),
         extra_body=dict(config.get("extra_body", {})),
         request_timeout_seconds=int(config.get("request_timeout_seconds", 120)),
     )
@@ -461,7 +496,9 @@ def build_result(task_ref: str, config: ResolvedAgentConfig, messages: list[dict
             "adapter": config.adapter,
             "config_path": config.config_path,
             "base_url": config.base_url,
+            "base_url_env": config.base_url_env,
             "model": config.model,
+            "model_env": config.model_env,
             "api_key_env": config.api_key_env,
             "chat_completions_path": config.chat_completions_path,
             "models_path": config.models_path,
@@ -470,6 +507,8 @@ def build_result(task_ref: str, config: ResolvedAgentConfig, messages: list[dict
             "max_completion_tokens": config.max_completion_tokens,
             "request_timeout_seconds": config.request_timeout_seconds,
             "headers": config.headers,
+            "header_envs": config.header_envs,
+            "env_contract": config.env_contract,
             "extra_body": config.extra_body,
         },
         "messages": messages,
@@ -552,8 +591,8 @@ def describe_command(config_path: Path) -> int:
                 "temperature": config.temperature,
                 "max_completion_tokens": config.max_completion_tokens,
                 "headers": config.headers,
-                "header_envs": config_data.get("header_envs", {}),
-                "env_contract": env_contract(config_data),
+                "header_envs": config.header_envs,
+                "env_contract": config.env_contract,
                 "extra_body": config.extra_body,
                 "request_timeout_seconds": config.request_timeout_seconds,
                 "api_key_present": bool(config.api_key),

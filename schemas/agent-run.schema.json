@@ -48,7 +48,9 @@
         "adapter",
         "config_path",
         "base_url",
+        "base_url_env",
         "model",
+        "model_env",
         "api_key_env",
         "chat_completions_path",
         "models_path",
@@ -57,6 +59,8 @@
         "max_completion_tokens",
         "request_timeout_seconds",
         "headers",
+        "header_envs",
+        "env_contract",
         "extra_body"
       ],
       "properties": {
@@ -81,8 +85,14 @@
         "base_url": {
           "type": "string"
         },
+        "base_url_env": {
+          "type": ["string", "null"]
+        },
         "model": {
           "type": "string"
+        },
+        "model_env": {
+          "type": ["string", "null"]
         },
         "api_key_env": {
           "type": ["string", "null"]
@@ -112,6 +122,34 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
+          }
+        },
+        "header_envs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "env_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "optional"
+          ],
+          "properties": {
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "optional": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         },
         "extra_body": {
