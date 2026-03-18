@@ -11,13 +11,16 @@ from pathlib import Path
 from typing import Any
 from urllib import error, request
 
+from benchmark_config import load_benchmark_agent_defaults
 from task_runner import ROOT, load_task_record, resolve_task_manifest
 
 AGENT_RESULTS_DIR = ROOT / "results" / "agent_runs"
 SCHEMA_PATH = ROOT / "schemas" / "agent-config.schema.json"
 RUN_SCHEMA_PATH = ROOT / "schemas" / "agent-run.schema.json"
-DEFAULT_PROFILE = "default"
-AGENT_PROFILES_DIR = ROOT / "harness" / "agents"
+BENCHMARK_DEFAULTS = load_benchmark_agent_defaults()
+DEFAULT_PROFILE = BENCHMARK_DEFAULTS.default_agent_default_profile
+AGENT_PROFILES_DIR = ROOT / BENCHMARK_DEFAULTS.default_agent_profiles_dir
+DEFAULT_AGENT_CONFIG_PATH = ROOT / BENCHMARK_DEFAULTS.default_agent_config
 
 
 @dataclass(frozen=True)
@@ -167,10 +170,16 @@ def resolve_config_path(config_or_profile: str | None, profile: str | None) -> P
             f"agent config not found: {config_or_profile!r} "
             f"(checked file {config_label(candidate)} and profile {config_label(fallback)})"
         )
+    if DEFAULT_AGENT_CONFIG_PATH.is_file():
+        return DEFAULT_AGENT_CONFIG_PATH
     default_path = profile_path(DEFAULT_PROFILE)
     if default_path.is_file():
         return default_path
-    raise SystemExit(f"default agent profile not found: {config_label(default_path)}")
+    raise SystemExit(
+        "default agent config not found: "
+        f"{config_label(DEFAULT_AGENT_CONFIG_PATH)} "
+        f"(fallback profile {config_label(default_path)})"
+    )
 
 
 def discover_profiles() -> list[str]:
@@ -464,7 +473,7 @@ def canonical_summary_path(config: ResolvedAgentConfig) -> Path:
 
 
 def uses_legacy_aliases(config: ResolvedAgentConfig) -> bool:
-    return config.track == "reference" and config.run_slug == DEFAULT_PROFILE
+    return config.track == "reference" and config.config_path == config_label(DEFAULT_AGENT_CONFIG_PATH)
 
 
 def write_result(task_ref: str, config: ResolvedAgentConfig, payload: dict[str, Any]) -> Path:

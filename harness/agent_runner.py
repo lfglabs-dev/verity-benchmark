@@ -7,7 +7,14 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from default_agent import canonical_summary_path, config_label, execute_agent_task, resolve_config, resolve_config_path
+from default_agent import (
+    canonical_summary_path,
+    config_label,
+    execute_agent_task,
+    resolve_config,
+    resolve_config_path,
+    uses_legacy_aliases,
+)
 from task_runner import ROOT, discover_task_refs
 
 RESULTS_DIR = ROOT / "results"
@@ -76,7 +83,7 @@ def run_many(task_refs: list[str], config_path: Path, dry_run: bool, *, profile:
     }
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    if resolved_config.track == "reference" and resolved_config.run_slug == "default":
+    if uses_legacy_aliases(resolved_config):
         LEGACY_AGENT_SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return exit_code
 
