@@ -34,6 +34,7 @@ Repository layout:
 - `scripts/run_custom_agent.sh`: custom-agent entrypoint for one task through the same adapter path
 - `scripts/run_custom_agent_case.sh`: custom-agent entrypoint for one case through the same adapter path
 - `scripts/run_custom_agent_all.sh`: custom-agent entrypoint for all active tasks through the same adapter path
+- all six shell wrappers now delegate profile/config resolution to `scripts/run_agent_entrypoint.sh`, so the repo-default and external OpenAI-compatible flows stay on one launcher contract
 - `scripts/check.sh`: repo-level metadata and benchmark check
 - `docs/architecture/task-api.md`: benchmark architecture note for case/task/source roles
 - `schemas/agent-run.schema.json`: schema for default-agent run artifacts

@@ -16,6 +16,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - `scripts/run_custom_agent.sh <task_ref>` invokes the same runner on the custom-agent track
 - `scripts/run_custom_agent_case.sh <project/case_id>` invokes the custom-agent track for each task in one case
 - `scripts/run_custom_agent_all.sh` invokes the custom-agent track for all active tasks
+- `scripts/run_agent_entrypoint.sh` is the shared shell launcher that resolves the default profile or explicit config before delegating to `harness/agent_runner.py`
 - `harness/agent_runner.py` is the first-class runner for task, case, and suite default-agent execution
 - bundled reusable profiles live in `harness/agents/*.json`
 - `benchmark.toml` publishes the benchmark-owned profile defaults: `default` for the repo reference track and `openai-compatible` for the custom/external track
