@@ -44,6 +44,7 @@ Design choices:
 - The default-agent path is adapter-driven and uses the `openai_compatible` contract for both the repo-default setup and external backends
 - The default-agent path uses named profiles in `harness/agents/` so the repo-owned default agent and external OpenAI-compatible backends share one entrypoint
 - The default-agent path is now runner-backed at task, case, and suite scope through `harness/agent_runner.py`
+- The default-agent config contract supports both pinned JSON values and env-injected values, and the harness can now report the resolved wiring explicitly
 - One selected contract per project unless scope is still ambiguous
 - The active suite is still mostly spec-oriented, but proof manifests now support and exercise explicit proof targets
 - `case.yaml` plus `tasks/*.yaml` are the source of truth for benchmark state
@@ -84,6 +85,7 @@ Run the default benchmark agent for one task:
 ```bash
 export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 python3 harness/default_agent.py profiles
+python3 harness/default_agent.py describe --profile openai-proxy-fast
 python3 harness/default_agent.py probe --profile default --ensure-model
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
@@ -101,6 +103,26 @@ Bundled default-agent profiles:
 - `default`: repo-owned default benchmark agent, pinned to `https://agent-backend.thomas.md/v1` and `builtin/fast`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
 - `openai-compatible`: generic external OpenAI-compatible profile; provide `VERITY_BENCHMARK_AGENT_BASE_URL`, `VERITY_BENCHMARK_AGENT_MODEL`, and `VERITY_BENCHMARK_AGENT_API_KEY`
 - `openai-proxy-fast`: direct pinned proxy profile for `https://agent-backend.thomas.md/v1` and `builtin/fast`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
+
+Exact proxy/model wiring supported through the shared default-agent path:
+
+```bash
+export VERITY_BENCHMARK_AGENT_API_KEY="sk-proxy-898b52c81ce84c2aa4f9bb8f6fb10984"
+VERITY_BENCHMARK_AGENT_PROFILE=openai-proxy-fast \
+  ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
+```
+
+Generic external OpenAI-compatible wiring through the same path:
+
+```bash
+export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
+export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
+export VERITY_BENCHMARK_AGENT_API_KEY="sk-proxy-898b52c81ce84c2aa4f9bb8f6fb10984"
+VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible \
+  ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
+```
+
+`python3 harness/default_agent.py describe --profile <name>` prints the resolved OpenAI-compatible contract, where each field came from, and which env vars are still required.
 
 Run all active tasks:
 

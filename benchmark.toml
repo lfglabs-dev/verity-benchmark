@@ -10,6 +10,14 @@ default_agent_suite_command = "./scripts/run_default_agent_all.sh"
 default_agent_profiles_dir = "harness/agents"
 default_agent_default_profile = "default"
 default_agent_config = "harness/agents/default.json"
+default_agent_example_config = "harness/default-agent.example.json"
+default_agent_adapter = "openai_compatible"
+default_agent_env_vars = [
+  "VERITY_BENCHMARK_AGENT_BASE_URL",
+  "VERITY_BENCHMARK_AGENT_MODEL",
+  "VERITY_BENCHMARK_AGENT_API_KEY",
+]
+default_agent_proxy_profile = "openai-proxy-fast"
 default_agent_result_schema = "schemas/agent-run.schema.json"
 default_agent_summary = "results/agent_summary.json"
 inventory = "benchmark-inventory.json"

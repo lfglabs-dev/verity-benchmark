@@ -8,11 +8,6 @@
     "schema_version",
     "agent_id",
     "adapter",
-    "base_url",
-    "base_url_env",
-    "model",
-    "model_env",
-    "api_key_env",
     "chat_completions_path",
     "models_path",
     "system_prompt_files",
@@ -37,16 +32,19 @@
       "type": ["string", "null"]
     },
     "base_url_env": {
-      "type": "string"
+      "type": ["string", "null"]
     },
     "model": {
       "type": ["string", "null"]
     },
     "model_env": {
-      "type": "string"
+      "type": ["string", "null"]
+    },
+    "api_key": {
+      "type": ["string", "null"]
     },
     "api_key_env": {
-      "type": "string"
+      "type": ["string", "null"]
     },
     "chat_completions_path": {
       "type": "string"

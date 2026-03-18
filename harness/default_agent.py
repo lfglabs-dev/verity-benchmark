@@ -27,7 +27,9 @@ class ResolvedAgentConfig:
     adapter: str
     config_path: str
     base_url: str
+    base_url_env: str | None
     model: str
+    model_env: str | None
     api_key: str
     api_key_env: str | None
     chat_completions_path: str
@@ -38,6 +40,7 @@ class ResolvedAgentConfig:
     headers: dict[str, str]
     extra_body: dict[str, Any]
     request_timeout_seconds: int
+    required_env_vars: list[str]
 
 
 def load_json(path: Path) -> object:
@@ -114,6 +117,9 @@ def validate_config_data(data: object, label: str) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise SystemExit(f"{label}: config must decode to an object")
     errors = validate(data, schema, label)
+    for field in ("base_url", "model", "api_key"):
+        if not normalize_string(data.get(field)) and not normalize_string(data.get(f"{field}_env")):
+            errors.append(f"{label}: set either {field!r} or {field + '_env'!r}")
     if errors:
         raise SystemExit("\n".join(errors))
     return data
@@ -219,15 +225,21 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
     if missing_files:
         raise SystemExit(f"missing system prompt files: {', '.join(missing_files)}")
 
+    base_url_env = normalize_string(config.get("base_url_env"))
+    model_env = normalize_string(config.get("model_env"))
+    api_key_env = normalize_string(config.get("api_key_env"))
+
     return ResolvedAgentConfig(
         profile=profile,
         agent_id=str(config["agent_id"]),
         adapter=str(config["adapter"]),
-        config_path=str(path.relative_to(ROOT)),
+        config_path=config_label(path),
         base_url=(resolve_field(config, "base_url", required=require_secrets) or "").rstrip("/"),
+        base_url_env=base_url_env,
         model=resolve_field(config, "model", required=require_secrets) or "",
+        model_env=model_env,
         api_key=resolve_field(config, "api_key", required=require_secrets) or "",
-        api_key_env=normalize_string(config.get("api_key_env")),
+        api_key_env=api_key_env,
         chat_completions_path=str(config["chat_completions_path"]),
         models_path=str(config.get("models_path", "/models")),
         system_prompt_files=prompt_files,
@@ -236,6 +248,7 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         headers=resolve_headers(config),
         extra_body=dict(config.get("extra_body", {})),
         request_timeout_seconds=int(config.get("request_timeout_seconds", 120)),
+        required_env_vars=required_env_vars(config),
     )
 
 
@@ -389,7 +402,9 @@ def build_result(task_ref: str, config: ResolvedAgentConfig, messages: list[dict
             "adapter": config.adapter,
             "config_path": config.config_path,
             "base_url": config.base_url,
+            "base_url_env": config.base_url_env,
             "model": config.model,
+            "model_env": config.model_env,
             "api_key_env": config.api_key_env,
             "chat_completions_path": config.chat_completions_path,
             "models_path": config.models_path,
@@ -399,6 +414,12 @@ def build_result(task_ref: str, config: ResolvedAgentConfig, messages: list[dict
             "request_timeout_seconds": config.request_timeout_seconds,
             "headers": config.headers,
             "extra_body": config.extra_body,
+            "field_sources": {
+                "base_url": field_source(config, "base_url"),
+                "model": field_source(config, "model"),
+                "api_key": field_source(config, "api_key"),
+            },
+            "required_env_vars": config.required_env_vars,
         },
         "messages": messages,
     }
@@ -415,6 +436,57 @@ def resolve_task(task_ref: str) -> dict[str, Any]:
     return load_task_record(resolve_task_manifest(task_ref))
 
 
+def field_source(config: ResolvedAgentConfig, field: str) -> str:
+    value = getattr(config, field)
+    env_name = getattr(config, f"{field}_env", None)
+    if value:
+        return f"env:{env_name}" if env_name and normalize_string(os.environ.get(env_name)) == value else "config"
+    if env_name:
+        return f"env:{env_name}"
+    return "unset"
+
+
+def required_env_vars(config_data: dict[str, Any]) -> list[str]:
+    env_vars: list[str] = []
+    for field in ("base_url", "model", "api_key"):
+        if not normalize_string(config_data.get(field)):
+            env_name = normalize_string(config_data.get(f"{field}_env"))
+            if env_name:
+                env_vars.append(env_name)
+    return env_vars
+
+
+def config_contract_payload(config_path: Path) -> dict[str, Any]:
+    config_data = load_config(config_path)
+    config = resolve_config(config_path, require_secrets=False)
+    return {
+        "adapter": config.adapter,
+        "agent_id": config.agent_id,
+        "config_path": config.config_path,
+        "base_url": config.base_url or None,
+        "base_url_env": config.base_url_env,
+        "model": config.model or None,
+        "model_env": config.model_env,
+        "api_key_env": config.api_key_env,
+        "chat_completions_path": config.chat_completions_path,
+        "models_path": config.models_path,
+        "system_prompt_files": config.system_prompt_files,
+        "temperature": config.temperature,
+        "max_completion_tokens": config.max_completion_tokens,
+        "headers": config.headers,
+        "header_envs": config_data.get("header_envs", {}),
+        "extra_body": config.extra_body,
+        "request_timeout_seconds": config.request_timeout_seconds,
+        "api_key_present": bool(config.api_key),
+        "field_sources": {
+            "base_url": field_source(config, "base_url"),
+            "model": field_source(config, "model"),
+            "api_key": field_source(config, "api_key"),
+        },
+        "required_env_vars": required_env_vars(config_data),
+    }
+
+
 def validate_command(config_path: Path) -> int:
     resolve_config(config_path, require_secrets=False)
     print(config_label(config_path))
@@ -422,33 +494,7 @@ def validate_command(config_path: Path) -> int:
 
 
 def describe_command(config_path: Path) -> int:
-    config_data = load_config(config_path)
-    config = resolve_config(config_path, require_secrets=False)
-    print(
-        json.dumps(
-            {
-                "adapter": config.adapter,
-                "agent_id": config.agent_id,
-                "config_path": config.config_path,
-                "base_url": config.base_url or None,
-                "base_url_env": config_data.get("base_url_env"),
-                "model": config.model or None,
-                "model_env": config_data.get("model_env"),
-                "api_key_env": config_data.get("api_key_env"),
-                "chat_completions_path": config.chat_completions_path,
-                "models_path": config.models_path,
-                "system_prompt_files": config.system_prompt_files,
-                "temperature": config.temperature,
-                "max_completion_tokens": config.max_completion_tokens,
-                "headers": config.headers,
-                "header_envs": config_data.get("header_envs", {}),
-                "extra_body": config.extra_body,
-                "request_timeout_seconds": config.request_timeout_seconds,
-                "api_key_present": bool(config.api_key),
-            },
-            indent=2,
-        )
-    )
+    print(json.dumps(config_contract_payload(config_path), indent=2))
     return 0
 
 
@@ -510,15 +556,9 @@ def profiles_command() -> int:
     profiles: list[dict[str, Any]] = []
     for name in discover_profiles():
         path = profile_path(name)
-        config = load_config(path)
-        profiles.append(
-            {
-                "name": name,
-                "agent_id": config["agent_id"],
-                "adapter": config["adapter"],
-                "config_path": config_label(path),
-            }
-        )
+        payload = config_contract_payload(path)
+        payload["name"] = name
+        profiles.append(payload)
     payload = {
         "profiles_dir": config_label(AGENT_PROFILES_DIR),
         "default_profile": DEFAULT_PROFILE,

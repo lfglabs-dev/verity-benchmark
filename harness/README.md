@@ -25,6 +25,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - the generic external profile is `openai-compatible`
 - the direct proxy profile is `openai-proxy-fast`
 - the current transport adapter contract is `openai_compatible`
+- the config contract accepts either pinned values in JSON or env-backed values via `*_env`
 - credentials and endpoint selection are injected through env vars where the profile does not pin them
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
 - aggregated case/suite agent-run status is written to `results/agent_summary.json`
@@ -52,16 +53,36 @@ Useful commands:
 
 - `python3 harness/agent_runner.py list --suite active`
 - `python3 harness/default_agent.py profiles`
+- `python3 harness/default_agent.py describe --profile openai-proxy-fast`
 - `python3 harness/default_agent.py validate-config harness/agents/default.json`
 - `python3 harness/default_agent.py validate-config harness/agents/openai-compatible.json`
+- `python3 harness/default_agent.py validate-config harness/default-agent.example.json`
 - `python3 harness/default_agent.py describe --profile default`
 - `python3 harness/default_agent.py describe --profile openai-compatible`
 - `python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
+- `VERITY_BENCHMARK_AGENT_PROFILE=openai-proxy-fast ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal`
 - `./scripts/run_default_agent_all.sh`
+
+Exact OpenAI-compatible proxy wiring supported in this repo:
+
+- profile: `openai-proxy-fast`
+- base URL: `https://agent-backend.thomas.md/v1`
+- model: `builtin/fast`
+- API key env: `VERITY_BENCHMARK_AGENT_API_KEY`
+
+Generic external OpenAI-compatible wiring:
+
+- profile: `openai-compatible`
+- base URL env: `VERITY_BENCHMARK_AGENT_BASE_URL`
+- model env: `VERITY_BENCHMARK_AGENT_MODEL`
+- API key env: `VERITY_BENCHMARK_AGENT_API_KEY`
+
+The `describe` and `profiles` commands print the resolved transport contract, field sources,
+and the exact env vars still required for a given profile or config file.
 
 Supported task manifest interface fields:
 
