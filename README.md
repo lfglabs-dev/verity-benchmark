@@ -92,6 +92,19 @@ python3 harness/default_agent.py probe --profile default --ensure-model
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
+Run an external OpenAI-compatible backend through the same default-agent entrypoint:
+
+```bash
+export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
+export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
+export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
+python3 harness/default_agent.py describe --profile openai-compatible
+VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible \
+  ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
+VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json \
+  ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
+```
+
 Run the default benchmark agent for one case or the whole active suite:
 
 ```bash
@@ -116,6 +129,8 @@ Bundled default-agent profiles:
 - `default`: repo-owned reference benchmark agent on `results/agent_runs/reference/default/`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
 - `openai-compatible`: generic custom-agent profile on `results/agent_runs/custom/openai-compatible/`; provide `VERITY_BENCHMARK_AGENT_BASE_URL`, `VERITY_BENCHMARK_AGENT_MODEL`, and `VERITY_BENCHMARK_AGENT_API_KEY`
 - `openai-proxy-fast`: pinned custom-agent profile on `results/agent_runs/custom/openai-proxy-fast/`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
+
+Use `python3 harness/default_agent.py describe --profile <name>` to inspect the env contract for a bundled profile, or `--config harness/default-agent.example.json` for a repo-local external config.
 
 Run all active tasks:
 

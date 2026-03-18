@@ -40,6 +40,13 @@ Bundled profile contract:
 - `openai-compatible`: generic external OpenAI-compatible backend; expects all three env vars above
 - `openai-proxy-fast`: direct pinned proxy profile for `https://agent-backend.thomas.md/v1` and `builtin/fast`; only requires `VERITY_BENCHMARK_AGENT_API_KEY`
 
+Safe reuse paths through the same default-agent entrypoints:
+
+- keep the repo-owned reference run path: `./scripts/run_default_agent.sh <task_ref>` with the bundled `default` profile
+- switch the same entrypoint onto the generic external profile: `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh <task_ref>`
+- keep a repo-local custom config on the same runner: `VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json ./scripts/run_default_agent.sh <task_ref>`
+- inspect which env vars a profile or config expects with `python3 harness/default_agent.py describe --profile <name>` or `--config <path>`
+
 Optional config-only extensions for OpenAI-compatible backends:
 
 - `models_path`: model-discovery path used by `probe`
@@ -53,12 +60,15 @@ Useful commands:
 - `python3 harness/default_agent.py profiles`
 - `python3 harness/default_agent.py validate-config harness/agents/default.json`
 - `python3 harness/default_agent.py validate-config harness/agents/openai-compatible.json`
+- `python3 harness/default_agent.py validate-config harness/default-agent.example.json`
 - `python3 harness/default_agent.py describe --profile default`
 - `python3 harness/default_agent.py describe --profile openai-compatible`
+- `python3 harness/default_agent.py describe --config harness/default-agent.example.json`
 - `python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
+- `VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal`
 - `./scripts/run_custom_agent_case.sh ethereum/deposit_contract_minimal`

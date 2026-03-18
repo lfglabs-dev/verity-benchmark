@@ -481,6 +481,32 @@ def validate_command(config_path: Path) -> int:
     return 0
 
 
+def env_contract(config: dict[str, Any]) -> dict[str, list[str]]:
+    required: list[str] = []
+    optional: list[str] = []
+
+    for field in ("base_url", "model", "api_key"):
+        env_name = normalize_string(config.get(f"{field}_env"))
+        if not env_name:
+            continue
+        if normalize_string(config.get(field)):
+            optional.append(env_name)
+        else:
+            required.append(env_name)
+
+    raw_header_envs = config.get("header_envs", {})
+    if isinstance(raw_header_envs, dict):
+        for env_name in raw_header_envs.values():
+            normalized = normalize_string(env_name)
+            if normalized:
+                optional.append(normalized)
+
+    return {
+        "required": sorted(set(required)),
+        "optional": sorted(set(optional)),
+    }
+
+
 def describe_command(config_path: Path) -> int:
     config_data = load_config(config_path)
     config = resolve_config(config_path, require_secrets=False)
@@ -504,6 +530,7 @@ def describe_command(config_path: Path) -> int:
                 "max_completion_tokens": config.max_completion_tokens,
                 "headers": config.headers,
                 "header_envs": config_data.get("header_envs", {}),
+                "env_contract": env_contract(config_data),
                 "extra_body": config.extra_body,
                 "request_timeout_seconds": config.request_timeout_seconds,
                 "api_key_present": bool(config.api_key),
@@ -581,6 +608,7 @@ def profiles_command() -> int:
                 "run_slug": config.get("run_slug"),
                 "adapter": config["adapter"],
                 "config_path": config_label(path),
+                "env_contract": env_contract(config),
             }
         )
     payload = {
