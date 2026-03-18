@@ -68,7 +68,7 @@ Manifest model:
 
 Architecture note:
 
-- [`docs/architecture/task-api.md`](/workspaces/mission-199bf89a/repo/docs/architecture/task-api.md)
+- [`docs/architecture/task-api.md`](./docs/architecture/task-api.md)
 
 Regenerate metadata:
 
@@ -97,7 +97,7 @@ python3 harness/default_agent.py probe --profile default --ensure-model
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
-`./scripts/run_default_agent.sh` defaults to the bundled `default` profile from [`benchmark.toml`](/workspaces/mission-199bf89a/wt-default-agent-openai-contract/benchmark.toml), which pins `base_url = https://agent-backend.thomas.md/v1` and `model = builtin/fast`; only `VERITY_BENCHMARK_AGENT_API_KEY` must be supplied at runtime.
+`./scripts/run_default_agent.sh` defaults to the bundled `default` profile from [`benchmark.toml`](./benchmark.toml), which pins `base_url = https://agent-backend.thomas.md/v1` and `model = builtin/fast`; only `VERITY_BENCHMARK_AGENT_API_KEY` must be supplied at runtime.
 
 Run an external OpenAI-compatible backend through the same default-agent entrypoint:
 
@@ -116,7 +116,7 @@ VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json \
   ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
-`./scripts/run_custom_agent.sh` defaults to the bundled `openai-compatible` profile from [`benchmark.toml`](/workspaces/mission-199bf89a/wt-default-agent-openai-contract/benchmark.toml). Reusing the repo-owned backend through that external contract means setting:
+`./scripts/run_custom_agent.sh` defaults to the bundled `openai-compatible` profile from [`benchmark.toml`](./benchmark.toml). Reusing the repo-owned backend through that external contract means setting:
 
 ```bash
 export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
