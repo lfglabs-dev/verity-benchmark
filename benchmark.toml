@@ -16,8 +16,6 @@ active_cases = [
   "ethereum/deposit_contract_minimal",
   "nexus_mutual/ramm_price_band",
   "kleros/sortition_trees",
-  "ethereum/beacon_roots_predeploy",
-  "zama/erc7984",
 ]
 backlog_cases = [
   "unlink_xyz/placeholder",

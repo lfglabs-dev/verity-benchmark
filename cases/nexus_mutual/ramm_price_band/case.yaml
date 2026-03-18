@@ -12,6 +12,7 @@ proof_status: not_started
 upstream_repo: https://github.com/NexusMutual/smart-contracts
 upstream_commit: ad212043a78953a2cd98cd02b06c8e3e354c6023
 original_contract_path: contracts/modules/capital/Ramm.sol
+source_ref: https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol
 lean_target: Benchmark.Cases.NexusMutual.RammPriceBand.Compile
 selected_functions:
   - calculateNxm

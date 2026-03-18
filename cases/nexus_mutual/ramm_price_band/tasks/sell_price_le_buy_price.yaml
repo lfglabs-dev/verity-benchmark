@@ -5,6 +5,8 @@ case_id: nexus_mutual/ramm_price_band
 split: active
 family_id: nexus_mutual
 implementation_id: smart_contracts
+source_ref: https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol
+task_interface_version: 1
 statement_id: sell_price_below_buy_price_spec
 property_class: price_ordering
 difficulty: easy
@@ -15,6 +17,10 @@ spec_status: frozen
 proof_status: not_started
 spec_target: Benchmark.Cases.NexusMutual.RammPriceBand.Specs
 proof_target: null
+evaluation_engine: lean_build
+evaluation_target_kind: spec
+evaluation_target: Benchmark.Cases.NexusMutual.RammPriceBand.Specs
+evaluation_declaration: sell_price_below_buy_price_spec
 allowed_files:
   - cases/nexus_mutual/ramm_price_band/verity/Specs.lean
   - Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean

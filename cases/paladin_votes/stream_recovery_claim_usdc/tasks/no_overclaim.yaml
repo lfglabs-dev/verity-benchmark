@@ -5,6 +5,8 @@ case_id: paladin_votes/stream_recovery_claim_usdc
 split: active
 family_id: paladin_votes
 implementation_id: stream_recovery_claim
+source_ref: https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol
+task_interface_version: 1
 statement_id: claimUsdc_preserves_round_bound_spec
 property_class: accounting_bound
 difficulty: easy
@@ -15,6 +17,10 @@ spec_status: frozen
 proof_status: not_started
 spec_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs
 proof_target: null
+evaluation_engine: lean_build
+evaluation_target_kind: spec
+evaluation_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs
+evaluation_declaration: claimUsdc_preserves_round_bound_spec
 allowed_files:
   - cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean
   - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean

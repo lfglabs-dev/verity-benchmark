@@ -12,6 +12,7 @@ proof_status: blocked
 upstream_repo: https://github.com/unlink-xyz/monorepo
 upstream_commit: null
 original_contract_path: TBD
+source_ref: unresolved:https://github.com/unlink-xyz/monorepo@unknown:TBD
 selected_functions: []
 failure_reason: upstream_unavailable
 source_language: solidity

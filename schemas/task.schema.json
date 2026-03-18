@@ -12,6 +12,8 @@
     "split",
     "family_id",
     "implementation_id",
+    "source_ref",
+    "task_interface_version",
     "statement_id",
     "property_class",
     "difficulty",
@@ -22,6 +24,10 @@
     "proof_status",
     "spec_target",
     "proof_target",
+    "evaluation_engine",
+    "evaluation_target_kind",
+    "evaluation_target",
+    "evaluation_declaration",
     "allowed_files",
     "abstraction_level",
     "abstraction_notes",
@@ -48,6 +54,12 @@
     },
     "implementation_id": {
       "type": "string"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "task_interface_version": {
+      "type": "integer"
     },
     "statement_id": {
       "type": "string"
@@ -77,6 +89,18 @@
       "type": ["string", "null"]
     },
     "proof_target": {
+      "type": ["string", "null"]
+    },
+    "evaluation_engine": {
+      "enum": ["lean_build"]
+    },
+    "evaluation_target_kind": {
+      "enum": ["translation", "spec", "proof"]
+    },
+    "evaluation_target": {
+      "type": "string"
+    },
+    "evaluation_declaration": {
       "type": ["string", "null"]
     },
     "allowed_files": {

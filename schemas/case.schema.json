@@ -19,6 +19,7 @@
     "upstream_repo",
     "upstream_commit",
     "original_contract_path",
+    "source_ref",
     "selected_functions",
     "source_language",
     "verity_version",
@@ -72,6 +73,9 @@
       "type": ["string", "null"]
     },
     "original_contract_path": {
+      "type": "string"
+    },
+    "source_ref": {
       "type": "string"
     },
     "lean_target": {

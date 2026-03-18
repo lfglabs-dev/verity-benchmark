@@ -12,6 +12,7 @@ proof_status: blocked
 upstream_repo: null
 upstream_commit: null
 original_contract_path: TBD
+source_ref: unresolved:usual/private_repo@unknown:TBD
 selected_functions: []
 failure_reason: private_access
 source_language: solidity

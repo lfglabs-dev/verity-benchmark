@@ -10,9 +10,9 @@
     "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "family_count": 7,
-    "implementation_count": 8,
-    "active_case_count": 6,
+    "family_count": 6,
+    "implementation_count": 6,
+    "active_case_count": 4,
     "backlog_case_count": 2,
     "active_task_count": 11,
     "backlog_task_count": 0,
@@ -20,21 +20,18 @@
     "runnable_task_count": 11,
     "case_stage_counts": {
       "build_green": 4,
-      "candidate": 2,
-      "scoped": 2
+      "candidate": 2
     },
     "translation_status_counts": {
-      "blocked": 4,
+      "blocked": 2,
       "translated": 4
     },
     "spec_status_counts": {
-      "blocked": 1,
-      "draft": 1,
       "frozen": 4,
       "not_started": 2
     },
     "proof_status_counts": {
-      "blocked": 4,
+      "blocked": 2,
       "not_started": 4
     },
     "task_track_counts": {
@@ -54,7 +51,7 @@
       "weighted_selection": 1
     },
     "family_split_counts": {
-      "active": 5,
+      "active": 4,
       "backlog": 2
     }
   },
@@ -64,18 +61,15 @@
       "display_name": "Ethereum",
       "split": "active",
       "status": "active",
-      "description": "Ethereum L1 benchmark slices covering deposit processing and the beacon roots predeploy interface pinned from public upstream artifacts.",
+      "description": "Ethereum L1 benchmark slices covering deposit processing pinned from public upstream artifacts.",
       "implementation_ids": [
-        "deposit_contract",
-        "beacon_roots_predeploy"
+        "deposit_contract"
       ],
       "case_ids": [
-        "ethereum/deposit_contract_minimal",
-        "ethereum/beacon_roots_predeploy"
+        "ethereum/deposit_contract_minimal"
       ],
       "source_languages": [
-        "vyper",
-        "spec"
+        "vyper"
       ],
       "manifest_path": "families/ethereum/family.yaml"
     },
@@ -163,42 +157,9 @@
         "solidity"
       ],
       "manifest_path": "families/usual/family.yaml"
-    },
-    {
-      "family_id": "zama",
-      "display_name": "Zama",
-      "split": "active",
-      "status": "active",
-      "description": "Confidential token benchmarks sourced from the OpenZeppelin confidential contracts codebase and tracked even when current Verity support is incomplete.",
-      "implementation_ids": [
-        "openzeppelin_confidential_contracts"
-      ],
-      "case_ids": [
-        "zama/erc7984"
-      ],
-      "source_languages": [
-        "solidity"
-      ],
-      "manifest_path": "families/zama/family.yaml"
     }
   ],
   "implementations": [
-    {
-      "family_id": "ethereum",
-      "implementation_id": "beacon_roots_predeploy",
-      "display_name": "Beacon Roots Predeploy",
-      "split": "active",
-      "status": "blocked",
-      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
-      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95",
-      "source_language": "spec",
-      "source_artifact_path": "EIPS/eip-4788.md",
-      "case_ids": [
-        "ethereum/beacon_roots_predeploy"
-      ],
-      "notes": "This target is pinned to the EIP text today and remains blocked until a stable implementation artifact is selected for translation.",
-      "manifest_path": "families/ethereum/implementations/beacon_roots_predeploy/implementation.yaml"
-    },
     {
       "family_id": "ethereum",
       "implementation_id": "deposit_contract",
@@ -294,66 +255,9 @@
       ],
       "notes": "Intake is blocked on repository access, so no implementation artifact or case slice can be pinned yet.",
       "manifest_path": "families/usual/implementations/private_repo/implementation.yaml"
-    },
-    {
-      "family_id": "zama",
-      "implementation_id": "openzeppelin_confidential_contracts",
-      "display_name": "OpenZeppelin Confidential Contracts",
-      "split": "active",
-      "status": "blocked",
-      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-confidential-contracts",
-      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8",
-      "source_language": "solidity",
-      "source_artifact_path": "contracts/token/ERC7984/ERC7984.sol",
-      "case_ids": [
-        "zama/erc7984"
-      ],
-      "notes": "Benchmark intake is blocked on encrypted integer support and FHE runtime semantics that are outside the current Verity benchmark surface.",
-      "manifest_path": "families/zama/implementations/openzeppelin_confidential_contracts/implementation.yaml"
     }
   ],
   "cases": [
-    {
-      "case_id": "ethereum/beacon_roots_predeploy",
-      "project": "ethereum",
-      "case_name": "beacon_roots_predeploy",
-      "suite": "active",
-      "schema_version": 1,
-      "manifest_path": "cases/ethereum/beacon_roots_predeploy/case.yaml",
-      "split": "active",
-      "family_id": "ethereum",
-      "implementation_id": "beacon_roots_predeploy",
-      "stage": "scoped",
-      "translation_status": "blocked",
-      "spec_status": "draft",
-      "proof_status": "blocked",
-      "source_language": "spec",
-      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
-      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95",
-      "original_contract_path": "EIPS/eip-4788.md",
-      "selected_functions": [
-        "get",
-        "set"
-      ],
-      "lean_target": null,
-      "failure_reason": "missing_implementation_artifact",
-      "notes": "Candidate selected, but the benchmark currently lacks a pinned implementation artifact beyond the EIP text.",
-      "buildable": false,
-      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
-      "lean_toolchain": "leanprover/lean4:v4.22.0",
-      "abstraction_level": "protocol_slice",
-      "abstraction_tags": [
-        "execution_layer_interface",
-        "spec_only",
-        "artifact_gap"
-      ],
-      "abstraction_notes": "The benchmark scope is the ring-buffer get/set interface from EIP-4788, but no pinned deployable implementation artifact is tracked yet.",
-      "unsupported_feature_codes": [
-        "missing_implementation_artifact"
-      ],
-      "spec_target": null,
-      "proof_target": null
-    },
     {
       "case_id": "ethereum/deposit_contract_minimal",
       "project": "ethereum",
@@ -372,6 +276,7 @@
       "upstream_repo": "https://github.com/ethereum/deposit_contract",
       "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8",
       "original_contract_path": "deposit_contract/contracts/validator_registration.v.py",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
       "selected_functions": [
         "deposit"
       ],
@@ -411,6 +316,7 @@
       "upstream_repo": "https://github.com/kleros/kleros-v2",
       "upstream_commit": "75125dfa54eee723cac239f20e5746d15786196b",
       "original_contract_path": "contracts/src/libraries/SortitionTrees.sol",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
       "selected_functions": [
         "set",
         "updateParents",
@@ -452,6 +358,7 @@
       "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
       "upstream_commit": "ad212043a78953a2cd98cd02b06c8e3e354c6023",
       "original_contract_path": "contracts/modules/capital/Ramm.sol",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
       "selected_functions": [
         "calculateNxm",
         "_getReserves",
@@ -494,6 +401,7 @@
       "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
       "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12",
       "original_contract_path": "src/StreamRecoveryClaim.sol",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
       "selected_functions": [
         "claimUsdc",
         "_claimUsdc"
@@ -514,48 +422,6 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
       "proof_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs"
-    },
-    {
-      "case_id": "zama/erc7984",
-      "project": "zama",
-      "case_name": "erc7984",
-      "suite": "active",
-      "schema_version": 1,
-      "manifest_path": "cases/zama/erc7984/case.yaml",
-      "split": "active",
-      "family_id": "zama",
-      "implementation_id": "openzeppelin_confidential_contracts",
-      "stage": "scoped",
-      "translation_status": "blocked",
-      "spec_status": "blocked",
-      "proof_status": "blocked",
-      "source_language": "solidity",
-      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-confidential-contracts",
-      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8",
-      "original_contract_path": "contracts/token/ERC7984/ERC7984.sol",
-      "selected_functions": [
-        "confidentialTransfer",
-        "confidentialTransferFrom"
-      ],
-      "lean_target": null,
-      "failure_reason": "missing_verity_feature",
-      "notes": "Selected as requested, but blocked because the contract depends on encrypted euint64 values and FHE-specific runtime semantics that are not benchmarked in this v1 scaffold.",
-      "buildable": false,
-      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
-      "lean_toolchain": "leanprover/lean4:v4.22.0",
-      "abstraction_level": "unsupported_runtime",
-      "abstraction_tags": [
-        "encrypted_uint",
-        "fhe_runtime",
-        "confidential_transfer"
-      ],
-      "abstraction_notes": "The candidate is useful for roadmap tracking, but the encrypted integer and FHE execution semantics are outside the current benchmark abstraction boundary.",
-      "unsupported_feature_codes": [
-        "encrypted_uint",
-        "fhe_runtime"
-      ],
-      "spec_target": null,
-      "proof_target": null
     }
   ],
   "backlog": [
@@ -577,6 +443,7 @@
       "upstream_repo": "https://github.com/unlink-xyz/monorepo",
       "upstream_commit": null,
       "original_contract_path": "TBD",
+      "source_ref": "unresolved:https://github.com/unlink-xyz/monorepo@unknown:TBD",
       "selected_functions": [],
       "lean_target": null,
       "failure_reason": "upstream_unavailable",
@@ -614,6 +481,7 @@
       "upstream_repo": null,
       "upstream_commit": null,
       "original_contract_path": "TBD",
+      "source_ref": "unresolved:usual/private_repo@unknown:TBD",
       "selected_functions": [],
       "lean_target": null,
       "failure_reason": "private_access",
@@ -645,6 +513,8 @@
       "split": "active",
       "family_id": "ethereum",
       "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "threshold_activation",
       "category": "bounds",
@@ -662,10 +532,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
+        "declaration": "deposit_starts_chain_at_threshold_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -678,6 +555,8 @@
       "split": "active",
       "family_id": "ethereum",
       "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "monotonic_counter",
       "category": "state-transition",
@@ -695,10 +574,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
+        "declaration": "deposit_increments_deposit_count_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -711,6 +597,8 @@
       "split": "active",
       "family_id": "kleros",
       "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "weighted_selection",
       "category": "probabilistic-encoding",
@@ -728,10 +616,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+        "declaration": "draw_interval_matches_weights_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -744,6 +639,8 @@
       "split": "active",
       "family_id": "kleros",
       "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "mapping_consistency",
       "category": "state-transition",
@@ -761,10 +658,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+        "declaration": "node_id_bijection_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -777,6 +681,8 @@
       "split": "active",
       "family_id": "kleros",
       "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "tree_conservation",
       "category": "state-transition",
@@ -794,10 +700,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+        "declaration": "parent_equals_sum_of_children_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -810,6 +723,8 @@
       "split": "active",
       "family_id": "kleros",
       "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "total_conservation",
       "category": "state-transition",
@@ -827,10 +742,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+        "declaration": "root_equals_sum_of_leaves_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -843,6 +765,8 @@
       "split": "active",
       "family_id": "nexus_mutual",
       "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "price_lower_bound",
       "category": "arithmetic-invariant",
@@ -860,10 +784,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
+        "declaration": "buy_price_above_book_value_buffer_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -876,6 +807,8 @@
       "split": "active",
       "family_id": "nexus_mutual",
       "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "price_ordering",
       "category": "arithmetic-invariant",
@@ -893,10 +826,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
+        "declaration": "sell_price_below_buy_price_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -909,6 +849,8 @@
       "split": "active",
       "family_id": "nexus_mutual",
       "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "price_upper_bound",
       "category": "arithmetic-invariant",
@@ -926,10 +868,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
+        "declaration": "sell_price_below_book_value_buffer_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -942,6 +891,8 @@
       "split": "active",
       "family_id": "paladin_votes",
       "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "authorization_state",
       "category": "state-transition",
@@ -959,10 +910,17 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
+        "declaration": "claimUsdc_marks_claimed_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     },
     {
@@ -975,6 +933,8 @@
       "split": "active",
       "family_id": "paladin_votes",
       "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 1,
       "track": "proof-only",
       "property_class": "accounting_bound",
       "category": "accounting",
@@ -992,13 +952,20 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
       "proof_target": null,
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "spec",
+        "target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
+        "declaration": "claimUsdc_preserves_round_bound_spec"
+      },
       "readiness": {
         "translation": "ready",
         "spec": "ready",
-        "proof": "planned"
+        "proof": "planned",
+        "evaluation": "ready"
       }
     }
   ],
   "backlog_tasks": [],
-  "generated_at": "2026-03-18T15:29:02.512902+00:00"
+  "generated_at": "2026-03-18T16:04:22.229500+00:00"
 }

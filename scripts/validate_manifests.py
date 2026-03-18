@@ -86,6 +86,15 @@ def load_manifest(path: Path) -> dict:
     return data
 
 
+def expected_source_ref(data: dict) -> str | None:
+    upstream_repo = data.get("upstream_repo")
+    upstream_commit = data.get("upstream_commit")
+    original_contract_path = data.get("original_contract_path")
+    if not all(isinstance(item, str) and item for item in (upstream_repo, upstream_commit, original_contract_path)):
+        return None
+    return f"{upstream_repo}@{upstream_commit}:{original_contract_path}"
+
+
 def main() -> int:
     schema_files = {
         "family": load_json(SCHEMA_ROOT / "family.schema.json"),
@@ -132,6 +141,12 @@ def main() -> int:
             cases[full_case_id] = data
             if family_id != project:
                 errors.append(f"{rel}: family_id must match project for current layout")
+        source_ref = data.get("source_ref")
+        expected_ref = expected_source_ref(data)
+        if not isinstance(source_ref, str) or not source_ref:
+            errors.append(f"{rel}: source_ref must be a non-empty string")
+        elif expected_ref is not None and source_ref != expected_ref:
+            errors.append(f"{rel}: source_ref must match pinned upstream source {expected_ref!r}")
         if not isinstance(family_id, str) or family_id not in families:
             errors.append(f"{rel}: unknown family_id {family_id!r}")
         if not isinstance(family_id, str) or not isinstance(implementation_id, str):
@@ -146,6 +161,7 @@ def main() -> int:
         case_id = data.get("case_id")
         family_id = data.get("family_id")
         implementation_id = data.get("implementation_id")
+        source_ref = data.get("source_ref")
         if not isinstance(case_id, str) or case_id not in cases:
             errors.append(f"{rel}: unknown case_id {case_id!r}")
         else:
@@ -154,12 +170,47 @@ def main() -> int:
                 errors.append(
                     f"{rel}: case_id {case_id!r} does not match parent case {parent_case_id!r}"
                 )
+            else:
+                case_record = cases[case_id]
+                case_source_ref = case_record.get("source_ref")
+                if source_ref != case_source_ref:
+                    errors.append(
+                        f"{rel}: source_ref {source_ref!r} does not match parent case source_ref {case_source_ref!r}"
+                    )
         if not isinstance(family_id, str) or family_id not in families:
             errors.append(f"{rel}: unknown family_id {family_id!r}")
         if not isinstance(family_id, str) or not isinstance(implementation_id, str):
             errors.append(f"{rel}: implementation reference is incomplete")
         elif (family_id, implementation_id) not in implementations:
             errors.append(f"{rel}: unknown implementation {(family_id, implementation_id)!r}")
+        interface_version = data.get("task_interface_version")
+        if not isinstance(interface_version, int) or interface_version < 1:
+            errors.append(f"{rel}: task_interface_version must be an integer >= 1")
+        evaluation_target_kind = data.get("evaluation_target_kind")
+        evaluation_target = data.get("evaluation_target")
+        evaluation_declaration = data.get("evaluation_declaration")
+        spec_target = data.get("spec_target")
+        proof_target = data.get("proof_target")
+        if not isinstance(source_ref, str) or not source_ref:
+            errors.append(f"{rel}: source_ref must be a non-empty string")
+        if evaluation_target_kind == "translation":
+            case_target = cases.get(case_id, {}).get("lean_target")
+            if evaluation_target != case_target:
+                errors.append(
+                    f"{rel}: translation evaluation_target must match parent case lean_target {case_target!r}"
+                )
+            if evaluation_declaration is not None:
+                errors.append(f"{rel}: translation tasks must set evaluation_declaration to null")
+        elif evaluation_target_kind == "spec":
+            if evaluation_target != spec_target:
+                errors.append(f"{rel}: spec evaluation_target must match spec_target")
+            if not isinstance(evaluation_declaration, str) or not evaluation_declaration:
+                errors.append(f"{rel}: spec tasks must declare evaluation_declaration")
+        elif evaluation_target_kind == "proof":
+            if evaluation_target != proof_target:
+                errors.append(f"{rel}: proof evaluation_target must match proof_target")
+            if not isinstance(evaluation_declaration, str) or not evaluation_declaration:
+                errors.append(f"{rel}: proof tasks must declare evaluation_declaration")
         allowed_files = data.get("allowed_files")
         if isinstance(allowed_files, list):
             for allowed in allowed_files:

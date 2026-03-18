@@ -5,6 +5,8 @@ case_id: ethereum/deposit_contract_minimal
 split: active
 family_id: ethereum
 implementation_id: deposit_contract
+source_ref: https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py
+task_interface_version: 1
 statement_id: deposit_increments_deposit_count_spec
 property_class: monotonic_counter
 difficulty: easy
@@ -15,6 +17,10 @@ spec_status: frozen
 proof_status: not_started
 spec_target: Benchmark.Cases.Ethereum.DepositContractMinimal.Specs
 proof_target: null
+evaluation_engine: lean_build
+evaluation_target_kind: spec
+evaluation_target: Benchmark.Cases.Ethereum.DepositContractMinimal.Specs
+evaluation_declaration: deposit_increments_deposit_count_spec
 allowed_files:
   - cases/ethereum/deposit_contract_minimal/verity/Specs.lean
   - Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean

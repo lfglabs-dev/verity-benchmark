@@ -12,6 +12,7 @@ proof_status: not_started
 upstream_repo: https://github.com/Figu3/sonic-earn-recovery-system
 upstream_commit: 699cbbc79def374cab9739e451acbbf866293d12
 original_contract_path: src/StreamRecoveryClaim.sol
+source_ref: https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol
 lean_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile
 selected_functions:
   - claimUsdc
