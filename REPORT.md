@@ -8,7 +8,7 @@ This report is generated from the benchmark manifests.
 - Implementations: 6
 - Active cases: 4
 - Buildable active cases: 4
-- Active tasks: 13
+- Active tasks: 14
 - Backlog cases: 2
 
 ## Buildable active cases
@@ -26,7 +26,7 @@ This report is generated from the benchmark manifests.
 ### `kleros/sortition_trees`
 - Family / implementation: `kleros` / `kleros_v2`
 - Stage: `build_green`
-- Status dimensions: translation=`translated`, spec=`frozen`, proof=`not_started`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`partial`
 - Lean target: `Benchmark.Cases.Kleros.SortitionTrees.Compile`
 - Source ref: `https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol`
 - Selected functions: `set`, `updateParents`, `draw`
@@ -108,6 +108,14 @@ This report is generated from the benchmark manifests.
 - Statement id: `root_equals_sum_of_leaves_spec`
 - Evaluation: engine=`lean_build`, target_kind=`spec`, target=`Benchmark.Cases.Kleros.SortitionTrees.Specs`, declaration=`root_equals_sum_of_leaves_spec`
 - Spec target: `Benchmark.Cases.Kleros.SortitionTrees.Specs`
+
+### `kleros/sortition_trees/root_minus_left_equals_right_subtree`
+- Track / property class: `proof-only` / `subtree_partition`
+- Readiness: translation=`ready`, spec=`ready`, proof=`ready`, evaluation=`ready`
+- Statement id: `root_minus_left_equals_right_subtree`
+- Evaluation: engine=`lean_build`, target_kind=`proof`, target=`Benchmark.Cases.Kleros.SortitionTrees.Proofs`, declaration=`root_minus_left_equals_right_subtree`
+- Spec target: `Benchmark.Cases.Kleros.SortitionTrees.Specs`
+- Proof target: `Benchmark.Cases.Kleros.SortitionTrees.Proofs`
 
 ### `nexus_mutual/ramm_price_band/buy_price_ge_bv_plus_1pct`
 - Track / property class: `proof-only` / `price_lower_bound`

@@ -14,10 +14,10 @@
     "implementation_count": 6,
     "active_case_count": 4,
     "backlog_case_count": 2,
-    "active_task_count": 13,
+    "active_task_count": 14,
     "backlog_task_count": 0,
     "buildable_case_count": 4,
-    "runnable_task_count": 13,
+    "runnable_task_count": 14,
     "case_stage_counts": {
       "build_green": 4,
       "candidate": 2
@@ -32,11 +32,11 @@
     },
     "proof_status_counts": {
       "blocked": 2,
-      "not_started": 3,
-      "partial": 1
+      "not_started": 2,
+      "partial": 2
     },
     "task_track_counts": {
-      "proof-only": 13
+      "proof-only": 14
     },
     "task_property_class_counts": {
       "accounting_bound": 1,
@@ -47,6 +47,7 @@
       "price_lower_bound": 1,
       "price_ordering": 1,
       "price_upper_bound": 1,
+      "subtree_partition": 1,
       "threshold_activation": 1,
       "total_conservation": 1,
       "tree_conservation": 1,
@@ -313,7 +314,7 @@
       "stage": "build_green",
       "translation_status": "translated",
       "spec_status": "frozen",
-      "proof_status": "not_started",
+      "proof_status": "partial",
       "source_language": "solidity",
       "upstream_repo": "https://github.com/kleros/kleros-v2",
       "upstream_commit": "75125dfa54eee723cac239f20e5746d15786196b",
@@ -340,7 +341,7 @@
       "abstraction_notes": "The benchmark specializes the dynamic K-ary sortition tree to a balanced four-leaf binary slice. It preserves the parent-update and draw-interval logic while abstracting dynamic arrays, bytes32 stake-path packing, and the hash used to derive the draw ticket.",
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
-      "proof_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs"
+      "proof_target": "Benchmark.Cases.Kleros.SortitionTrees.Proofs"
     },
     {
       "case_id": "nexus_mutual/ramm_price_band",
@@ -802,6 +803,50 @@
       }
     },
     {
+      "task_ref": "kleros/sortition_trees/root_minus_left_equals_right_subtree",
+      "task_id": "root_minus_left_equals_right_subtree",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/root_minus_left_equals_right_subtree.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 1,
+      "track": "proof-only",
+      "property_class": "subtree_partition",
+      "category": "data-structure",
+      "difficulty": "medium",
+      "statement_id": "root_minus_left_equals_right_subtree",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "allowed_files": [
+        "cases/kleros/sortition_trees/tasks/root_minus_left_equals_right_subtree.yaml",
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Proofs.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task turns the tree conservation slice into a partition theorem: once the root and parent sums are established, subtracting the left subtree mass from the root must leave exactly the right subtree mass.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+      "proof_target": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_build",
+        "target_kind": "proof",
+        "target": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+        "declaration": "root_minus_left_equals_right_subtree"
+      },
+      "readiness": {
+        "translation": "ready",
+        "spec": "ready",
+        "proof": "ready",
+        "evaluation": "ready"
+      }
+    },
+    {
       "task_ref": "nexus_mutual/ramm_price_band/buy_price_ge_bv_plus_1pct",
       "task_id": "buy_price_ge_bv_plus_1pct",
       "case_id": "nexus_mutual/ramm_price_band",
@@ -1057,5 +1102,5 @@
     }
   ],
   "backlog_tasks": [],
-  "generated_at": "2026-03-18T16:41:12.421632+00:00"
+  "generated_at": "2026-03-18T16:46:31.378562+00:00"
 }

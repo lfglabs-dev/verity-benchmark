@@ -1,0 +1,34 @@
+manifest_kind: task
+schema_version: 1
+task_id: root_minus_left_equals_right_subtree
+case_id: kleros/sortition_trees
+split: active
+family_id: kleros
+implementation_id: kleros_v2
+source_ref: https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol
+task_interface_version: 1
+statement_id: root_minus_left_equals_right_subtree
+property_class: subtree_partition
+difficulty: medium
+category: data-structure
+track: proof-only
+translation_status: translated
+spec_status: frozen
+proof_status: partial
+spec_target: Benchmark.Cases.Kleros.SortitionTrees.Specs
+proof_target: Benchmark.Cases.Kleros.SortitionTrees.Proofs
+evaluation_engine: lean_build
+evaluation_target_kind: proof
+evaluation_target: Benchmark.Cases.Kleros.SortitionTrees.Proofs
+evaluation_declaration: root_minus_left_equals_right_subtree
+allowed_files:
+  - cases/kleros/sortition_trees/tasks/root_minus_left_equals_right_subtree.yaml
+  - cases/kleros/sortition_trees/verity/Specs.lean
+  - Benchmark/Cases/Kleros/SortitionTrees/Specs.lean
+  - Benchmark/Cases/Kleros/SortitionTrees/Proofs.lean
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task turns the tree conservation slice into a partition theorem: once the
+  root and parent sums are established, subtracting the left subtree mass from
+  the root must leave exactly the right subtree mass.
+unsupported_feature_codes: []
