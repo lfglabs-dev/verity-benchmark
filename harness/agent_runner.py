@@ -27,14 +27,20 @@ def resolve_case_task_refs(case_ref: str, suite: str) -> list[str]:
 
 def run_many(task_refs: list[str], config_path: Path, dry_run: bool, *, profile: str | None, scope: str) -> int:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    resolved_config = resolve_config(config_path, require_secrets=False, profile=profile)
+    resolved_config = resolve_config(config_path, require_secrets=not dry_run, profile=profile)
     summary_path = canonical_summary_path(resolved_config)
     entries: list[dict[str, object]] = []
     exit_code = 0
 
     for task_ref in task_refs:
         try:
-            _, result_path = execute_agent_task(config_path, task_ref, dry_run, profile=profile)
+            _, result_path = execute_agent_task(
+                config_path,
+                task_ref,
+                dry_run,
+                profile=profile,
+                resolved_config=resolved_config,
+            )
             status = "dry_run" if dry_run else "completed"
             entries.append(
                 {

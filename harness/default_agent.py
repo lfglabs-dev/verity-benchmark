@@ -633,8 +633,15 @@ def probe_command(config_path: Path, ensure_model: bool) -> int:
     return 0
 
 
-def execute_agent_task(config_path: Path, task_ref: str, dry_run: bool, *, profile: str | None = None) -> tuple[int, Path]:
-    config = resolve_config(config_path, require_secrets=not dry_run, profile=profile)
+def execute_agent_task(
+    config_path: Path,
+    task_ref: str,
+    dry_run: bool,
+    *,
+    profile: str | None = None,
+    resolved_config: ResolvedAgentConfig | None = None,
+) -> tuple[int, Path]:
+    config = resolved_config or resolve_config(config_path, require_secrets=not dry_run, profile=profile)
     task = resolve_task(task_ref)
     messages = build_messages(config, task)
     result = build_result(task_ref, config, messages, dry_run=dry_run)

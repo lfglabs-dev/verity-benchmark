@@ -29,6 +29,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - task artifacts are partitioned under `results/agent_runs/<track>/<run_slug>/...`
 - aggregated case/suite agent-run status is written to `results/agent_summaries/<track>/<run_slug>.json`
 - compatibility aliases remain at `results/agent_runs/*.json` and `results/agent_summary.json` for the repo reference `default` profile
+- `harness/agent_runner.py` resolves one `ResolvedAgentConfig` per run scope and reuses it across tasks, so missing or bad required env config fails once up front for live runs
 
 Default OpenAI-compatible env contract:
 
@@ -70,6 +71,7 @@ Useful commands:
 - `python3 harness/default_agent.py describe --config harness/default-agent.example.json`
 - `python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
 - `VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
+- `VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/agent_runner.py run-case ethereum/deposit_contract_minimal --profile default`
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
