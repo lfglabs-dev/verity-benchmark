@@ -30,11 +30,11 @@ python3 - "$manifest" "$tmp_json" <<'PY'
 import json
 from pathlib import Path
 import sys
-import yaml
+from scripts.manifest_utils import load_manifest_data
 
 manifest = Path(sys.argv[1])
 out = Path(sys.argv[2])
-data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+data = load_manifest_data(manifest)
 suite = "active" if manifest.parts[0] == "cases" else "backlog"
 payload = {
     "case_id": f"{data['project']}/{data['case_id']}",

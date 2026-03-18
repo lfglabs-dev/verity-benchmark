@@ -7,8 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import sys
 
-import yaml
-
+from manifest_utils import load_manifest_data
 
 ROOT = Path(__file__).resolve().parent.parent
 ACTIVE_ROOT = ROOT / "cases"
@@ -37,9 +36,16 @@ REQUIRED_KEYS = {
 }
 
 
+def normalize_notes(path: Path, value: object) -> str:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise ValueError(f"{path}: notes must be a string or null")
+    return value.strip()
+
+
 def load_manifest(path: Path, suite: str) -> dict:
-    with path.open("r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle)
+    data = load_manifest_data(path)
 
     missing = sorted(REQUIRED_KEYS - data.keys())
     if missing:
@@ -65,7 +71,7 @@ def load_manifest(path: Path, suite: str) -> dict:
         "selected_functions": data["selected_functions"],
         "lean_target": data.get("lean_target"),
         "failure_reason": data.get("failure_reason"),
-        "notes": data["notes"].strip(),
+        "notes": normalize_notes(path, data.get("notes")),
         "manifest_path": str(path.relative_to(ROOT)),
         "buildable": stage in BUILDABLE_STAGES and bool(data.get("lean_target")),
         "verity_commit": data["verity_version"],
@@ -107,7 +113,6 @@ def write_inventory(active: list[dict], backlog: list[dict]) -> None:
 
     payload = {
         "benchmark": "verity-benchmark",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
         "manifest_schema_version": 1,
         "inventory_source": {
             "active": "cases/*/*/case.yaml",
@@ -117,6 +122,17 @@ def write_inventory(active: list[dict], backlog: list[dict]) -> None:
         "cases": active,
         "backlog": backlog,
     }
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    if INVENTORY_PATH.exists():
+        existing = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+        existing_without_timestamp = {
+            key: value for key, value in existing.items() if key != "generated_at"
+        }
+        if existing_without_timestamp == payload:
+            generated_at = str(existing.get("generated_at", generated_at))
+
+    payload["generated_at"] = generated_at
 
     INVENTORY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
@@ -149,7 +165,7 @@ def write_report(active: list[dict], backlog: list[dict]) -> None:
         lines.append("")
 
     lines.extend([
-        "## Scoped active cases",
+        "## Non-buildable active cases",
         "",
     ])
 

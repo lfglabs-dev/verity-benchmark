@@ -7,10 +7,10 @@ mkdir -p results
 
 mapfile -t case_ids < <(python3 - <<'PY'
 from pathlib import Path
-import yaml
+from scripts.manifest_utils import load_manifest_data
 
 for manifest in sorted(Path("cases").glob("*/*/case.yaml")):
-    data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    data = load_manifest_data(manifest)
     print(f"{data['project']}/{data['case_id']}")
 PY
 )

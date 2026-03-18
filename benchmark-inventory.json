@@ -1,6 +1,5 @@
 {
   "benchmark": "verity-benchmark",
-  "generated_at": "2026-03-14T13:43:36.061637+00:00",
   "manifest_schema_version": 1,
   "inventory_source": {
     "active": "cases/*/*/case.yaml",
@@ -174,5 +173,6 @@
       "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
       "lean_toolchain": "leanprover/lean4:v4.22.0"
     }
-  ]
+  ],
+  "generated_at": "2026-03-18T07:38:26.822277+00:00"
 }

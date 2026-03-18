@@ -24,7 +24,7 @@ This report is generated from the per-case `case.yaml` manifests.
 - Source artifact: `src/StreamRecoveryClaim.sol`
 - Notes: Single-round accounting slice of the USDC claim path. Merkle verification is abstracted as a boolean witness and token transfer side effects are omitted.
 
-## Scoped active cases
+## Non-buildable active cases
 
 ### `ethereum/beacon_roots_predeploy`
 - Stage: `scoped`
