@@ -46,6 +46,7 @@ Design choices:
 - Tasks target explicit proof modules and proof declarations
 - The default-agent path is adapter-driven and uses the `openai_compatible` contract for both the repo-default setup and external backends
 - The default-agent path uses named profiles in `harness/agents/` so the repo-owned reference agent and custom OpenAI-compatible backends share one runner
+- `benchmark.toml` declares the benchmark-owned defaults: `default_agent_default_profile = "default"` for the repo reference path and `custom_agent_default_profile = "openai-compatible"` for reusable external OpenAI-compatible backends
 - The default-agent path is now runner-backed at task, case, and suite scope through `harness/agent_runner.py`
 - The OpenAI-compatible connection contract is explicit in config: `base_url`, `model`, and `api_key` can each be pinned directly or supplied via `*_env`
 - Default-agent run artifacts preserve both the resolved OpenAI-compatible endpoint/model and the env contract that supplied them
@@ -94,6 +95,8 @@ python3 harness/default_agent.py probe --profile default --ensure-model
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
+`./scripts/run_default_agent.sh` defaults to the bundled `default` profile from [`benchmark.toml`](/workspaces/mission-199bf89a/wt-default-agent-docs-wiring/benchmark.toml), which pins `base_url = https://agent-backend.thomas.md/v1` and `model = builtin/fast`; only `VERITY_BENCHMARK_AGENT_API_KEY` must be supplied at runtime.
+
 Run an external OpenAI-compatible backend through the same default-agent entrypoint:
 
 ```bash
@@ -109,6 +112,15 @@ VERITY_BENCHMARK_AGENT_PROFILE=openai-proxy-fast \
   ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json \
   ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
+```
+
+`./scripts/run_custom_agent.sh` defaults to the bundled `openai-compatible` profile from [`benchmark.toml`](/workspaces/mission-199bf89a/wt-default-agent-docs-wiring/benchmark.toml). Reusing the repo-owned backend through that external contract means setting:
+
+```bash
+export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
+export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
+export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
+./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
 Run the default benchmark agent for one case or the whole active suite:
@@ -137,6 +149,7 @@ Bundled default-agent profiles:
 - `openai-proxy-fast`: pinned custom-agent profile on `results/agent_runs/custom/openai-proxy-fast/`; provide `VERITY_BENCHMARK_AGENT_API_KEY`
 
 Use `python3 harness/default_agent.py describe --profile <name>` to inspect the env contract for a bundled profile, or `--config harness/default-agent.example.json` for a repo-local external config.
+The repo-owned `default` profile and the reusable `openai-proxy-fast` profile both speak the same `openai_compatible` contract to `https://agent-backend.thomas.md/v1` with `builtin/fast`; the difference is the run track and whether you select them through the benchmark default profile or an explicit external profile/config.
 `harness/agent_runner.py` resolves one explicit config per invocation and reuses it across all tasks in that run scope, so live runs fail fast when required env vars such as `base_url`, `model`, or `api_key` are missing or invalid.
 
 Run all active tasks:

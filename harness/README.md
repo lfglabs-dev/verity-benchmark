@@ -18,6 +18,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - `scripts/run_custom_agent_all.sh` invokes the custom-agent track for all active tasks
 - `harness/agent_runner.py` is the first-class runner for task, case, and suite default-agent execution
 - bundled reusable profiles live in `harness/agents/*.json`
+- `benchmark.toml` publishes the benchmark-owned profile defaults: `default` for the repo reference track and `openai-compatible` for the custom/external track
 - the default profile is `default`, which is the repo-owned reference benchmark agent identity on the `reference/default` run path
 - the generic external profile is `openai-compatible`, which is the baseline `custom/openai-compatible` run path
 - the direct proxy profile is `openai-proxy-fast`, which is a pinned `custom/openai-proxy-fast` run path
@@ -47,6 +48,7 @@ Safe reuse paths through the same default-agent entrypoints:
 
 - keep the repo-owned reference run path: `./scripts/run_default_agent.sh <task_ref>` with the bundled `default` profile
 - switch the same entrypoint onto the generic external profile: `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh <task_ref>`
+- reuse the repo-owned backend through the external contract: `VERITY_BENCHMARK_AGENT_BASE_URL=https://agent-backend.thomas.md/v1 VERITY_BENCHMARK_AGENT_MODEL=builtin/fast VERITY_BENCHMARK_AGENT_API_KEY=... VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh <task_ref>`
 - keep a repo-local custom config on the same runner: `VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json ./scripts/run_default_agent.sh <task_ref>`
 - inspect which env vars a profile or config expects with `python3 harness/default_agent.py describe --profile <name>` or `--config <path>`
 
@@ -76,6 +78,7 @@ Useful commands:
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_BASE_URL=https://agent-backend.thomas.md/v1 VERITY_BENCHMARK_AGENT_MODEL=builtin/fast VERITY_BENCHMARK_AGENT_API_KEY=... VERITY_BENCHMARK_AGENT_PROFILE=openai-compatible ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
+- `VERITY_BENCHMARK_AGENT_BASE_URL=https://agent-backend.thomas.md/v1 VERITY_BENCHMARK_AGENT_MODEL=builtin/fast VERITY_BENCHMARK_AGENT_API_KEY=... ./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count`
 - `./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal`
