@@ -27,6 +27,17 @@ theorem small_deposit_preserves_full_count
   exact hSmallDeposit hBelowThreshold
 
 /--
+A full deposit increments the full-deposit counter by exactly one.
+-/
+theorem full_deposit_increments_full_count
+    (depositAmount : Uint256) (s s' : ContractState) :
+    deposit_increments_full_count_for_full_deposit_spec depositAmount s s' ->
+    depositAmount >= 32000000000 ->
+    s'.storage 1 = add (s.storage 1) 1 := by
+  intro hFullDeposit hAtLeastThreshold
+  exact hFullDeposit hAtLeastThreshold
+
+/--
 A threshold-crossing full deposit starts the chain flag.
 -/
 theorem full_deposit_starts_chain_at_threshold

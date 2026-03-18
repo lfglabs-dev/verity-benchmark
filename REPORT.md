@@ -8,7 +8,7 @@ This report is generated from the benchmark manifests.
 - Implementations: 6
 - Active cases: 4
 - Buildable active cases: 4
-- Active tasks: 15
+- Active tasks: 16
 - Backlog cases: 2
 
 ## Buildable active cases
@@ -71,6 +71,13 @@ This report is generated from the benchmark manifests.
 - Readiness: proof=`ready`, evaluation=`ready`
 - Statement id: `deposit_increments_deposit_count`
 - Evaluation: engine=`lean_build`, target_kind=`proof`, target=`Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`, declaration=`deposit_increments_deposit_count`
+- Proof target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`
+
+### `ethereum/deposit_contract_minimal/full_deposit_increments_full_count`
+- Track / property class: `proof-only` / `monotonic_counter`
+- Readiness: proof=`ready`, evaluation=`ready`
+- Statement id: `full_deposit_increments_full_count`
+- Evaluation: engine=`lean_build`, target_kind=`proof`, target=`Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`, declaration=`full_deposit_increments_full_count`
 - Proof target: `Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs`
 
 ### `ethereum/deposit_contract_minimal/full_deposit_preserves_partial_gap`
