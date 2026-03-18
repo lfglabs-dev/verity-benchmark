@@ -10,6 +10,7 @@ python3 harness/default_agent.py validate-config "harness/agents/${DEFAULT_AGENT
 python3 harness/default_agent.py validate-config "harness/agents/${CUSTOM_AGENT_PROFILE}.json"
 python3 harness/default_agent.py validate-config harness/agents/openai-proxy-fast.json
 python3 harness/default_agent.py validate-config harness/default-agent.example.json
+python3 harness/default_agent.py validate-config "$(pwd)/harness/default-agent.example.json"
 python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile "$DEFAULT_AGENT_PROFILE" --dry-run
 python3 harness/agent_runner.py run-case ethereum/deposit_contract_minimal --profile "$DEFAULT_AGENT_PROFILE" --dry-run
 python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile "$CUSTOM_AGENT_PROFILE" --dry-run

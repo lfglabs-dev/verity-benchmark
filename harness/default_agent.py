@@ -110,6 +110,25 @@ def validate(value: object, schema: dict[str, Any], path: str) -> list[str]:
         for index, item in enumerate(value):
             errors.extend(validate(item, schema["items"], f"{path}[{index}]"))
 
+    if isinstance(value, str):
+        min_length = schema.get("minLength")
+        if min_length is not None and len(value) < min_length:
+            errors.append(f"{path}: expected string length >= {min_length}, got {len(value)}")
+
+    if isinstance(value, list):
+        min_items = schema.get("minItems")
+        if min_items is not None and len(value) < min_items:
+            errors.append(f"{path}: expected at least {min_items} item(s), got {len(value)}")
+        if schema.get("uniqueItems"):
+            duplicates: list[object] = []
+            for item in value:
+                if item in duplicates:
+                    continue
+                if value.count(item) > 1:
+                    duplicates.append(item)
+            if duplicates:
+                errors.append(f"{path}: expected unique items, got duplicates {duplicates!r}")
+
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         minimum = schema.get("minimum")
         if minimum is not None and value < minimum:
@@ -130,7 +149,7 @@ def validate_config_data(data: object, label: str) -> dict[str, Any]:
 
 
 def load_config(path: Path) -> dict[str, Any]:
-    return validate_config_data(load_json(path), str(path.relative_to(ROOT)))
+    return validate_config_data(load_json(path), config_label(path))
 
 
 def config_label(path: Path) -> str:
@@ -138,6 +157,15 @@ def config_label(path: Path) -> str:
         return str(path.relative_to(ROOT))
     except ValueError:
         return str(path)
+
+
+def explicit_config_path(config_path: str) -> Path:
+    candidate = Path(config_path)
+    if not candidate.is_absolute():
+        candidate = ROOT / candidate
+    if candidate.is_file():
+        return candidate
+    raise SystemExit(f"agent config file not found: {config_label(candidate)}")
 
 
 def profile_path(profile: str) -> Path:
@@ -313,7 +341,7 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         track=resolve_track(config, profile=profile),
         run_slug=resolve_run_slug(config, agent_id=agent_id, profile=profile),
         adapter=str(config["adapter"]),
-        config_path=str(path.relative_to(ROOT)),
+        config_path=config_label(path),
         base_url=(resolve_field(config, "base_url", required=require_secrets) or "").rstrip("/"),
         base_url_env=normalize_string(config.get("base_url_env")),
         model=resolve_field(config, "model", required=require_secrets) or "",
@@ -744,7 +772,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "validate-config":
-        return validate_command(ROOT / args.config)
+        return validate_command(explicit_config_path(args.config))
     if args.command == "describe":
         return describe_command(resolve_config_path(args.config, args.profile))
     if args.command == "prompt":

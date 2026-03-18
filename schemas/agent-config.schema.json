@@ -26,13 +26,15 @@
       "const": 1
     },
     "agent_id": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "track": {
       "enum": ["reference", "custom"]
     },
     "run_slug": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "adapter": {
       "description": "Transport adapter contract used by the default-agent path.",
@@ -40,42 +42,52 @@
     },
     "base_url": {
       "description": "Pinned OpenAI-compatible API base URL, for example https://agent-backend.thomas.md/v1.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "base_url_env": {
       "description": "Environment variable that provides the OpenAI-compatible API base URL when base_url is not pinned.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "model": {
       "description": "Pinned model identifier passed to chat completions, for example builtin/fast.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "model_env": {
       "description": "Environment variable that provides the model identifier when model is not pinned.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "api_key": {
       "description": "Pinned bearer token for the OpenAI-compatible backend. Prefer api_key_env for reusable local configs.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "api_key_env": {
       "description": "Environment variable that provides the bearer token for the OpenAI-compatible backend.",
-      "type": ["string", "null"]
+      "type": ["string", "null"],
+      "minLength": 1
     },
     "chat_completions_path": {
       "description": "Path appended to base_url for chat completions requests.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "models_path": {
       "description": "Path appended to base_url for model discovery and probe requests.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "system_prompt_files": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true
     },
     "temperature": {
       "type": "number"
