@@ -110,6 +110,10 @@
       "type": "integer",
       "minimum": 1
     },
+    "require_run_lean_check_before_finalize": {
+      "description": "Require interactive runs to call run_lean_check before the agent may finalize.",
+      "type": "boolean"
+    },
     "headers": {
       "type": "object",
       "additionalProperties": {

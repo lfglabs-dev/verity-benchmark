@@ -102,6 +102,7 @@ config = ResolvedAgentConfig(
     max_completion_tokens=1,
     max_attempts=1,
     max_tool_calls=1,
+    require_run_lean_check_before_finalize=False,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
@@ -189,6 +190,7 @@ config = ResolvedAgentConfig(
     max_completion_tokens=1,
     max_attempts=2,
     max_tool_calls=1,
+    require_run_lean_check_before_finalize=True,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
@@ -202,14 +204,105 @@ responses = iter([
     {"choices": [{"message": {"content": ""}}]},
 ])
 original_send = default_agent.send_chat_completion
+original_evaluate = default_agent.TaskProofRuntime.evaluate_current
 default_agent.send_chat_completion = lambda *_args, **_kwargs: next(responses)
+default_agent.TaskProofRuntime.evaluate_current = lambda self, **_kwargs: {
+    "status": "failed",
+    "failure_mode": "empty_response",
+    "details": "agent response was empty",
+}
 try:
     _, _, _, evaluation, attempts, _ = execute_interactive_agent_task(config, task, build_messages(config, task))
 finally:
     default_agent.send_chat_completion = original_send
+    default_agent.TaskProofRuntime.evaluate_current = original_evaluate
 
 if len(attempts) < 2:
     raise SystemExit("interactive mode should retry after an empty final response")
+if evaluation.get("failure_mode") != "missing_required_tool_use":
+    raise SystemExit(f"expected missing_required_tool_use, got {evaluation!r}")
+PY
+python3 - <<'PY'
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path("harness").resolve()))
+
+import default_agent
+from default_agent import ResolvedAgentConfig, build_messages, execute_interactive_agent_task, resolve_task
+
+task = resolve_task("ethereum/deposit_contract_minimal/deposit_count")
+config = ResolvedAgentConfig(
+    profile="interactive-test",
+    agent_id="agent",
+    mode="interactive",
+    track="custom",
+    run_slug="interactive-test",
+    adapter="openai_compatible",
+    config_path="harness/agents/interactive.json",
+    base_url="https://example.invalid",
+    base_url_env=None,
+    model="builtin/smart",
+    model_env="VERITY_BENCHMARK_AGENT_MODEL",
+    api_key="sk-test",
+    api_key_env="VERITY_BENCHMARK_AGENT_API_KEY",
+    chat_completions_path="/chat/completions",
+    models_path="/models",
+    system_prompt_files=[],
+    temperature=0.0,
+    max_completion_tokens=1,
+    max_attempts=3,
+    max_tool_calls=2,
+    require_run_lean_check_before_finalize=False,
+    headers={},
+    header_envs={},
+    env_contract={"required": [], "optional": []},
+    extra_body={},
+    request_timeout_seconds=1,
+    command=[],
+)
+
+bad_proof = Path(task["editable_files"][0]).read_text(encoding="utf-8").replace("by\n  sorry", "by\n  exact 0")
+responses = iter([
+    {
+        "choices": [
+            {
+                "message": {
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "call-1",
+                            "type": "function",
+                            "function": {
+                                "name": "write_editable_proof",
+                                "arguments": "{\"content\": " + default_agent.json.dumps(bad_proof) + "}",
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
+    },
+    {"choices": [{"message": {"content": ""}}]},
+    {"choices": [{"message": {"content": ""}}]},
+])
+original_send = default_agent.send_chat_completion
+original_evaluate = default_agent.TaskProofRuntime.evaluate_current
+default_agent.send_chat_completion = lambda *_args, **_kwargs: next(responses)
+default_agent.TaskProofRuntime.evaluate_current = lambda self, **_kwargs: {
+    "status": "failed",
+    "failure_mode": "lean_check_failed",
+    "details": "simulated checker failure",
+}
+try:
+    _, _, _, _, attempts, _ = execute_interactive_agent_task(config, task, build_messages(config, task))
+finally:
+    default_agent.send_chat_completion = original_send
+    default_agent.TaskProofRuntime.evaluate_current = original_evaluate
+
+repair_prompt = attempts[2]["messages"][-1]["content"]
+if "Lean checker output:" not in repair_prompt:
+    raise SystemExit("expected tool-written invalid proof to feed checker output into the next repair prompt")
 PY
 python3 harness/default_agent.py describe --profile "$DEFAULT_AGENT_PROFILE"
 python3 harness/default_agent.py describe --profile "$CUSTOM_AGENT_PROFILE"
