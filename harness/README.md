@@ -21,14 +21,17 @@ The default benchmark agent now has its own explicit entrypoint:
 - bundled reusable profiles live in `harness/agents/*.json`
 - `benchmark.toml` publishes the benchmark-owned profile defaults: `default` for the repo reference track and `openai-compatible` for the custom/external track
 - the default profile is `default`, which is the repo-owned reference benchmark agent identity on the `reference/default` run path
+- the bundled `interactive` profile is the minimal-tool interactive runtime on `custom/interactive-proxy`
 - the generic external profile is `openai-compatible`, which is the baseline `custom/openai-compatible` run path
 - the direct proxy profile is `openai-proxy-fast`, which is a pinned `custom/openai-proxy-fast` run path
-- the current transport adapter contract is `openai_compatible`
+- runtime modes are `strict`, `interactive`, and `custom`
+- the transport adapter contracts are `openai_compatible` and `command`
 - credentials and endpoint selection are injected through env vars where the profile does not pin them
 - each connection field is explicit in config: `base_url`, `model`, and `api_key` may be pinned directly or sourced from `*_env`
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
 - each run artifact records the resolved `base_url` and `model` plus the originating `*_env` contract for reproducibility
 - each task prompt now embeds `implementation_files`, `specification_files`, and the editable proof template, so external OpenAI-compatible backends receive the exact public benchmark surface through the shared runner
+- command adapters also receive the task-scoped `public_files` bundle and `editable_file` path as structured JSON input
 - live default-agent runs may use bounded harness-owned propose-check-repair loops against Lean checker feedback while keeping the mutable surface fixed to the single editable proof file
 - live default-agent runs evaluate the returned proof artifact instead of just recording it
 - candidate evaluation writes the editable file into a temp workspace, rejects `sorry` / `admit` / `axiom`, compiles it with Lean, and checks the declared theorem exists
@@ -54,6 +57,7 @@ Proxy-backed example for the generic external contract:
 Bundled profile contract:
 
 - `default`: repo-owned default benchmark agent; pins base URL to `https://agent-backend.thomas.md/v1` and model to `builtin/fast`, and only requires `VERITY_BENCHMARK_AGENT_API_KEY`
+- `interactive`: minimal-tool interactive runtime; pins the base URL, reads `VERITY_BENCHMARK_AGENT_MODEL` from env, and requires `VERITY_BENCHMARK_AGENT_API_KEY`
 - `openai-compatible`: generic external OpenAI-compatible backend; expects all three env vars above
 - `openai-proxy-fast`: direct pinned proxy profile for `https://agent-backend.thomas.md/v1` and `builtin/fast`; only requires `VERITY_BENCHMARK_AGENT_API_KEY`
 
@@ -73,21 +77,39 @@ Optional config-only extensions for OpenAI-compatible backends:
 - `extra_body`: extra JSON merged into the chat-completions request body
 - `request_timeout_seconds`: request timeout for both probe and run
 - `max_attempts`: bounded number of propose-check-repair rounds per task
+- `max_tool_calls`: interactive-mode tool budget
+
+Mode summary:
+
+- `strict`: no agent-visible tools; the harness owns bounded repair rounds
+- `interactive`: exposes only `read_public_file`, `write_editable_proof`, `run_lean_check`, `inspect_lean_goals`, and `search_public_defs`
+- `custom`: runs a command adapter and still evaluates the returned proof through the benchmark harness
+
+The command adapter request body includes:
+
+- `task`: structured task metadata
+- `public_files`: task-scoped file contents for implementation/spec/proof template files
+- `editable_file`: the single writable proof path
+- `input.messages`: the rendered system/user prompt bundle
 
 Useful commands:
 
 - `python3 harness/agent_runner.py list --suite active`
 - `python3 harness/default_agent.py profiles`
 - `python3 harness/default_agent.py validate-config harness/agents/default.json`
+- `python3 harness/default_agent.py validate-config harness/agents/interactive.json`
 - `python3 harness/default_agent.py validate-config harness/agents/openai-compatible.json`
 - `python3 harness/default_agent.py validate-config harness/agents/openai-proxy-fast.json`
 - `python3 harness/default_agent.py validate-config harness/default-agent.example.json`
 - `python3 harness/default_agent.py describe --profile default`
+- `python3 harness/default_agent.py describe --profile interactive`
 - `python3 harness/default_agent.py describe --profile openai-compatible`
 - `python3 harness/default_agent.py describe --profile openai-proxy-fast`
 - `python3 harness/default_agent.py describe --config harness/default-agent.example.json`
+- `VERITY_BENCHMARK_AGENT_MODEL=builtin/smart VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/default_agent.py probe --profile interactive --ensure-model`
 - `python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
 - `VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model`
+- `VERITY_BENCHMARK_AGENT_MODEL=builtin/smart VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile interactive`
 - `VERITY_BENCHMARK_AGENT_API_KEY=... python3 harness/agent_runner.py run-case ethereum/deposit_contract_minimal --profile default`
 - `python3 harness/default_agent.py prompt ethereum/deposit_contract_minimal/deposit_count --profile default`
 - `./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count`

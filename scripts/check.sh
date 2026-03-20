@@ -37,9 +37,9 @@ sys.path.insert(0, str(Path("harness").resolve()))
 
 from default_agent import build_user_prompt, resolve_task
 
-prompt = build_user_prompt(resolve_task("ethereum/deposit_contract_minimal/deposit_count"))
+prompt = build_user_prompt(resolve_task("ethereum/deposit_contract_minimal/deposit_count"), interactive=False)
 required_snippets = [
-    "This is a one-shot harness invocation.",
+    "The harness may give you several bounded repair rounds for the same task.",
     "Implementation file contents:",
     "Specification file contents:",
     "Editable proof template contents:",
@@ -98,6 +98,7 @@ from default_agent import ResolvedAgentConfig, ensure_configured_model_available
 config = ResolvedAgentConfig(
     profile="test",
     agent_id="agent",
+    mode="strict",
     track="custom",
     run_slug="test",
     adapter="openai_compatible",
@@ -113,11 +114,14 @@ config = ResolvedAgentConfig(
     system_prompt_files=[],
     temperature=0.0,
     max_completion_tokens=1,
+    max_attempts=1,
+    max_tool_calls=1,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
     extra_body={},
     request_timeout_seconds=1,
+    command=[],
 )
 
 try:

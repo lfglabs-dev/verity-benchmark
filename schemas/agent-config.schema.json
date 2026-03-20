@@ -8,6 +8,7 @@
   "required": [
     "schema_version",
     "agent_id",
+    "mode",
     "track",
     "run_slug",
     "adapter",
@@ -29,6 +30,10 @@
       "type": "string",
       "minLength": 1
     },
+    "mode": {
+      "description": "Runtime interaction mode for the benchmark harness.",
+      "enum": ["strict", "interactive", "custom"]
+    },
     "track": {
       "enum": ["reference", "custom"]
     },
@@ -37,8 +42,8 @@
       "minLength": 1
     },
     "adapter": {
-      "description": "Transport adapter contract used by the default-agent path.",
-      "enum": ["openai_compatible"]
+      "description": "Transport adapter contract used by the benchmark agent path.",
+      "enum": ["openai_compatible", "command"]
     },
     "base_url": {
       "description": "Pinned OpenAI-compatible API base URL, for example https://agent-backend.thomas.md/v1.",
@@ -72,12 +77,12 @@
     },
     "chat_completions_path": {
       "description": "Path appended to base_url for chat completions requests.",
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "models_path": {
       "description": "Path appended to base_url for model discovery and probe requests.",
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1
     },
     "system_prompt_files": {
@@ -96,7 +101,12 @@
       "type": "integer"
     },
     "max_attempts": {
-      "description": "Maximum number of bounded propose-check-repair iterations for one task run.",
+      "description": "Maximum number of harness-managed model attempts for one task run.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_tool_calls": {
+      "description": "Maximum number of tool calls allowed during one interactive task run.",
       "type": "integer",
       "minimum": 1
     },
@@ -116,6 +126,15 @@
     "extra_body": {
       "description": "Optional JSON body merged into every chat-completions request.",
       "type": "object"
+    },
+    "command": {
+      "description": "Non-shell command argv used by the command adapter protocol.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
     },
     "request_timeout_seconds": {
       "description": "HTTP timeout for both model probe and chat-completions requests.",

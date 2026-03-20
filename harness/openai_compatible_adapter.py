@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import re
+import sys
+from typing import Any
+from urllib import error, request
+
+USER_AGENT = "verity-benchmark/0.1"
+
+
+def require_object(value: object, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise SystemExit(f"{label} must be a JSON object")
+    return value
+
+
+def send_chat_completion(agent: dict[str, Any], messages: list[dict[str, str]]) -> dict[str, Any]:
+    base_url = str(agent.get("base_url") or "").rstrip("/")
+    chat_path = str(agent.get("chat_completions_path") or "")
+    api_key = str(agent.get("api_key") or "")
+    payload = {
+        "model": agent.get("model"),
+        "messages": messages,
+        "temperature": agent.get("temperature"),
+        "max_tokens": agent.get("max_completion_tokens"),
+    }
+    extra_body = agent.get("extra_body")
+    if isinstance(extra_body, dict):
+        payload.update(extra_body)
+    req = request.Request(
+        f"{base_url}{chat_path}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+            **dict(agent.get("headers", {})),
+        },
+        method="POST",
+    )
+    timeout = int(agent.get("request_timeout_seconds") or 120)
+    try:
+        with request.urlopen(req, timeout=timeout) as response:
+            body = response.read().decode("utf-8")
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"chat completion request failed with HTTP {exc.code}: {detail}") from exc
+    except error.URLError as exc:
+        raise SystemExit(f"chat completion request failed: {exc}") from exc
+    return require_object(json.loads(body), "chat completion response")
+
+
+def list_models(agent: dict[str, Any]) -> dict[str, Any]:
+    base_url = str(agent.get("base_url") or "").rstrip("/")
+    models_path = str(agent.get("models_path") or "")
+    headers = {
+        "User-Agent": USER_AGENT,
+        **dict(agent.get("headers", {})),
+    }
+    api_key = str(agent.get("api_key") or "")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = request.Request(f"{base_url}{models_path}", headers=headers, method="GET")
+    timeout = int(agent.get("request_timeout_seconds") or 120)
+    try:
+        with request.urlopen(req, timeout=timeout) as response:
+            body = response.read().decode("utf-8")
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"model probe failed with HTTP {exc.code}: {detail}") from exc
+    except error.URLError as exc:
+        raise SystemExit(f"model probe failed: {exc}") from exc
+    return require_object(json.loads(body), "model probe response")
+
+
+def extract_model_ids(models_payload: dict[str, Any]) -> list[str]:
+    data = models_payload.get("data")
+    if not isinstance(data, list):
+        return []
+    model_ids: list[str] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        model_id = item.get("id")
+        if isinstance(model_id, str):
+            model_ids.append(model_id)
+    return model_ids
+
+
+def extract_text(response: dict[str, Any]) -> str:
+    choices = response.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return ""
+    message = choices[0].get("message", {})
+    if not isinstance(message, dict):
+        return ""
+    content = message.get("content")
+    if isinstance(content, str):
+        return re.sub(r"(?s)<think>.*?</think>\s*", "", content).strip()
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return re.sub(r"(?s)<think>.*?</think>\s*", "", "\n".join(parts)).strip()
+    reasoning_content = message.get("reasoning_content")
+    if isinstance(reasoning_content, str):
+        return reasoning_content.strip()
+    return ""
+
+
+def extract_candidate_file(response_text: str) -> str:
+    text = response_text.strip()
+    fenced = re.findall(r"```(?:lean)?\s*\n(.*?)```", text, flags=re.DOTALL)
+    if len(fenced) == 1:
+        return fenced[0].strip() + "\n"
+    return text + ("\n" if text and not text.endswith("\n") else "")
+
+
+def run_request(payload: dict[str, Any]) -> dict[str, Any]:
+    agent = require_object(payload.get("agent"), "agent")
+    input_payload = require_object(payload.get("input"), "input")
+    messages = input_payload.get("messages")
+    if not isinstance(messages, list):
+        raise SystemExit("input.messages must be an array")
+    typed_messages: list[dict[str, str]] = []
+    for item in messages:
+        if not isinstance(item, dict):
+            raise SystemExit("each input.messages item must be an object")
+        role = item.get("role")
+        content = item.get("content")
+        if not isinstance(role, str) or not isinstance(content, str):
+            raise SystemExit("each input.messages item must contain string role/content")
+        typed_messages.append({"role": role, "content": content})
+    response = send_chat_completion(agent, typed_messages)
+    response_text = extract_text(response)
+    return {
+        "protocol_version": 1,
+        "response": response,
+        "response_text": response_text,
+        "candidate_file_contents": extract_candidate_file(response_text),
+    }
+
+
+def probe_request(payload: dict[str, Any]) -> dict[str, Any]:
+    agent = require_object(payload.get("agent"), "agent")
+    models_payload = list_models(agent)
+    model_ids = extract_model_ids(models_payload)
+    configured_model = agent.get("model")
+    return {
+        "protocol_version": 1,
+        "adapter": "openai_compatible",
+        "mode": payload.get("mode"),
+        "base_url": agent.get("base_url"),
+        "models_path": agent.get("models_path"),
+        "configured_model": configured_model,
+        "model_count": len(model_ids),
+        "models": model_ids,
+        "configured_model_available": configured_model in model_ids,
+    }
+
+
+def main() -> int:
+    payload = require_object(json.load(sys.stdin), "request")
+    if payload.get("protocol_version") != 1:
+        raise SystemExit(f"unsupported protocol_version {payload.get('protocol_version')!r}")
+    kind = payload.get("kind")
+    if kind == "run":
+        response = run_request(payload)
+    elif kind == "probe":
+        response = probe_request(payload)
+    else:
+        raise SystemExit(f"unsupported request kind {kind!r}")
+    print(json.dumps(response))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

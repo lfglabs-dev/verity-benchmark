@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "agent_id": "openai-compatible",
+  "mode": "custom",
   "track": "custom",
   "run_slug": "openai-compatible",
-  "adapter": "openai_compatible",
+  "adapter": "command",
   "base_url": null,
   "base_url_env": "VERITY_BENCHMARK_AGENT_BASE_URL",
   "model": null,
@@ -20,7 +21,8 @@
   ],
   "temperature": 0.0,
   "max_completion_tokens": 2000,
-  "max_attempts": 8,
+  "max_attempts": 1,
+  "max_tool_calls": 24,
   "headers": {},
   "header_envs": {},
   "extra_body": {
@@ -28,5 +30,9 @@
       "type": "disabled"
     }
   },
+  "command": [
+    "python3",
+    "harness/openai_compatible_adapter.py"
+  ],
   "request_timeout_seconds": 120
 }
