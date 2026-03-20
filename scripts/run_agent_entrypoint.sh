@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${VERITY_BENCHMARK_DOTENVX_LOADED:-}" != "1" ]]; then
+  exec "$(dirname "$0")/exec_with_dotenvx.sh" "$0" "$@"
+fi
+
 cd "$(dirname "$0")/.."
 
 usage() {

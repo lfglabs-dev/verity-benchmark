@@ -27,6 +27,7 @@ The default benchmark agent now has its own explicit entrypoint:
 - runtime modes are `strict`, `interactive`, and `custom`
 - the transport adapter contracts are `openai_compatible` and `command`
 - credentials and endpoint selection are injected through env vars where the profile does not pin them
+- the checked-in repo `.env` is encrypted with `dotenvx`, so local runs use `.env.keys` and CI uses `DOTENV_PRIVATE_KEY`
 - each connection field is explicit in config: `base_url`, `model`, and `api_key` may be pinned directly or sourced from `*_env`
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
 - each run artifact records the resolved `base_url` and `model` plus the originating `*_env` contract for reproducibility
@@ -47,6 +48,14 @@ Default OpenAI-compatible env contract:
 - `VERITY_BENCHMARK_AGENT_BASE_URL`
 - `VERITY_BENCHMARK_AGENT_MODEL`
 - `VERITY_BENCHMARK_AGENT_API_KEY`
+
+Encrypted env loading:
+
+- `./scripts/check.sh` and the default/custom agent shell entrypoints auto-load `.env` through `dotenvx`
+- local development can rely on `.env.keys`
+- CI should set `DOTENV_PRIVATE_KEY` and run the same scripts unchanged
+- `VERITY_BENCHMARK_RUN_LIVE_AGENT_CHECKS=1` enables live backend probes inside `./scripts/check.sh`; otherwise those checks stay dry and deterministic
+- `.env.local` remains an ignored local override layer
 
 Proxy-backed example for the generic external contract:
 

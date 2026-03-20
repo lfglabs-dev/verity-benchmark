@@ -94,7 +94,7 @@ Run one task:
 Run the default benchmark agent for one task:
 
 ```bash
-export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
+DOTENV_PRIVATE_KEY="<from .env.keys or GitHub secret>" ./scripts/check.sh
 python3 harness/default_agent.py profiles
 python3 harness/default_agent.py probe --profile default --ensure-model
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
@@ -102,12 +102,17 @@ python3 harness/default_agent.py probe --profile default --ensure-model
 
 `./scripts/run_default_agent.sh` defaults to the bundled `default` profile from [`benchmark.toml`](./benchmark.toml), which pins `base_url = https://agent-backend.thomas.md/v1` and `model = builtin/fast`; only `VERITY_BENCHMARK_AGENT_API_KEY` must be supplied at runtime.
 
+Encrypted env setup with `dotenvx`:
+
+- The committed [`./.env`](./.env) now holds the OpenAI-compatible benchmark connection values in encrypted form.
+- The private decryption key lives in local-only `.env.keys` and in the GitHub repo secret `DOTENV_PRIVATE_KEY`.
+- The agent entrypoints and [`./scripts/check.sh`](./scripts/check.sh) auto-load `.env` through `dotenvx` when either `.env.keys` or `DOTENV_PRIVATE_KEY` is present.
+- `./scripts/check.sh` stays deterministic by default; live backend probes/runs only happen when `VERITY_BENCHMARK_RUN_LIVE_AGENT_CHECKS=1`.
+- `.env.local` stays ignored and can override committed values locally without changing CI.
+
 Run an external OpenAI-compatible backend through the same default-agent entrypoint:
 
 ```bash
-export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
-export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
-export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 python3 harness/default_agent.py describe --profile openai-compatible
 python3 harness/default_agent.py describe --profile openai-proxy-fast
 python3 harness/default_agent.py probe --profile openai-compatible --ensure-model
@@ -122,16 +127,12 @@ VERITY_BENCHMARK_AGENT_CONFIG=harness/default-agent.example.json \
 `./scripts/run_custom_agent.sh` defaults to the bundled `openai-compatible` profile from [`benchmark.toml`](./benchmark.toml). Reusing the repo-owned backend through that external contract means setting:
 
 ```bash
-export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
-export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
-export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 ./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```
 
 Run the default benchmark agent for one case or the whole active suite:
 
 ```bash
-export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 ./scripts/run_default_agent_case.sh ethereum/deposit_contract_minimal
 ./scripts/run_default_agent_all.sh
 ```
@@ -139,9 +140,6 @@ export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 Run the custom-agent track through the same adapter path:
 
 ```bash
-export VERITY_BENCHMARK_AGENT_BASE_URL="https://agent-backend.thomas.md/v1"
-export VERITY_BENCHMARK_AGENT_MODEL="builtin/fast"
-export VERITY_BENCHMARK_AGENT_API_KEY="<redacted>"
 ./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ./scripts/run_custom_agent_case.sh ethereum/deposit_contract_minimal
 ./scripts/run_custom_agent_all.sh

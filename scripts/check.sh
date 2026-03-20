@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${VERITY_BENCHMARK_DOTENVX_LOADED:-}" != "1" ]]; then
+  exec "$(dirname "$0")/exec_with_dotenvx.sh" "$0" "$@"
+fi
+
 cd "$(dirname "$0")/.."
 DEFAULT_AGENT_PROFILE="$(python3 - <<'PY'
 from pathlib import Path
@@ -22,6 +26,7 @@ from toml_compat import load_toml_file
 print(load_toml_file(Path("benchmark.toml"))["custom_agent_default_profile"])
 PY
 )"
+RUN_LIVE_AGENT_CHECKS="${VERITY_BENCHMARK_RUN_LIVE_AGENT_CHECKS:-0}"
 
 python3 harness/default_agent.py profiles
 python3 harness/default_agent.py validate-config "harness/agents/${DEFAULT_AGENT_PROFILE}.json"
@@ -139,14 +144,14 @@ python3 harness/default_agent.py describe --profile "$CUSTOM_AGENT_PROFILE"
 python3 harness/default_agent.py describe --profile openai-proxy-fast
 python3 harness/default_agent.py describe --config harness/default-agent.example.json
 
-if [[ -n "${VERITY_BENCHMARK_AGENT_API_KEY:-}" ]]; then
+if [[ "$RUN_LIVE_AGENT_CHECKS" == "1" && -n "${VERITY_BENCHMARK_AGENT_API_KEY:-}" ]]; then
   python3 harness/default_agent.py probe --profile "$DEFAULT_AGENT_PROFILE" --ensure-model
   python3 harness/default_agent.py probe --profile openai-proxy-fast --ensure-model
   python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile "$DEFAULT_AGENT_PROFILE"
   python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile openai-proxy-fast
 fi
 
-if [[ -n "${VERITY_BENCHMARK_AGENT_BASE_URL:-}" && -n "${VERITY_BENCHMARK_AGENT_MODEL:-}" && -n "${VERITY_BENCHMARK_AGENT_API_KEY:-}" ]]; then
+if [[ "$RUN_LIVE_AGENT_CHECKS" == "1" && -n "${VERITY_BENCHMARK_AGENT_BASE_URL:-}" && -n "${VERITY_BENCHMARK_AGENT_MODEL:-}" && -n "${VERITY_BENCHMARK_AGENT_API_KEY:-}" ]]; then
   python3 harness/default_agent.py probe --profile "$CUSTOM_AGENT_PROFILE" --ensure-model
   python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --profile "$CUSTOM_AGENT_PROFILE"
   python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --config harness/default-agent.example.json
