@@ -625,6 +625,30 @@ def build_finalization_messages(
     ]
 
 
+def build_interactive_repair_prompt(
+    candidate_text: str,
+    evaluation: dict[str, Any],
+    *,
+    attempt_index: int,
+    max_attempts: int,
+) -> str:
+    details = str(evaluation.get("details", "")).strip()
+    trimmed_details = details[:MAX_ERROR_FEEDBACK_CHARS]
+    guidance = build_repair_guidance(trimmed_details)
+    prompt = (
+        f"The current editable Lean file still does not pass the checker (attempt {attempt_index} of {max_attempts}).\n"
+        "Use the available tools if needed, then return a corrected complete replacement for the editable Lean proof file.\n"
+        "Return Lean code only if you answer with a final proof file.\n\n"
+        "Current editable file:\n"
+        f"{candidate_text.rstrip()}\n\n"
+        "Lean checker output:\n"
+        f"{trimmed_details}\n"
+    )
+    if guidance:
+        prompt += f"\nGeneric repair guidance:\n{guidance}\n"
+    return prompt
+
+
 def send_chat_completion(
     config: ResolvedAgentConfig,
     messages: list[dict[str, Any]],
@@ -1261,6 +1285,35 @@ def execute_interactive_agent_task(
             if final_candidate.strip():
                 runtime.write_editable_proof(final_candidate)
             evaluation = runtime.evaluate_current()
+            if evaluation["status"] != "passed" and attempt_index < config.max_attempts:
+                transcript.append({"role": "assistant", "content": response_text})
+                if final_candidate.strip():
+                    transcript.append(
+                        {
+                            "role": "user",
+                            "content": build_interactive_repair_prompt(
+                                runtime.current_proof_text,
+                                evaluation,
+                                attempt_index=attempt_index,
+                                max_attempts=config.max_attempts,
+                            ),
+                        }
+                    )
+                else:
+                    transcript.append(
+                        {
+                            "role": "user",
+                            "content": build_finalization_messages(
+                                messages,
+                                response,
+                                attempt_index=attempt_index,
+                                max_attempts=config.max_attempts,
+                            )[-1]["content"],
+                        }
+                    )
+                attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
+                attempts[-1]["evaluation"] = evaluation
+                continue
             attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
             attempts[-1]["evaluation"] = evaluation
             return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used

@@ -158,6 +158,59 @@ reasoning_only = {
 if extract_text(reasoning_only) != "":
     raise SystemExit("reasoning-only responses should not be treated as candidate proof text")
 PY
+python3 - <<'PY'
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path("harness").resolve()))
+
+import default_agent
+from default_agent import ResolvedAgentConfig, build_messages, execute_interactive_agent_task, resolve_task
+
+task = resolve_task("ethereum/deposit_contract_minimal/deposit_count")
+config = ResolvedAgentConfig(
+    profile="interactive-test",
+    agent_id="agent",
+    mode="interactive",
+    track="custom",
+    run_slug="interactive-test",
+    adapter="openai_compatible",
+    config_path="harness/agents/interactive.json",
+    base_url="https://example.invalid",
+    base_url_env=None,
+    model="builtin/smart",
+    model_env="VERITY_BENCHMARK_AGENT_MODEL",
+    api_key="sk-test",
+    api_key_env="VERITY_BENCHMARK_AGENT_API_KEY",
+    chat_completions_path="/chat/completions",
+    models_path="/models",
+    system_prompt_files=[],
+    temperature=0.0,
+    max_completion_tokens=1,
+    max_attempts=2,
+    max_tool_calls=1,
+    headers={},
+    header_envs={},
+    env_contract={"required": [], "optional": []},
+    extra_body={},
+    request_timeout_seconds=1,
+    command=[],
+)
+
+responses = iter([
+    {"choices": [{"message": {"content": ""}}]},
+    {"choices": [{"message": {"content": ""}}]},
+])
+original_send = default_agent.send_chat_completion
+default_agent.send_chat_completion = lambda *_args, **_kwargs: next(responses)
+try:
+    _, _, _, evaluation, attempts, _ = execute_interactive_agent_task(config, task, build_messages(config, task))
+finally:
+    default_agent.send_chat_completion = original_send
+
+if len(attempts) < 2:
+    raise SystemExit("interactive mode should retry after an empty final response")
+PY
 python3 harness/default_agent.py describe --profile "$DEFAULT_AGENT_PROFILE"
 python3 harness/default_agent.py describe --profile "$CUSTOM_AGENT_PROFILE"
 python3 harness/default_agent.py describe --profile openai-proxy-fast
