@@ -1,20 +1,17 @@
 # stream_recovery_claim_usdc
 
-Selected from `Figu3/sonic-earn-recovery-system` at `699cbbc79def374cab9739e451acbbf866293d12`.
+Source:
+- `Figu3/sonic-earn-recovery-system`
+- commit `699cbbc79def374cab9739e451acbbf866293d12`
+- file `src/StreamRecoveryClaim.sol`
 
-What is selected:
-- Contract: `src/StreamRecoveryClaim.sol`
-- Functions: `claimUsdc`, `_claimUsdc`
-- Benchmark focus: the accounting path that prevents a user claim from pushing `usdcClaimed` above `usdcTotal`
+Focus:
+- `claimUsdc`
+- `_claimUsdc`
+- claim accounting and round bounds
 
-Frozen specs:
-- claimant is marked claimed
-- `roundUsdcClaimed` increases by the computed payout
-- `totalUsdcAllocated` decreases by the computed payout
-- post-state satisfies `roundUsdcClaimed <= roundUsdcTotal`
-
-Intentionally left out:
+Out of scope:
 - multi-round batching
 - WETH flow
-- actual Merkle verification and proof structure
+- Merkle proof details
 - ERC20 transfer semantics

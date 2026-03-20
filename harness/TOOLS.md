@@ -1,10 +1,8 @@
 # Harness Tools
 
-The fixed harness currently uses only repository-local tools:
+The fixed harness uses only repo-local tools:
+- `lake build <target>`
+- `scripts/run_task.sh`
+- `scripts/run_all.sh`
 
-- `lake build <target>` for proof-module checks
-- `scripts/run_task.sh` for one task
-- `scripts/run_all.sh` for sorted task discovery and aggregation
-
-The tool surface is intentionally narrow so later leaderboard runs can pin the same
-interaction policy across agents.
+The tool surface stays narrow so runs remain comparable.
