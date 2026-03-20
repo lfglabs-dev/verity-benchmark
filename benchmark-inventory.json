@@ -2,70 +2,412 @@
   "benchmark": "verity-benchmark",
   "manifest_schema_version": 1,
   "inventory_source": {
-    "active": "cases/*/*/case.yaml",
-    "backlog": "backlog/*/*/case.yaml"
+    "families": "families/*/family.yaml",
+    "implementations": "families/*/implementations/*/implementation.yaml",
+    "active_cases": "cases/*/*/case.yaml",
+    "active_tasks": "cases/*/*/tasks/*.yaml",
+    "backlog_cases": "backlog/*/*/case.yaml",
+    "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "active_cases": 4,
-    "backlog_cases": 4,
-    "buildable_cases": 2,
-    "stages": {
-      "build_green": 2,
-      "candidate": 4,
-      "scoped": 2
+    "family_count": 6,
+    "implementation_count": 6,
+    "active_case_count": 4,
+    "backlog_case_count": 2,
+    "active_task_count": 18,
+    "backlog_task_count": 0,
+    "buildable_case_count": 4,
+    "runnable_task_count": 18,
+    "case_stage_counts": {
+      "build_green": 4,
+      "candidate": 2
+    },
+    "translation_status_counts": {
+      "blocked": 2,
+      "translated": 4
+    },
+    "proof_status_counts": {
+      "blocked": 2,
+      "partial": 4
+    },
+    "task_track_counts": {
+      "proof-only": 18
+    },
+    "task_property_class_counts": {
+      "accounting_bound": 1,
+      "accounting_conservation": 2,
+      "authorization_state": 1,
+      "mapping_consistency": 1,
+      "monotonic_counter": 2,
+      "output_range": 1,
+      "price_computation": 3,
+      "storage_write": 1,
+      "subtree_partition": 1,
+      "threshold_activation": 1,
+      "threshold_partition": 1,
+      "total_conservation": 1,
+      "tree_conservation": 1,
+      "weighted_selection": 1
+    },
+    "task_proof_family_counts": {
+      "authorization_enablement": 2,
+      "functional_correctness": 5,
+      "protocol_transition_correctness": 2,
+      "refinement_equivalence": 4,
+      "state_preservation_local_effects": 5
+    },
+    "family_split_counts": {
+      "active": 4,
+      "backlog": 2
     }
   },
-  "cases": [
+  "families": [
     {
-      "case_id": "ethereum/beacon_roots_predeploy",
-      "suite": "active",
-      "schema_version": 1,
-      "stage": "scoped",
-      "source_language": "spec",
-      "upstream_repo": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4788.md",
-      "upstream_commit": "4f64d1b5040aca16d3f165867c9ee441e4239a95",
-      "original_contract_path": "EIPS/eip-4788.md",
-      "selected_functions": [
-        "get",
-        "set"
+      "family_id": "ethereum",
+      "display_name": "Ethereum",
+      "split": "active",
+      "status": "active",
+      "description": "Ethereum L1 benchmark slices covering deposit processing pinned from public upstream artifacts.",
+      "implementation_ids": [
+        "deposit_contract"
       ],
-      "lean_target": null,
-      "failure_reason": "missing_implementation_artifact",
-      "notes": "Candidate selected, but the benchmark currently lacks a pinned implementation artifact beyond the EIP text.",
-      "manifest_path": "cases/ethereum/beacon_roots_predeploy/case.yaml",
-      "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
+      "case_ids": [
+        "ethereum/deposit_contract_minimal"
+      ],
+      "source_languages": [
+        "vyper"
+      ],
+      "manifest_path": "families/ethereum/family.yaml"
     },
     {
+      "family_id": "kleros",
+      "display_name": "Kleros",
+      "split": "active",
+      "status": "active",
+      "description": "Active benchmark family for Kleros protocol slices focused on proving conservation and selection properties over jury-sampling logic.",
+      "implementation_ids": [
+        "kleros_v2"
+      ],
+      "case_ids": [
+        "kleros/sortition_trees"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/kleros/family.yaml"
+    },
+    {
+      "family_id": "nexus_mutual",
+      "display_name": "Nexus Mutual",
+      "split": "active",
+      "status": "active",
+      "description": "Active benchmark family for Nexus Mutual protocol slices centered on proving arithmetic and behavioral properties over real contract pricing logic.",
+      "implementation_ids": [
+        "smart_contracts"
+      ],
+      "case_ids": [
+        "nexus_mutual/ramm_price_band"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/nexus_mutual/family.yaml"
+    },
+    {
+      "family_id": "paladin_votes",
+      "display_name": "Paladin Votes",
+      "split": "active",
+      "status": "active",
+      "description": "Governance recovery flow benchmarks drawn from the Sonic earn recovery system with emphasis on accounting and claim-state updates.",
+      "implementation_ids": [
+        "stream_recovery_claim"
+      ],
+      "case_ids": [
+        "paladin_votes/stream_recovery_claim_usdc"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/paladin_votes/family.yaml"
+    },
+    {
+      "family_id": "unlink_xyz",
+      "display_name": "unlink.xyz",
+      "split": "backlog",
+      "status": "backlog",
+      "description": "Backlog intake for unlink.xyz contracts pending recovery of a resolvable upstream repository snapshot.",
+      "implementation_ids": [
+        "monorepo"
+      ],
+      "case_ids": [
+        "unlink_xyz/placeholder"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/unlink_xyz/family.yaml"
+    },
+    {
+      "family_id": "usual",
+      "display_name": "Usual",
+      "split": "backlog",
+      "status": "backlog",
+      "description": "Backlog intake for a private upstream that cannot yet be pinned to a public benchmarkable contract artifact.",
+      "implementation_ids": [
+        "private_repo"
+      ],
+      "case_ids": [
+        "usual/placeholder"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/usual/family.yaml"
+    }
+  ],
+  "implementations": [
+    {
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "display_name": "Ethereum Deposit Contract",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/ethereum/deposit_contract",
+      "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8",
+      "source_language": "vyper",
+      "source_artifact_path": "deposit_contract/contracts/validator_registration.v.py",
+      "case_ids": [
+        "ethereum/deposit_contract_minimal"
+      ],
+      "notes": "Canonical validator deposit contract used for the minimal counter and threshold slice translated into Lean.",
+      "manifest_path": "families/ethereum/implementations/deposit_contract/implementation.yaml"
+    },
+    {
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "display_name": "Kleros V2",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/kleros/kleros-v2",
+      "upstream_commit": "75125dfa54eee723cac239f20e5746d15786196b",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/src/libraries/SortitionTrees.sol",
+      "case_ids": [
+        "kleros/sortition_trees"
+      ],
+      "notes": "Active implementation entry for Kleros V2, currently benchmarking a fixed-tree slice of the sortition library.",
+      "manifest_path": "families/kleros/implementations/kleros_v2/implementation.yaml"
+    },
+    {
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "display_name": "Nexus Mutual Smart Contracts",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
+      "upstream_commit": "ad212043a78953a2cd98cd02b06c8e3e354c6023",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/modules/capital/Ramm.sol",
+      "case_ids": [
+        "nexus_mutual/ramm_price_band"
+      ],
+      "notes": "Active implementation entry for the Nexus Mutual smart-contract repository, currently benchmarking the RAMM price-band slice.",
+      "manifest_path": "families/nexus_mutual/implementations/smart_contracts/implementation.yaml"
+    },
+    {
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "display_name": "Stream Recovery Claim",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
+      "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12",
+      "source_language": "solidity",
+      "source_artifact_path": "src/StreamRecoveryClaim.sol",
+      "case_ids": [
+        "paladin_votes/stream_recovery_claim_usdc"
+      ],
+      "notes": "Claim accounting contract translated as a single-round slice with Merkle verification abstracted away from the benchmark.",
+      "manifest_path": "families/paladin_votes/implementations/stream_recovery_claim/implementation.yaml"
+    },
+    {
+      "family_id": "unlink_xyz",
+      "implementation_id": "monorepo",
+      "display_name": "unlink.xyz Monorepo",
+      "split": "backlog",
+      "status": "blocked",
+      "upstream_repo": "https://github.com/unlink-xyz/monorepo",
+      "upstream_commit": null,
+      "source_language": "solidity",
+      "source_artifact_path": "TBD",
+      "case_ids": [
+        "unlink_xyz/placeholder"
+      ],
+      "notes": "The referenced repository snapshot was unavailable during intake, so the case remains a placeholder without a pinned artifact.",
+      "manifest_path": "families/unlink_xyz/implementations/monorepo/implementation.yaml"
+    },
+    {
+      "family_id": "usual",
+      "implementation_id": "private_repo",
+      "display_name": "Usual Private Repository",
+      "split": "backlog",
+      "status": "blocked",
+      "upstream_repo": null,
+      "upstream_commit": null,
+      "source_language": "solidity",
+      "source_artifact_path": "TBD",
+      "case_ids": [
+        "usual/placeholder"
+      ],
+      "notes": "Intake is blocked on repository access, so no implementation artifact or case slice can be pinned yet.",
+      "manifest_path": "families/usual/implementations/private_repo/implementation.yaml"
+    }
+  ],
+  "cases": [
+    {
       "case_id": "ethereum/deposit_contract_minimal",
+      "project": "ethereum",
+      "case_name": "deposit_contract_minimal",
       "suite": "active",
       "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/case.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
       "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
       "source_language": "vyper",
       "upstream_repo": "https://github.com/ethereum/deposit_contract",
       "upstream_commit": "691feb18330d3d102b5a4b3d4434fac7571f51b8",
       "original_contract_path": "deposit_contract/contracts/validator_registration.v.py",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
       "selected_functions": [
         "deposit"
       ],
       "lean_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Compile",
       "failure_reason": null,
       "notes": "Counter-oriented slice of the deposit path. Merkle tree, SSZ hashing, and log emission are omitted so the benchmark can focus on threshold-driven state updates.",
-      "manifest_path": "cases/ethereum/deposit_contract_minimal/case.yaml",
       "buildable": true,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "merkle_elided",
+        "ssz_elided",
+        "event_elided",
+        "deposit_counter_slice"
+      ],
+      "abstraction_notes": "The benchmark keeps the threshold and counter state transitions while abstracting away Merkle tree updates, SSZ hashing, and event emission.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Specs",
+      "proof_target": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs"
+    },
+    {
+      "case_id": "kleros/sortition_trees",
+      "project": "kleros",
+      "case_name": "sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/case.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/kleros/kleros-v2",
+      "upstream_commit": "75125dfa54eee723cac239f20e5746d15786196b",
+      "original_contract_path": "contracts/src/libraries/SortitionTrees.sol",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "selected_functions": [
+        "set",
+        "updateParents",
+        "draw"
+      ],
+      "lean_target": "Benchmark.Cases.Kleros.SortitionTrees.Compile",
+      "failure_reason": null,
+      "notes": "Sortition-tree slice focused on additive parent invariants, root conservation, interval-based draws, and ID/index correspondence.",
+      "buildable": true,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "fixed_arity_slice",
+        "four_leaf_specialization",
+        "bytes32_id_elided_to_uint",
+        "hash_randomness_elided_to_ticket"
+      ],
+      "abstraction_notes": "The benchmark specializes the dynamic K-ary sortition tree to a balanced four-leaf binary slice. It preserves the parent-update and draw-interval logic while abstracting dynamic arrays, bytes32 stake-path packing, and the hash used to derive the draw ticket.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
+      "proof_target": "Benchmark.Cases.Kleros.SortitionTrees.Proofs"
+    },
+    {
+      "case_id": "nexus_mutual/ramm_price_band",
+      "project": "nexus_mutual",
+      "case_name": "ramm_price_band",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/nexus_mutual/ramm_price_band/case.yaml",
+      "split": "active",
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
+      "upstream_commit": "ad212043a78953a2cd98cd02b06c8e3e354c6023",
+      "original_contract_path": "contracts/modules/capital/Ramm.sol",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "selected_functions": [
+        "calculateNxm",
+        "_getReserves",
+        "getSpotPrices",
+        "getBookValue"
+      ],
+      "lean_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Compile",
+      "failure_reason": null,
+      "notes": "Price-band slice of Nexus Mutual RAMM. The Verity model keeps the buffered book-value computation behind buy and sell spot prices and omits unrelated state evolution machinery.",
+      "buildable": true,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "reserve_dynamics_elided",
+        "ratchet_elided",
+        "twap_elided",
+        "price_band_slice"
+      ],
+      "abstraction_notes": "The benchmark freezes the 1 percent buy/sell band around book value that the RAMM exposes through its reserve-derived spot prices. Reserve ratchets, swap execution, and oracle accumulation are omitted so the tasks focus on the arithmetic safety band itself.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Specs",
+      "proof_target": "Benchmark.Cases.NexusMutual.RammPriceBand.Proofs"
     },
     {
       "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "project": "paladin_votes",
+      "case_name": "stream_recovery_claim_usdc",
       "suite": "active",
       "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/case.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
       "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
       "source_language": "solidity",
       "upstream_repo": "https://github.com/Figu3/sonic-earn-recovery-system",
       "upstream_commit": "699cbbc79def374cab9739e451acbbf866293d12",
       "original_contract_path": "src/StreamRecoveryClaim.sol",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
       "selected_functions": [
         "claimUsdc",
         "_claimUsdc"
@@ -73,106 +415,911 @@
       "lean_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile",
       "failure_reason": null,
       "notes": "Single-round accounting slice of the USDC claim path. Merkle verification is abstracted as a boolean witness and token transfer side effects are omitted.",
-      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/case.yaml",
       "buildable": true,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
-    },
-    {
-      "case_id": "zama/erc7984",
-      "suite": "active",
-      "schema_version": 1,
-      "stage": "scoped",
-      "source_language": "solidity",
-      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-confidential-contracts",
-      "upstream_commit": "d7ecc2c65e38dc5646ef976490cca287c1b1c3c8",
-      "original_contract_path": "contracts/token/ERC7984/ERC7984.sol",
-      "selected_functions": [
-        "confidentialTransfer",
-        "confidentialTransferFrom"
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "merkle_elided",
+        "token_transfer_elided",
+        "single_round_slice"
       ],
-      "lean_target": null,
-      "failure_reason": "missing_verity_feature",
-      "notes": "Selected as requested, but blocked because the contract depends on encrypted euint64 values and FHE-specific runtime semantics that are not benchmarked in this v1 scaffold.",
-      "manifest_path": "cases/zama/erc7984/case.yaml",
-      "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
+      "abstraction_notes": "The benchmark fixes focus on the single-round claim path and abstracts Merkle verification plus token transfer effects into a simpler state-only model.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs",
+      "proof_target": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs"
     }
   ],
   "backlog": [
     {
-      "case_id": "kleros/placeholder",
-      "suite": "backlog",
-      "schema_version": 1,
-      "stage": "candidate",
-      "source_language": "solidity",
-      "upstream_repo": "https://github.com/kleros/kleros-v2",
-      "upstream_commit": "982af06592f1c48747481ab39999b776f05cac36",
-      "original_contract_path": "TBD",
-      "selected_functions": [],
-      "lean_target": null,
-      "failure_reason": "selection_pending",
-      "notes": "Waiting for protocol-side contract/function selection.",
-      "manifest_path": "backlog/kleros/placeholder/case.yaml",
-      "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
-    },
-    {
-      "case_id": "nexus_mutual/placeholder",
-      "suite": "backlog",
-      "schema_version": 1,
-      "stage": "candidate",
-      "source_language": "solidity",
-      "upstream_repo": "https://github.com/NexusMutual/smart-contracts",
-      "upstream_commit": "070972503a471b6e14d01213aca4cf41e156c215",
-      "original_contract_path": "TBD",
-      "selected_functions": [],
-      "lean_target": null,
-      "failure_reason": "selection_pending",
-      "notes": "Waiting for protocol-side invariant and target contract selection.",
-      "manifest_path": "backlog/nexus_mutual/placeholder/case.yaml",
-      "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
-    },
-    {
       "case_id": "unlink_xyz/placeholder",
+      "project": "unlink_xyz",
+      "case_name": "placeholder",
       "suite": "backlog",
       "schema_version": 1,
+      "manifest_path": "backlog/unlink_xyz/placeholder/case.yaml",
+      "split": "backlog",
+      "family_id": "unlink_xyz",
+      "implementation_id": "monorepo",
       "stage": "candidate",
+      "translation_status": "blocked",
+      "spec_status": "not_started",
+      "proof_status": "blocked",
       "source_language": "solidity",
       "upstream_repo": "https://github.com/unlink-xyz/monorepo",
       "upstream_commit": null,
       "original_contract_path": "TBD",
+      "source_ref": "unresolved:https://github.com/unlink-xyz/monorepo@unknown:TBD",
       "selected_functions": [],
       "lean_target": null,
       "failure_reason": "upstream_unavailable",
       "notes": "Referenced repository was not resolvable during setup, so no candidate contract was pinned.",
-      "manifest_path": "backlog/unlink_xyz/placeholder/case.yaml",
       "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "inaccessible_upstream",
+      "abstraction_tags": [
+        "intake_placeholder",
+        "upstream_missing"
+      ],
+      "abstraction_notes": "Intake cannot progress until a resolvable upstream snapshot is available and a benchmark slice can be selected from it.",
+      "unsupported_feature_codes": [
+        "upstream_unavailable"
+      ],
+      "spec_target": null,
+      "proof_target": null
     },
     {
       "case_id": "usual/placeholder",
+      "project": "usual",
+      "case_name": "placeholder",
       "suite": "backlog",
       "schema_version": 1,
+      "manifest_path": "backlog/usual/placeholder/case.yaml",
+      "split": "backlog",
+      "family_id": "usual",
+      "implementation_id": "private_repo",
       "stage": "candidate",
+      "translation_status": "blocked",
+      "spec_status": "not_started",
+      "proof_status": "blocked",
       "source_language": "solidity",
       "upstream_repo": null,
       "upstream_commit": null,
       "original_contract_path": "TBD",
+      "source_ref": "unresolved:usual/private_repo@unknown:TBD",
       "selected_functions": [],
       "lean_target": null,
       "failure_reason": "private_access",
       "notes": "Pending private repository access and target selection.",
-      "manifest_path": "backlog/usual/placeholder/case.yaml",
       "buildable": false,
-      "verity_commit": "34a6b2b2e91713f870572fef1e1c4b5131812dfb",
-      "lean_toolchain": "leanprover/lean4:v4.22.0"
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "inaccessible_upstream",
+      "abstraction_tags": [
+        "intake_placeholder",
+        "private_repo"
+      ],
+      "abstraction_notes": "The benchmark cannot define a translation or spec slice until repository access is available and a concrete contract artifact can be pinned.",
+      "unsupported_feature_codes": [
+        "private_repo_access"
+      ],
+      "spec_target": null,
+      "proof_target": null
     }
   ],
-  "generated_at": "2026-03-18T07:38:26.822277+00:00"
+  "tasks": [
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/chain_start_threshold",
+      "task_id": "chain_start_threshold",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/chain_start_threshold.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "threshold_activation",
+      "category": "bounds",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Ethereum.DepositContractMinimal.full_deposit_starts_chain_at_threshold",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Contract.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Ethereum/DepositContractMinimal/Tasks/ChainStartThreshold.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The task focuses on the threshold-triggered state flip after enough full deposits, not on global beacon chain initialization mechanics.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/deposit_count",
+      "task_id": "deposit_count",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/deposit_count.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "monotonic_counter",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.Ethereum.DepositContractMinimal.deposit_increments_deposit_count",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Contract.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Ethereum/DepositContractMinimal/Tasks/DepositCount.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the counter increment effect of a successful deposit without exposing the omitted Merkle tree or event machinery.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/full_deposit_increments_full_count",
+      "task_id": "full_deposit_increments_full_count",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/full_deposit_increments_full_count.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "monotonic_counter",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.Ethereum.DepositContractMinimal.full_deposit_increments_full_count",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Contract.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Ethereum/DepositContractMinimal/Tasks/FullDepositIncrementsFullCount.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the full-deposit branch: deposits at or above the full threshold must increment the full-deposit counter by one.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/full_deposit_preserves_partial_gap",
+      "task_id": "full_deposit_preserves_partial_gap",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/full_deposit_preserves_partial_gap.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_conservation",
+      "category": "accounting",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Ethereum.DepositContractMinimal.full_deposit_preserves_partial_gap",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Contract.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Ethereum/DepositContractMinimal/Tasks/FullDepositPreservesPartialGap.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task treats the difference between all deposits and full deposits as the \"partial deposit\" mass. A full-sized deposit increments both counters in lockstep, so that gap must remain unchanged.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "ethereum/deposit_contract_minimal/small_deposit_preserves_full_count",
+      "task_id": "small_deposit_preserves_full_count",
+      "case_id": "ethereum/deposit_contract_minimal",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/ethereum/deposit_contract_minimal/tasks/small_deposit_preserves_full_count.yaml",
+      "split": "active",
+      "family_id": "ethereum",
+      "implementation_id": "deposit_contract",
+      "source_ref": "https://github.com/ethereum/deposit_contract@691feb18330d3d102b5a4b3d4434fac7571f51b8:deposit_contract/contracts/validator_registration.v.py",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "threshold_partition",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.Ethereum.DepositContractMinimal.small_deposit_preserves_full_count",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Contract.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/ethereum/deposit_contract_minimal/verity/Specs.lean",
+        "Benchmark/Cases/Ethereum/DepositContractMinimal/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Ethereum/DepositContractMinimal/Tasks/SmallDepositPreservesFullCount.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the non-full-deposit branch: deposits below the full threshold must leave the full-deposit counter unchanged.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/draw_interval_matches_weights",
+      "task_id": "draw_interval_matches_weights",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/draw_interval_matches_weights.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "weighted_selection",
+      "category": "probabilistic-encoding",
+      "difficulty": "hard",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.draw_interval_matches_weights",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/DrawIntervalMatchesWeights.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The probabilistic claim is encoded as interval preservation: each leaf owns a contiguous ticket interval whose width equals its weight.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/draw_selects_valid_leaf",
+      "task_id": "draw_selects_valid_leaf",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/draw_selects_valid_leaf.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "output_range",
+      "category": "bounds",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.draw_selects_valid_leaf",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/DrawSelectsValidLeaf.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task turns the interval-based draw semantics into a concrete range guarantee: every in-range draw must resolve to one of the four leaf indices in the fixed benchmark tree.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/node_id_bijection",
+      "task_id": "node_id_bijection",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/node_id_bijection.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "mapping_consistency",
+      "category": "state-transition",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.node_id_bijection",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/NodeIdBijection.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks the explicit two-way correspondence between node indexes and stake-path IDs in the fixed tree slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/parent_equals_sum_of_children",
+      "task_id": "parent_equals_sum_of_children",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/parent_equals_sum_of_children.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "tree_conservation",
+      "category": "state-transition",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.parent_equals_sum_of_children",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/ParentEqualsSumOfChildren.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks that each internal node remains the sum of its direct children after a leaf update.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/root_equals_sum_of_leaves",
+      "task_id": "root_equals_sum_of_leaves",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/root_equals_sum_of_leaves.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "total_conservation",
+      "category": "state-transition",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.root_equals_sum_of_leaves",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/RootEqualsSumOfLeaves.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks that the root always equals the total stake stored in the leaves of the benchmarked tree slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "kleros/sortition_trees/root_minus_left_equals_right_subtree",
+      "task_id": "root_minus_left_equals_right_subtree",
+      "case_id": "kleros/sortition_trees",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/kleros/sortition_trees/tasks/root_minus_left_equals_right_subtree.yaml",
+      "split": "active",
+      "family_id": "kleros",
+      "implementation_id": "kleros_v2",
+      "source_ref": "https://github.com/kleros/kleros-v2@75125dfa54eee723cac239f20e5746d15786196b:contracts/src/libraries/SortitionTrees.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "subtree_partition",
+      "category": "data-structure",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Kleros.SortitionTrees.root_minus_left_equals_right_subtree",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/kleros/sortition_trees/verity/Contract.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/kleros/sortition_trees/verity/Specs.lean",
+        "Benchmark/Cases/Kleros/SortitionTrees/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Kleros/SortitionTrees/Tasks/RootMinusLeftEqualsRightSubtree.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task turns the tree conservation slice into a partition theorem: once the root and parent sums are established, subtracting the left subtree mass from the root must leave exactly the right subtree mass.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Kleros.SortitionTrees.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "nexus_mutual/ramm_price_band/sync_sets_book_value",
+      "task_id": "sync_sets_book_value",
+      "case_id": "nexus_mutual/ramm_price_band",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/nexus_mutual/ramm_price_band/tasks/sync_sets_book_value.yaml",
+      "split": "active",
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "price_computation",
+      "category": "arithmetic-invariant",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_book_value",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Contract.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Specs.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/NexusMutual/RammPriceBand/Tasks/SyncSetsBookValue.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task proves that the synchronized book value stored on-chain matches the specification formula.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.NexusMutual.RammPriceBand.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "nexus_mutual/ramm_price_band/sync_sets_buy_price",
+      "task_id": "sync_sets_buy_price",
+      "case_id": "nexus_mutual/ramm_price_band",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/nexus_mutual/ramm_price_band/tasks/sync_sets_buy_price.yaml",
+      "split": "active",
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "price_computation",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_buy_price",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Contract.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Specs.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/NexusMutual/RammPriceBand/Tasks/SyncSetsBuyPrice.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks that the synchronized buy-side quote matches the buffered book-value formula.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.NexusMutual.RammPriceBand.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "nexus_mutual/ramm_price_band/sync_sets_capital",
+      "task_id": "sync_sets_capital",
+      "case_id": "nexus_mutual/ramm_price_band",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/nexus_mutual/ramm_price_band/tasks/sync_sets_capital.yaml",
+      "split": "active",
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_write",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_capital",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Contract.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Specs.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/NexusMutual/RammPriceBand/Tasks/SyncSetsCapital.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks the direct post-state write that synchronizes the stored capital value.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.NexusMutual.RammPriceBand.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "nexus_mutual/ramm_price_band/sync_sets_sell_price",
+      "task_id": "sync_sets_sell_price",
+      "case_id": "nexus_mutual/ramm_price_band",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/nexus_mutual/ramm_price_band/tasks/sync_sets_sell_price.yaml",
+      "split": "active",
+      "family_id": "nexus_mutual",
+      "implementation_id": "smart_contracts",
+      "source_ref": "https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "price_computation",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_sell_price",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Contract.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/nexus_mutual/ramm_price_band/verity/Specs.lean",
+        "Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/NexusMutual/RammPriceBand/Tasks/SyncSetsSellPrice.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task checks that the synchronized sell-side quote matches the discounted book-value formula.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.NexusMutual.RammPriceBand.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "paladin_votes/stream_recovery_claim_usdc/claim_marks_user",
+      "task_id": "claim_marks_user",
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/tasks/claim_marks_user.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "authorization_state",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_marks_user_claimed",
+      "proof_family": "authorization_enablement",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimMarksUser.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The task checks the claimed flag update in isolation from Merkle validation and ERC20 transfer side effects.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "paladin_votes/stream_recovery_claim_usdc/claimed_plus_allocated_conserved",
+      "task_id": "claimed_plus_allocated_conserved",
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/tasks/claimed_plus_allocated_conserved.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_conservation",
+      "category": "accounting",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_claimed_plus_allocated_conserved",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimedPlusAllocatedConserved.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task composes the claim path's two accounting updates into a single conservation theorem: claimed USDC increases by exactly the amount removed from total allocated USDC in the benchmark's single-round slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "paladin_votes/stream_recovery_claim_usdc/no_overclaim",
+      "task_id": "no_overclaim",
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/tasks/no_overclaim.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_preserves_round_bound",
+      "proof_family": "authorization_enablement",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/NoOverclaim.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The task captures the round-level accounting bound after a claim while staying inside the benchmark's simplified single-round model.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    }
+  ],
+  "backlog_tasks": [],
+  "generated_at": "2026-03-19T16:33:49.377168+00:00"
 }

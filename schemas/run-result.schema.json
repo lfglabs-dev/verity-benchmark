@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/run-result.schema.json",
+  "title": "Benchmark Run Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "benchmark",
+    "schema_version",
+    "unit",
+    "run_id",
+    "task_id",
+    "task_ref",
+    "case_id",
+    "suite",
+    "track",
+    "property_class",
+    "category",
+    "difficulty",
+    "theorem_name",
+    "proof_family",
+    "source_ref",
+    "task_interface_version",
+    "command",
+    "started_at",
+    "completed_at",
+    "outcome",
+    "status",
+    "failure_mode",
+    "failure_reason",
+    "exit_code",
+    "manifests",
+    "artifacts",
+    "metrics",
+    "environment",
+    "readiness",
+    "evaluation",
+    "targets",
+    "reference_solution",
+    "output"
+  ],
+  "properties": {
+    "benchmark": {
+      "const": "verity-benchmark"
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "unit": {
+      "const": "task"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "task_ref": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "suite": {
+      "type": "string"
+    },
+    "track": {
+      "type": "string"
+    },
+    "property_class": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "string"
+    },
+    "theorem_name": {
+      "type": ["string", "null"]
+    },
+    "proof_family": {
+      "type": "string"
+    },
+    "source_ref": {
+      "type": ["string", "null"]
+    },
+    "task_interface_version": {
+      "type": "integer"
+    },
+    "command": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "outcome": {
+      "enum": ["passed", "failed", "not_runnable"]
+    },
+    "status": {
+      "enum": ["passed", "failed", "not_runnable"]
+    },
+    "failure_mode": {
+      "type": ["string", "null"]
+    },
+    "failure_reason": {
+      "type": ["string", "null"]
+    },
+    "exit_code": {
+      "type": "integer"
+    },
+    "manifests": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    },
+    "implementation_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "specification_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "editable_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      }
+    },
+    "reference_solution": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      }
+    },
+    "output": {
+      "type": "string"
+    }
+  }
+}

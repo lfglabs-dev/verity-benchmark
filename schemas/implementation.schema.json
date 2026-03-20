@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/implementation.schema.json",
+  "title": "Benchmark Implementation Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_kind",
+    "schema_version",
+    "family_id",
+    "implementation_id",
+    "display_name",
+    "split",
+    "status",
+    "upstream_repo",
+    "upstream_commit",
+    "source_language",
+    "source_artifact_path",
+    "case_ids",
+    "notes"
+  ],
+  "properties": {
+    "manifest_kind": {
+      "const": "implementation"
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "family_id": {
+      "type": "string"
+    },
+    "implementation_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "split": {
+      "enum": ["active", "backlog"]
+    },
+    "status": {
+      "enum": ["candidate", "scoped", "translated", "blocked"]
+    },
+    "upstream_repo": {
+      "type": ["string", "null"]
+    },
+    "upstream_commit": {
+      "type": ["string", "null"]
+    },
+    "source_language": {
+      "type": "string"
+    },
+    "source_artifact_path": {
+      "type": "string"
+    },
+    "case_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

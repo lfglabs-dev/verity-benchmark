@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: ethereum
+implementation_id: deposit_contract
+display_name: Ethereum Deposit Contract
+split: active
+status: translated
+upstream_repo: https://github.com/ethereum/deposit_contract
+upstream_commit: 691feb18330d3d102b5a4b3d4434fac7571f51b8
+source_language: vyper
+source_artifact_path: deposit_contract/contracts/validator_registration.v.py
+case_ids:
+  - ethereum/deposit_contract_minimal
+notes: >
+  Canonical validator deposit contract used for the minimal counter and threshold
+  slice translated into Lean.

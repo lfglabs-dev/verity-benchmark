@@ -1,20 +1,38 @@
 name = "verity-benchmark"
 version = "0.1.0"
+primary_unit = "task"
 primary_track = "proof-only"
 build_command = "./scripts/run_all.sh"
+task_command = "./scripts/run_task.sh <project/case_id/task_id>"
+default_agent_command = "./scripts/run_default_agent.sh <project/case_id/task_id>"
+default_agent_case_command = "./scripts/run_default_agent_case.sh <project/case_id>"
+default_agent_suite_command = "./scripts/run_default_agent_all.sh"
+custom_agent_command = "./scripts/run_custom_agent.sh <project/case_id/task_id>"
+custom_agent_case_command = "./scripts/run_custom_agent_case.sh <project/case_id>"
+custom_agent_suite_command = "./scripts/run_custom_agent_all.sh"
+default_agent_profiles_dir = "harness/agents"
+default_agent_default_profile = "default"
+custom_agent_default_profile = "openai-compatible"
+default_agent_config = "harness/agents/default.json"
+default_agent_result_schema = "schemas/agent-run.schema.json"
+# Canonical summaries are written under results/agent_summaries/<track>/<run_slug>.json.
+# These two paths name the benchmark-owned reference defaults for the repo and generic external tracks.
+default_agent_summary = "results/agent_summaries/reference/default.json"
+custom_agent_summary = "results/agent_summaries/custom/openai-compatible.json"
 inventory = "benchmark-inventory.json"
 report = "REPORT.md"
 manifest_glob = "cases/*/*/case.yaml"
+task_manifest_glob = "cases/*/*/tasks/*.yaml"
 backlog_glob = "backlog/*/*/case.yaml"
+backlog_task_glob = "backlog/*/*/tasks/*.yaml"
+result_schema = "schemas/run-result.schema.json"
 active_cases = [
   "paladin_votes/stream_recovery_claim_usdc",
   "ethereum/deposit_contract_minimal",
-  "ethereum/beacon_roots_predeploy",
-  "zama/erc7984",
+  "nexus_mutual/ramm_price_band",
+  "kleros/sortition_trees",
 ]
 backlog_cases = [
-  "nexus_mutual/placeholder",
-  "kleros/placeholder",
   "unlink_xyz/placeholder",
   "usual/placeholder",
 ]

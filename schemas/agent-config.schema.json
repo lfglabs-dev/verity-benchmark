@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/agent-config.schema.json",
+  "title": "Default Benchmark Agent Config",
+  "description": "Adapter-backed config for the benchmark's default-agent path. The current adapter contract is OpenAI-compatible chat completions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent_id",
+    "mode",
+    "track",
+    "run_slug",
+    "adapter",
+    "chat_completions_path",
+    "models_path",
+    "system_prompt_files",
+    "temperature",
+    "max_completion_tokens",
+    "headers",
+    "header_envs",
+    "extra_body",
+    "request_timeout_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "description": "Runtime interaction mode for the benchmark harness.",
+      "enum": ["strict", "interactive", "custom"]
+    },
+    "track": {
+      "enum": ["reference", "custom"]
+    },
+    "run_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapter": {
+      "description": "Transport adapter contract used by the benchmark agent path.",
+      "enum": ["openai_compatible", "command"]
+    },
+    "base_url": {
+      "description": "Pinned OpenAI-compatible API base URL, for example https://agent-backend.thomas.md/v1.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "base_url_env": {
+      "description": "Environment variable that provides the OpenAI-compatible API base URL when base_url is not pinned.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "model": {
+      "description": "Pinned model identifier passed to chat completions, for example builtin/fast.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "model_env": {
+      "description": "Environment variable that provides the model identifier when model is not pinned.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "api_key": {
+      "description": "Pinned bearer token for the OpenAI-compatible backend. Prefer api_key_env for reusable local configs.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "api_key_env": {
+      "description": "Environment variable that provides the bearer token for the OpenAI-compatible backend.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "chat_completions_path": {
+      "description": "Path appended to base_url for chat completions requests.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "models_path": {
+      "description": "Path appended to base_url for model discovery and probe requests.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "system_prompt_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "temperature": {
+      "type": "number"
+    },
+    "max_completion_tokens": {
+      "type": "integer"
+    },
+    "max_attempts": {
+      "description": "Maximum number of harness-managed model attempts for one task run.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_tool_calls": {
+      "description": "Maximum number of tool calls allowed during one interactive task run.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "header_envs": {
+      "description": "Optional extra HTTP headers resolved from environment variables for proxy-specific routing or auth.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "extra_body": {
+      "description": "Optional JSON body merged into every chat-completions request.",
+      "type": "object"
+    },
+    "command": {
+      "description": "Non-shell command argv used by the command adapter protocol.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "request_timeout_seconds": {
+      "description": "HTTP timeout for both model probe and chat-completions requests.",
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

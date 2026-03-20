@@ -18,6 +18,9 @@ def claimUsdc_updates_round_claimed_spec (shareWad : Uint256) (s s' : ContractSt
 def claimUsdc_updates_total_allocated_spec (shareWad : Uint256) (s s' : ContractState) : Prop :=
   s'.storage 2 = sub (s.storage 2) (computedClaimAmount shareWad s)
 
+def claimUsdc_claimed_plus_allocated_conserved_spec (_shareWad : Uint256) (s s' : ContractState) : Prop :=
+  add (s'.storage 1) (s'.storage 2) = add (s.storage 1) (s.storage 2)
+
 def claimUsdc_preserves_round_bound_spec (s' : ContractState) : Prop :=
   s'.storage 1 <= s'.storage 0
 

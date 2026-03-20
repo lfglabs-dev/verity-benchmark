@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/task.schema.json",
+  "title": "Benchmark Task Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_kind",
+    "schema_version",
+    "task_id",
+    "case_id",
+    "split",
+    "family_id",
+    "implementation_id",
+    "source_ref",
+    "task_interface_version",
+    "theorem_name",
+    "proof_family",
+    "property_class",
+    "difficulty",
+    "category",
+    "track",
+    "translation_status",
+    "proof_status",
+    "evaluation_engine",
+    "implementation_files",
+    "specification_files",
+    "editable_files",
+    "reference_solution_module",
+    "reference_solution_declaration",
+    "abstraction_level",
+    "abstraction_notes",
+    "unsupported_feature_codes"
+  ],
+  "properties": {
+    "manifest_kind": {
+      "const": "task"
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "split": {
+      "enum": ["active", "backlog"]
+    },
+    "family_id": {
+      "type": "string"
+    },
+    "implementation_id": {
+      "type": "string"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "task_interface_version": {
+      "type": "integer"
+    },
+    "theorem_name": {
+      "type": "string"
+    },
+    "proof_family": {
+      "enum": [
+        "functional_correctness",
+        "state_preservation_local_effects",
+        "authorization_enablement",
+        "protocol_transition_correctness",
+        "refinement_equivalence"
+      ]
+    },
+    "property_class": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "track": {
+      "type": "string"
+    },
+    "translation_status": {
+      "enum": ["not_started", "scoped", "translated", "blocked"]
+    },
+    "proof_status": {
+      "enum": ["not_started", "in_progress", "partial", "complete", "blocked"]
+    },
+    "evaluation_engine": {
+      "enum": ["lean_proof_generation"]
+    },
+    "implementation_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "specification_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "editable_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "reference_solution_module": {
+      "type": ["string", "null"]
+    },
+    "reference_solution_declaration": {
+      "type": ["string", "null"]
+    },
+    "abstraction_level": {
+      "type": "string"
+    },
+    "abstraction_notes": {
+      "type": "string"
+    },
+    "unsupported_feature_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

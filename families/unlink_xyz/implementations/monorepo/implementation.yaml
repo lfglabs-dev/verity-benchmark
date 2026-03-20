@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: unlink_xyz
+implementation_id: monorepo
+display_name: unlink.xyz Monorepo
+split: backlog
+status: blocked
+upstream_repo: https://github.com/unlink-xyz/monorepo
+upstream_commit: null
+source_language: solidity
+source_artifact_path: TBD
+case_ids:
+  - unlink_xyz/placeholder
+notes: >
+  The referenced repository snapshot was unavailable during intake, so the case
+  remains a placeholder without a pinned artifact.

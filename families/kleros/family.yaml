@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: kleros
+display_name: Kleros
+split: active
+status: active
+description: >
+  Active benchmark family for Kleros protocol slices focused on proving
+  conservation and selection properties over jury-sampling logic.
+implementation_ids:
+  - kleros_v2
+case_ids:
+  - kleros/sortition_trees
+source_languages:
+  - solidity

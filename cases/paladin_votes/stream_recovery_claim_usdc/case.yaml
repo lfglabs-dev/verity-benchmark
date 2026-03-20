@@ -1,17 +1,36 @@
+manifest_kind: case
 project: paladin_votes
 case_id: stream_recovery_claim_usdc
 schema_version: 1
+split: active
+family_id: paladin_votes
+implementation_id: stream_recovery_claim
 stage: build_green
+translation_status: translated
+spec_status: frozen
+proof_status: partial
 upstream_repo: https://github.com/Figu3/sonic-earn-recovery-system
 upstream_commit: 699cbbc79def374cab9739e451acbbf866293d12
 original_contract_path: src/StreamRecoveryClaim.sol
+source_ref: https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol
 lean_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Compile
 selected_functions:
   - claimUsdc
   - _claimUsdc
 source_language: solidity
-verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
 lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - merkle_elided
+  - token_transfer_elided
+  - single_round_slice
+abstraction_notes: >
+  The benchmark fixes focus on the single-round claim path and abstracts Merkle
+  verification plus token transfer effects into a simpler state-only model.
+unsupported_feature_codes: []
+spec_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs
+proof_target: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs
 notes: >
   Single-round accounting slice of the USDC claim path. Merkle verification is
   abstracted as a boolean witness and token transfer side effects are omitted.

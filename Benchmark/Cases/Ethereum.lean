@@ -1,1 +1,2 @@
 import Benchmark.Cases.Ethereum.DepositContractMinimal.Compile
+import Benchmark.Cases.Ethereum.DepositContractMinimal.Proofs

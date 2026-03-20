@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: paladin_votes
+display_name: Paladin Votes
+split: active
+status: active
+description: >
+  Governance recovery flow benchmarks drawn from the Sonic earn recovery system
+  with emphasis on accounting and claim-state updates.
+implementation_ids:
+  - stream_recovery_claim
+case_ids:
+  - paladin_votes/stream_recovery_claim_usdc
+source_languages:
+  - solidity

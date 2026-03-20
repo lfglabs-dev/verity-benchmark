@@ -1,0 +1,32 @@
+manifest_kind: task
+schema_version: 1
+task_id: sync_sets_capital
+case_id: nexus_mutual/ramm_price_band
+split: active
+family_id: nexus_mutual
+implementation_id: smart_contracts
+source_ref: https://github.com/NexusMutual/smart-contracts@ad212043a78953a2cd98cd02b06c8e3e354c6023:contracts/modules/capital/Ramm.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_capital
+proof_family: state_preservation_local_effects
+property_class: storage_write
+difficulty: easy
+category: state-transition
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/nexus_mutual/ramm_price_band/verity/Contract.lean
+  - Benchmark/Cases/NexusMutual/RammPriceBand/Contract.lean
+specification_files:
+  - cases/nexus_mutual/ramm_price_band/verity/Specs.lean
+  - Benchmark/Cases/NexusMutual/RammPriceBand/Specs.lean
+editable_files:
+  - Benchmark/Generated/NexusMutual/RammPriceBand/Tasks/SyncSetsCapital.lean
+reference_solution_module: Benchmark.Cases.NexusMutual.RammPriceBand.Proofs
+reference_solution_declaration: Benchmark.Cases.NexusMutual.RammPriceBand.syncPriceBand_sets_capital
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task checks the direct post-state write that synchronizes the stored capital value.
+unsupported_feature_codes: []

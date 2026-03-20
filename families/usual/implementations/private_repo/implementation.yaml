@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: usual
+implementation_id: private_repo
+display_name: Usual Private Repository
+split: backlog
+status: blocked
+upstream_repo: null
+upstream_commit: null
+source_language: solidity
+source_artifact_path: TBD
+case_ids:
+  - usual/placeholder
+notes: >
+  Intake is blocked on repository access, so no implementation artifact or case
+  slice can be pinned yet.

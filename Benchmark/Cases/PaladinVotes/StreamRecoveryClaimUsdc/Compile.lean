@@ -1,5 +1,5 @@
 import Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Contract
-import Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Specs
+import Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs
 
 namespace Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc
 

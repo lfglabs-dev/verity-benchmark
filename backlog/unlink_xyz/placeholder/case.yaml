@@ -1,13 +1,32 @@
+manifest_kind: case
 project: unlink_xyz
 case_id: placeholder
 schema_version: 1
+split: backlog
+family_id: unlink_xyz
+implementation_id: monorepo
 stage: candidate
+translation_status: blocked
+spec_status: not_started
+proof_status: blocked
 upstream_repo: https://github.com/unlink-xyz/monorepo
 upstream_commit: null
 original_contract_path: TBD
+source_ref: unresolved:https://github.com/unlink-xyz/monorepo@unknown:TBD
 selected_functions: []
 failure_reason: upstream_unavailable
 source_language: solidity
-verity_version: 34a6b2b2e91713f870572fef1e1c4b5131812dfb
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
 lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: inaccessible_upstream
+abstraction_tags:
+  - intake_placeholder
+  - upstream_missing
+abstraction_notes: >
+  Intake cannot progress until a resolvable upstream snapshot is available and a
+  benchmark slice can be selected from it.
+unsupported_feature_codes:
+  - upstream_unavailable
+spec_target: null
+proof_target: null
 notes: Referenced repository was not resolvable during setup, so no candidate contract was pinned.

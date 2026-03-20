@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/case.schema.json",
+  "title": "Benchmark Case Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_kind",
+    "project",
+    "case_id",
+    "schema_version",
+    "split",
+    "family_id",
+    "implementation_id",
+    "stage",
+    "translation_status",
+    "spec_status",
+    "proof_status",
+    "upstream_repo",
+    "upstream_commit",
+    "original_contract_path",
+    "source_ref",
+    "selected_functions",
+    "source_language",
+    "verity_version",
+    "lean_toolchain",
+    "abstraction_level",
+    "abstraction_tags",
+    "abstraction_notes",
+    "unsupported_feature_codes",
+    "spec_target",
+    "proof_target",
+    "notes"
+  ],
+  "properties": {
+    "manifest_kind": {
+      "const": "case"
+    },
+    "project": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "split": {
+      "enum": ["active", "backlog"]
+    },
+    "family_id": {
+      "type": "string"
+    },
+    "implementation_id": {
+      "type": "string"
+    },
+    "stage": {
+      "enum": ["candidate", "scoped", "build_green", "proof_partial", "proof_complete"]
+    },
+    "translation_status": {
+      "enum": ["not_started", "scoped", "translated", "blocked"]
+    },
+    "spec_status": {
+      "enum": ["not_started", "draft", "frozen", "blocked"]
+    },
+    "proof_status": {
+      "enum": ["not_started", "in_progress", "partial", "complete", "blocked"]
+    },
+    "upstream_repo": {
+      "type": ["string", "null"]
+    },
+    "upstream_commit": {
+      "type": ["string", "null"]
+    },
+    "original_contract_path": {
+      "type": "string"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "lean_target": {
+      "type": ["string", "null"]
+    },
+    "selected_functions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failure_reason": {
+      "type": ["string", "null"]
+    },
+    "source_language": {
+      "type": "string"
+    },
+    "verity_version": {
+      "type": "string"
+    },
+    "lean_toolchain": {
+      "type": "string"
+    },
+    "abstraction_level": {
+      "type": "string"
+    },
+    "abstraction_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "abstraction_notes": {
+      "type": "string"
+    },
+    "unsupported_feature_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "spec_target": {
+      "type": ["string", "null"]
+    },
+    "proof_target": {
+      "type": ["string", "null"]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

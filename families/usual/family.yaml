@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: usual
+display_name: Usual
+split: backlog
+status: backlog
+description: >
+  Backlog intake for a private upstream that cannot yet be pinned to a public
+  benchmarkable contract artifact.
+implementation_ids:
+  - private_repo
+case_ids:
+  - usual/placeholder
+source_languages:
+  - solidity

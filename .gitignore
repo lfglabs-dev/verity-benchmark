@@ -3,3 +3,12 @@
 build/
 lake-packages/
 results/*.json
+results/tasks/*.json
+results/agent_runs/*.json
+results/agent_runs/**/*.json
+results/agent_summaries/**/*.json
+__pycache__/
+.env.keys
+.env.local
+.env.*
+!.env

@@ -1,8 +1,32 @@
+manifest_kind: task
+schema_version: 1
 task_id: claim_marks_user
-statement_id: claimUsdc_marks_claimed_spec
+case_id: paladin_votes/stream_recovery_claim_usdc
+split: active
+family_id: paladin_votes
+implementation_id: stream_recovery_claim
+source_ref: https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_marks_user_claimed
+proof_family: authorization_enablement
+property_class: authorization_state
 difficulty: easy
 category: state-transition
 track: proof-only
-allowed_files:
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean
+  - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean
+specification_files:
   - cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean
   - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean
+editable_files:
+  - Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimMarksUser.lean
+reference_solution_module: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs
+reference_solution_declaration: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_marks_user_claimed
+abstraction_level: protocol_slice
+abstraction_notes: >
+  The task checks the claimed flag update in isolation from Merkle validation and ERC20 transfer side effects.
+unsupported_feature_codes: []

@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: unlink_xyz
+display_name: unlink.xyz
+split: backlog
+status: backlog
+description: >
+  Backlog intake for unlink.xyz contracts pending recovery of a resolvable
+  upstream repository snapshot.
+implementation_ids:
+  - monorepo
+case_ids:
+  - unlink_xyz/placeholder
+source_languages:
+  - solidity

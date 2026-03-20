@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: ethereum
+display_name: Ethereum
+split: active
+status: active
+description: >
+  Ethereum L1 benchmark slices covering deposit processing pinned from public
+  upstream artifacts.
+implementation_ids:
+  - deposit_contract
+case_ids:
+  - ethereum/deposit_contract_minimal
+source_languages:
+  - vyper

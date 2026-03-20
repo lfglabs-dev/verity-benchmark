@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: nexus_mutual
+implementation_id: smart_contracts
+display_name: Nexus Mutual Smart Contracts
+split: active
+status: translated
+upstream_repo: https://github.com/NexusMutual/smart-contracts
+upstream_commit: ad212043a78953a2cd98cd02b06c8e3e354c6023
+source_language: solidity
+source_artifact_path: contracts/modules/capital/Ramm.sol
+case_ids:
+  - nexus_mutual/ramm_price_band
+notes: >
+  Active implementation entry for the Nexus Mutual smart-contract repository,
+  currently benchmarking the RAMM price-band slice.

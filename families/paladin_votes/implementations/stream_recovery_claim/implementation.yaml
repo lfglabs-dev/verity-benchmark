@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: paladin_votes
+implementation_id: stream_recovery_claim
+display_name: Stream Recovery Claim
+split: active
+status: translated
+upstream_repo: https://github.com/Figu3/sonic-earn-recovery-system
+upstream_commit: 699cbbc79def374cab9739e451acbbf866293d12
+source_language: solidity
+source_artifact_path: src/StreamRecoveryClaim.sol
+case_ids:
+  - paladin_votes/stream_recovery_claim_usdc
+notes: >
+  Claim accounting contract translated as a single-round slice with Merkle
+  verification abstracted away from the benchmark.

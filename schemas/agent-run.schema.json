@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity-benchmark.local/schemas/agent-run.schema.json",
+  "title": "Default Benchmark Agent Run Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_ref",
+    "task_id",
+    "case_id",
+    "timestamp",
+    "dry_run",
+    "status",
+    "theorem_name",
+    "proof_family",
+    "implementation_files",
+    "specification_files",
+    "editable_files",
+    "agent",
+    "messages"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_ref": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "elapsed_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "status": {
+      "enum": ["dry_run", "passed", "failed"]
+    },
+    "theorem_name": {
+      "type": ["string", "null"]
+    },
+    "proof_family": {
+      "type": "string"
+    },
+    "implementation_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "specification_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "editable_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "agent_id",
+        "mode",
+        "track",
+        "run_slug",
+        "adapter",
+        "config_path",
+        "base_url",
+        "base_url_env",
+        "model",
+        "model_env",
+        "api_key_env",
+        "chat_completions_path",
+        "models_path",
+        "system_prompt_files",
+        "temperature",
+        "max_completion_tokens",
+        "max_attempts",
+        "request_timeout_seconds",
+        "headers",
+        "header_envs",
+        "env_contract",
+        "extra_body",
+        "command"
+      ],
+      "properties": {
+        "profile": {
+          "type": ["string", "null"]
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": ["strict", "interactive", "custom"]
+        },
+        "track": {
+          "enum": ["reference", "custom"]
+        },
+        "run_slug": {
+          "type": "string"
+        },
+        "adapter": {
+          "type": "string"
+        },
+        "config_path": {
+          "type": "string"
+        },
+        "base_url": {
+          "type": "string"
+        },
+        "base_url_env": {
+          "type": ["string", "null"]
+        },
+        "model": {
+          "type": "string"
+        },
+        "model_env": {
+          "type": ["string", "null"]
+        },
+        "api_key_env": {
+          "type": ["string", "null"]
+        },
+        "chat_completions_path": {
+          "type": "string"
+        },
+        "models_path": {
+          "type": "string"
+        },
+        "system_prompt_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "max_completion_tokens": {
+          "type": "integer"
+        },
+        "max_attempts": {
+          "type": "integer"
+        },
+        "max_tool_calls": {
+          "type": "integer"
+        },
+        "request_timeout_seconds": {
+          "type": "integer"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "header_envs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "env_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "optional"
+          ],
+          "properties": {
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "optional": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "extra_body": {
+          "type": "object"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "content"
+        ],
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "failure_mode",
+        "details"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["passed", "failed"]
+        },
+        "failure_mode": {
+          "type": ["string", "null"]
+        },
+        "details": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "candidate_workspace": {
+          "type": "string"
+        }
+      }
+    },
+    "response": {
+      "type": "object"
+    },
+    "response_text": {
+      "type": "string"
+    },
+    "candidate_file_contents": {
+      "type": "string"
+    },
+    "tool_calls_used": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

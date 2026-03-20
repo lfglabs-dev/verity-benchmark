@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: nexus_mutual
+display_name: Nexus Mutual
+split: active
+status: active
+description: >
+  Active benchmark family for Nexus Mutual protocol slices centered on proving
+  arithmetic and behavioral properties over real contract pricing logic.
+implementation_ids:
+  - smart_contracts
+case_ids:
+  - nexus_mutual/ramm_price_band
+source_languages:
+  - solidity
