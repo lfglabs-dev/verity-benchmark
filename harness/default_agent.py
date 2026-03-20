@@ -1349,9 +1349,9 @@ def execute_agent_task(
 
 
 def run_command(config_path: Path, task_ref: str, dry_run: bool, *, profile: str | None = None) -> int:
-    _, result_path = execute_agent_task(config_path, task_ref, dry_run, profile=profile)
+    exit_code, result_path = execute_agent_task(config_path, task_ref, dry_run, profile=profile)
     print(result_path.relative_to(ROOT))
-    return 0
+    return exit_code
 
 
 def profiles_command() -> int:

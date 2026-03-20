@@ -13,6 +13,7 @@ from task_runner import ROOT, run_command as lean_run_command
 PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
 HOLE_PATTERN = re.compile(r"\?(?:_|\w+)")
 DEF_PATTERN = re.compile(r"^\s*(?:def|theorem|lemma|abbrev|opaque)\s+([A-Za-z0-9_'.]+)")
+HIDDEN_PROOF_IMPORT_PATTERN = re.compile(r"^\s*import\s+Benchmark\.Cases\..*\.Proofs\b", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,7 @@ class TaskProofRuntime:
             ),
         )
         self.current_proof_text = self._read_repo_file(editable_rel_path)
+        self.expected_theorem_signature = self._extract_theorem_signature(self.current_proof_text)
 
     def _read_repo_file(self, rel_path: str) -> str:
         path = ROOT / rel_path
@@ -136,6 +138,21 @@ class TaskProofRuntime:
                 "status": "failed",
                 "failure_mode": "placeholder_detected",
                 "details": "candidate proof contains a rejected placeholder token",
+            }
+
+        if HIDDEN_PROOF_IMPORT_PATTERN.search(candidate_text):
+            return {
+                "status": "failed",
+                "failure_mode": "hidden_proof_import_detected",
+                "details": "candidate proof imports hidden Benchmark.Cases.*.Proofs modules",
+            }
+
+        candidate_signature = self._extract_theorem_signature(candidate_text)
+        if candidate_signature != self.expected_theorem_signature:
+            return {
+                "status": "failed",
+                "failure_mode": "theorem_statement_mismatch",
+                "details": "candidate proof changed the editable theorem statement",
             }
 
         with tempfile.TemporaryDirectory(prefix="verity-benchmark-agent-") as tmp_dir:
@@ -283,6 +300,19 @@ class TaskProofRuntime:
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
             os.symlink(source, target, target_is_directory=source.is_dir())
+
+    def _extract_theorem_signature(self, text: str) -> str | None:
+        short_name = self.paths.theorem_name.rsplit(".", 1)[-1]
+        pattern = re.compile(
+            rf"theorem\s+{re.escape(short_name)}\b(?P<signature>.*?)(?::=\s*by)",
+            re.DOTALL,
+        )
+        match = pattern.search(text)
+        if not match:
+            return None
+        signature = re.sub(r"/-.*?-/", " ", match.group("signature"), flags=re.DOTALL)
+        signature = re.sub(r"--.*$", " ", signature, flags=re.MULTILINE)
+        return " ".join(signature.split())
 
 
 def tool_result_json(result: dict[str, Any]) -> str:
