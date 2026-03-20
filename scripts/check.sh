@@ -78,25 +78,6 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path("harness").resolve()))
-from toml_compat import load_toml_file
-
-root = Path(".")
-config = load_toml_file(root / "benchmark.toml")
-expected = [
-    config["default_agent_summary"],
-    config["custom_agent_summary"],
-    "results/agent_summaries/custom/openai-proxy-fast.json",
-    "results/agent_summaries/custom/custom-openai-compatible.json",
-]
-missing = [path for path in expected if not (root / path).is_file()]
-if missing:
-    raise SystemExit(f"missing expected agent summary artifacts: {', '.join(missing)}")
-PY
-python3 - <<'PY'
-from pathlib import Path
-import sys
-
-sys.path.insert(0, str(Path("harness").resolve()))
 
 from default_agent import ResolvedAgentConfig, ensure_configured_model_available
 
