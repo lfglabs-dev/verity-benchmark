@@ -1,7 +1,6 @@
 # Harness Policy
 
-- Treat `tasks/*.yaml` as the primary execution unit.
-- Preserve case-level compatibility fields because Lean translation targets are still defined per case.
-- Only execute a proof target when `proof_status` is `partial` or `complete`.
-- Treat the task manifest's explicit proof target as the execution contract.
-- Emit deterministic task result paths under `results/tasks/`.
+- `tasks/*.yaml` is the execution unit.
+- The task manifest defines the proof contract.
+- Only run tasks with `proof_status` `partial` or `complete`.
+- Write deterministic outputs under `results/tasks/`.

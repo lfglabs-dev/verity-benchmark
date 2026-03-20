@@ -1,42 +1,22 @@
 # Contributing
 
-The repository is optimized for small, deterministic benchmark updates.
+Keep changes small and deterministic.
 
-## Case contract
+Case source of truth:
+- `cases/<project>/<case>/case.yaml` for active cases
+- `backlog/<project>/<case>/case.yaml` for placeholders
 
-Each case is defined by a single canonical manifest at `cases/<project>/<case_id>/case.yaml` or `backlog/<project>/<case_id>/case.yaml`.
+Stages:
+- `candidate`: intake only
+- `scoped`: target pinned, not runnable
+- `build_green`: translation builds
+- `proof_partial`: some proofs done
+- `proof_complete`: intended proofs done
 
-Required keys:
-- `project`
-- `case_id`
-- `schema_version`
-- `stage`
-- `selected_functions`
-- `source_language`
-- `verity_version`
-- `lean_toolchain`
-- `notes`
-
-Optional but recommended keys:
-- `lean_target`
-- `upstream_repo`
-- `upstream_commit`
-- `original_contract_path`
-- `failure_reason`
-
-## Stage meanings
-
-- `candidate`: intake or placeholder entry, not part of the active suite
-- `scoped`: concrete target is pinned but not yet runnable
-- `build_green`: Verity translation compiles under the pinned toolchain
-- `proof_partial`: compileable case with partial proof coverage
-- `proof_complete`: compileable case with full intended proof coverage
-
-## Workflow
-
-1. Edit or add the case manifest.
+Workflow:
+1. Edit the manifest or task files.
 2. Run `python3 scripts/generate_metadata.py`.
-3. If the case is runnable, run `./scripts/run_case.sh <project/case_id>`.
-4. Run `./scripts/check.sh` before opening a PR.
+3. Run `./scripts/run_case.sh <project/case>` if the case is runnable.
+4. Run `./scripts/check.sh`.
 
-Do not edit `benchmark-inventory.json` or `REPORT.md` by hand. They are generated from the manifests.
+Do not edit `benchmark-inventory.json` or `REPORT.md` by hand.
