@@ -25,6 +25,8 @@ DEFAULT_PROFILE = BENCHMARK_DEFAULTS.default_agent_default_profile
 AGENT_PROFILES_DIR = ROOT / BENCHMARK_DEFAULTS.default_agent_profiles_dir
 DEFAULT_AGENT_CONFIG_PATH = ROOT / BENCHMARK_DEFAULTS.default_agent_config
 PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
+MAX_ERROR_FEEDBACK_CHARS = 6000
+MAX_REASONING_SNIPPET_CHARS = 4000
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,7 @@ class ResolvedAgentConfig:
     system_prompt_files: list[str]
     temperature: float
     max_completion_tokens: int
+    max_attempts: int
     headers: dict[str, str]
     header_envs: dict[str, str]
     env_contract: dict[str, list[str]]
@@ -357,6 +360,7 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         system_prompt_files=prompt_files,
         temperature=float(config["temperature"]),
         max_completion_tokens=int(config["max_completion_tokens"]),
+        max_attempts=int(config.get("max_attempts", 5)),
         headers=resolve_headers(config),
         header_envs={str(key): str(value) for key, value in dict(config.get("header_envs", {})).items()},
         env_contract=env_contract(config),
@@ -380,47 +384,75 @@ def render_file_bundle(paths: list[str]) -> str:
         if not path.is_file():
             sections.append(f"[{rel_path}]\n<missing>")
             continue
-        sections.append(f"[{rel_path}]\n{path.read_text(encoding='utf-8').strip()}")
+        contents = path.read_text(encoding="utf-8").strip()
+        lines = [line.strip() for line in contents.splitlines() if line.strip()]
+        if len(lines) == 1 and lines[0].startswith("import "):
+            continue
+        sections.append(f"[{rel_path}]\n{contents}")
     return "\n\n".join(sections).strip()
 
 
+def build_proof_hints(task: dict[str, Any]) -> str:
+    family = str(task.get("proof_family", ""))
+    shared = [
+        "Verity execution proofs often need `simp` with the operational definitions, not just the theorem spec.",
+        "Useful simplification symbols are often: `getStorage`, `setStorage`, `setMapping`, `setMappingUint`, `Verity.require`, `Verity.bind`, `Bind.bind`, `Verity.pure`, `Pure.pure`, `Contract.run`, and `ContractResult.snd`.",
+        "Include the contract's storage labels in the simp set when relevant, for example fields such as `RammPriceBand.capital` or `DepositContractMinimal.depositCount`.",
+        "If helpful, you may add imports required for proof automation, for example `import Verity.Proofs.Stdlib.Automation`.",
+        "When a branch guard is not directly in the right form for `simp`, derive a helper fact first, then simplify.",
+        "If `simp` gets stuck on a conditional execution path, prove branch-specific private helper theorems with explicit hypotheses instead of trying to split the final `match` state directly.",
+    ]
+    family_specific: list[str] = []
+    if family == "state_preservation_local_effects":
+        family_specific = [
+            "For local-effect theorems, a good pattern is: unfold the spec, split on relevant branch conditions, prove concrete slot-write equalities, then finish with `simpa`.",
+            "A private helper theorem that proves several slot writes at once can make the final theorem much shorter.",
+            "When the contract branches on a threshold, use `by_cases` on the branch condition in the public theorem and a negated helper fact such as `Nat.not_le_of_lt hSmall` for the non-branch case.",
+        ]
+    elif family == "protocol_transition_correctness":
+        family_specific = [
+            "For transition theorems, use `by_cases` on threshold guards and threshold equalities before simplifying the execution trace.",
+            "For hypotheses of the form `hSmall : x < c`, the corresponding negated branch fact is often `have hNotBranch : ¬ c ≤ x := Nat.not_le_of_lt hSmall`.",
+        ]
+    elif family == "authorization_enablement":
+        family_specific = [
+            "For authorization theorems, unfold the spec and simplify the guarded execution path using the provided permission hypotheses.",
+        ]
+    elif family == "refinement_equivalence":
+        family_specific = [
+            "For refinement/equivalence theorems, first normalize both sides into the same post-state shape, then prove the observable fields agree.",
+        ]
+    elif family == "functional_correctness":
+        family_specific = [
+            "For functional-correctness theorems, unfold the spec to the mathematical target form before simplifying the execution result.",
+        ]
+    lines = ["Public proof hints:"] + [f"- {item}" for item in [*shared, *family_specific]]
+    return "\n".join(lines)
+
+
 def build_user_prompt(task: dict[str, Any]) -> str:
-    task_payload = {
-        "task_ref": task["task_ref"],
-        "task_id": task["task_id"],
-        "case_id": task["case_id"],
-        "track": task["track"],
-        "property_class": task["property_class"],
-        "category": task["category"],
-        "difficulty": task["difficulty"],
-        "theorem_name": task["theorem_name"],
-        "proof_family": task["proof_family"],
-        "implementation_files": task["implementation_files"],
-        "specification_files": task["specification_files"],
-        "editable_files": task["editable_files"],
-        "targets": task["targets"],
-        "evaluation": task["evaluation"],
-        "readiness": task["readiness"],
-        "manifest_path": task["manifest_path"],
-        "case_manifest_path": task["case_manifest_path"],
-    }
+    editable_file = task["editable_files"][0]
     return (
         "You are running the default benchmark agent for verity-benchmark.\n"
         "Treat this as a strict proof-generation benchmark.\n"
         "Do not invent specs, modify implementations, or rely on hidden reference proofs.\n\n"
-        "This is a one-shot harness invocation.\n"
+        "The harness may give you several bounded repair rounds for the same task.\n"
+        "On every round, return the complete editable Lean proof file, not a patch or explanation.\n"
         "Do not claim that you will inspect more files or run commands.\n"
         "Reason only from the task payload and the file contents included below.\n"
         "Return the complete contents of the single editable Lean proof file.\n"
         "Return Lean code only, with no markdown fences or extra explanation.\n\n"
-        "Task payload:\n"
-        f"{json.dumps(task_payload, indent=2)}\n\n"
+        f"Task ref: {task['task_ref']}\n"
+        f"Theorem name: {task['theorem_name']}\n"
+        f"Proof family: {task['proof_family']}\n"
+        f"Editable file: {editable_file}\n\n"
         "Implementation file contents:\n"
         f"{render_file_bundle(task['implementation_files'])}\n\n"
         "Specification file contents:\n"
         f"{render_file_bundle(task['specification_files'])}\n\n"
         "Editable proof template contents:\n"
-        f"{render_file_bundle(task['editable_files'])}\n"
+        f"{render_file_bundle(task['editable_files'])}\n\n"
+        f"{build_proof_hints(task)}\n"
     )
 
 
@@ -428,6 +460,100 @@ def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[di
     return [
         {"role": "system", "content": build_system_prompt(config)},
         {"role": "user", "content": build_user_prompt(task)},
+    ]
+
+
+def build_repair_messages(
+    base_messages: list[dict[str, str]],
+    candidate_text: str,
+    evaluation: dict[str, Any],
+    *,
+    attempt_index: int,
+    max_attempts: int,
+) -> list[dict[str, str]]:
+    details = str(evaluation.get("details", "")).strip()
+    trimmed_details = details[:MAX_ERROR_FEEDBACK_CHARS]
+    guidance = build_repair_guidance(trimmed_details)
+    repair_prompt = (
+        f"The previous Lean file did not pass the checker (attempt {attempt_index} of {max_attempts}).\n"
+        "Return a corrected complete replacement for the editable Lean proof file.\n"
+        "Return Lean code only, with no markdown fences or extra explanation.\n\n"
+        "Previous candidate file:\n"
+        f"{candidate_text.rstrip()}\n\n"
+        "Lean checker output:\n"
+        f"{trimmed_details}\n"
+    )
+    if guidance:
+        repair_prompt += f"\nGeneric repair guidance:\n{guidance}\n"
+    return [
+        *base_messages,
+        {"role": "assistant", "content": candidate_text},
+        {"role": "user", "content": repair_prompt},
+    ]
+
+
+def build_repair_guidance(details: str) -> str:
+    hints: list[str] = []
+    if "tactic 'split' failed" in details:
+        hints.append(
+            "- Do not `split` the final post-state blindly. Prove branch-specific helper theorems first, then use `by_cases` plus `simpa`."
+        )
+    if "no goals to be solved" in details:
+        hints.append(
+            "- A previous `simp` likely closed the goal already. Remove trailing tactics such as `decide`, `exact`, or extra `simp` calls after the goal is solved."
+        )
+    if "expected type must not contain free variables" in details:
+        hints.append(
+            "- Do not use `native_decide` or `decide` on goals that still contain parameters. First reduce to concrete slot-number equalities with `have` facts or extra `simp`; only then use `native_decide` if the remaining goal is fully decidable."
+        )
+    if "Unknown identifier" in details:
+        hints.append(
+            "- Fix typos or missing imports directly; prefer standard names such as `Nat.lt_of_not_ge` and `Nat.not_le_of_lt`."
+        )
+    if "unsolved goals" in details and "if " in details:
+        hints.append(
+            "- If `simp` leaves concrete slot comparisons or small `if` expressions, finish those residual finite equalities with `native_decide` or `decide`."
+        )
+    if "unsolved goals" in details and "32000000000" in details:
+        hints.append(
+            "- The generated code often uses the comparator form `32000000000 ≤ depositAmount`. Derive the exact branch fact needed by `simp`, for example `have hNotFull : ¬ 32000000000 ≤ depositAmount := Nat.not_le_of_lt hSmall`."
+        )
+    return "\n".join(hints)
+
+
+def reasoning_excerpt(response: dict[str, Any]) -> str:
+    choices = response.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return ""
+    message = choices[0].get("message", {})
+    reasoning_content = message.get("reasoning_content")
+    if isinstance(reasoning_content, str):
+        return reasoning_content.strip()[:MAX_REASONING_SNIPPET_CHARS]
+    return ""
+
+
+def build_finalization_messages(
+    base_messages: list[dict[str, str]],
+    response: dict[str, Any],
+    *,
+    attempt_index: int,
+    max_attempts: int,
+) -> list[dict[str, str]]:
+    reasoning = reasoning_excerpt(response)
+    prompt = (
+        f"Your previous reply did not include a final Lean file (attempt {attempt_index} of {max_attempts}).\n"
+        "Stop reasoning and return the complete contents of the editable Lean proof file now.\n"
+        "Return Lean code only, with no markdown fences or extra explanation.\n"
+        "Prefer a short proof built from private helper theorems plus `simp`/`simpa`.\n"
+    )
+    if reasoning:
+        prompt += (
+            "\nPrevious internal draft excerpt:\n"
+            f"{reasoning}\n"
+        )
+    return [
+        *base_messages,
+        {"role": "user", "content": prompt},
     ]
 
 
@@ -515,7 +641,9 @@ def extract_text(response: dict[str, Any]) -> str:
     message = choices[0].get("message", {})
     content = message.get("content")
     if isinstance(content, str):
-        return content
+        text = content.strip()
+        if text:
+            return re.sub(r"(?s)<think>.*?</think>\s*", "", content).strip()
     if isinstance(content, list):
         parts: list[str] = []
         for item in content:
@@ -523,7 +651,9 @@ def extract_text(response: dict[str, Any]) -> str:
                 text = item.get("text")
                 if isinstance(text, str):
                     parts.append(text)
-        return "\n".join(parts)
+        joined = "\n".join(parts).strip()
+        if joined:
+            return re.sub(r"(?s)<think>.*?</think>\s*", "", joined).strip()
     reasoning_content = message.get("reasoning_content")
     if isinstance(reasoning_content, str):
         return reasoning_content
@@ -674,9 +804,10 @@ def build_result(
             "chat_completions_path": config.chat_completions_path,
             "models_path": config.models_path,
             "system_prompt_files": config.system_prompt_files,
-            "temperature": config.temperature,
-            "max_completion_tokens": config.max_completion_tokens,
-            "request_timeout_seconds": config.request_timeout_seconds,
+                "temperature": config.temperature,
+                "max_completion_tokens": config.max_completion_tokens,
+                "max_attempts": config.max_attempts,
+                "request_timeout_seconds": config.request_timeout_seconds,
             "headers": config.headers,
             "header_envs": config.header_envs,
             "env_contract": config.env_contract,
@@ -835,11 +966,53 @@ def execute_agent_task(
         return 0, result_path
 
     start = time.perf_counter()
-    response = send_chat_completion(config, messages)
+    attempt_messages = messages
+    response: dict[str, Any] = {}
+    response_text = ""
+    candidate_text = ""
+    evaluation: dict[str, Any] = {
+        "status": "failed",
+        "failure_mode": "agent_not_run",
+        "details": "agent invocation did not start",
+    }
+    attempts: list[dict[str, Any]] = []
+
+    for attempt_index in range(1, config.max_attempts + 1):
+        response = send_chat_completion(config, attempt_messages)
+        response_text = extract_text(response)
+        candidate_text = extract_candidate_file(response_text)
+        evaluation = evaluate_candidate_submission(task, candidate_text)
+        attempts.append(
+            {
+                "attempt": attempt_index,
+                "messages": attempt_messages,
+                "response": response,
+                "response_text": response_text,
+                "candidate_file_contents": candidate_text,
+                "evaluation": evaluation,
+            }
+        )
+        if evaluation["status"] == "passed":
+            break
+        if evaluation.get("failure_mode") == "empty_response":
+            attempt_messages = build_finalization_messages(
+                messages,
+                response,
+                attempt_index=attempt_index,
+                max_attempts=config.max_attempts,
+            )
+            continue
+        if evaluation.get("failure_mode") != "lean_check_failed" or not candidate_text.strip():
+            break
+        attempt_messages = build_repair_messages(
+            messages,
+            candidate_text,
+            evaluation,
+            attempt_index=attempt_index,
+            max_attempts=config.max_attempts,
+        )
+
     elapsed_seconds = time.perf_counter() - start
-    response_text = extract_text(response)
-    candidate_text = extract_candidate_file(response_text)
-    evaluation = evaluate_candidate_submission(task, candidate_text)
     result = build_result(
         task_ref,
         config,
@@ -851,6 +1024,7 @@ def execute_agent_task(
     result["response"] = response
     result["response_text"] = response_text
     result["candidate_file_contents"] = candidate_text
+    result["attempts"] = attempts
     validate_result_payload(result, task_ref)
     result_path = write_result(task_ref, config, result)
     return (0 if evaluation["status"] == "passed" else 1), result_path

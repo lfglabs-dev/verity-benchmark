@@ -95,6 +95,11 @@
     "max_completion_tokens": {
       "type": "integer"
     },
+    "max_attempts": {
+      "description": "Maximum number of bounded propose-check-repair iterations for one task run.",
+      "type": "integer",
+      "minimum": 1
+    },
     "headers": {
       "type": "object",
       "additionalProperties": {

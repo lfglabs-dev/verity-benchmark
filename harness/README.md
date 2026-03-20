@@ -28,7 +28,8 @@ The default benchmark agent now has its own explicit entrypoint:
 - each connection field is explicit in config: `base_url`, `model`, and `api_key` may be pinned directly or sourced from `*_env`
 - the default-agent run artifact is schema-backed by `schemas/agent-run.schema.json`
 - each run artifact records the resolved `base_url` and `model` plus the originating `*_env` contract for reproducibility
-- each one-shot task prompt now embeds `implementation_files`, `specification_files`, and the editable proof template, so external OpenAI-compatible backends receive the exact public benchmark surface through the shared runner
+- each task prompt now embeds `implementation_files`, `specification_files`, and the editable proof template, so external OpenAI-compatible backends receive the exact public benchmark surface through the shared runner
+- live default-agent runs may use bounded harness-owned propose-check-repair loops against Lean checker feedback while keeping the mutable surface fixed to the single editable proof file
 - live default-agent runs evaluate the returned proof artifact instead of just recording it
 - candidate evaluation writes the editable file into a temp workspace, rejects `sorry` / `admit` / `axiom`, compiles it with Lean, and checks the declared theorem exists
 - each live or dry-run artifact records `elapsed_seconds` for reproducible timing checks
@@ -71,6 +72,7 @@ Optional config-only extensions for OpenAI-compatible backends:
 - `header_envs`: map of HTTP header name to env var for proxy-specific auth/routing
 - `extra_body`: extra JSON merged into the chat-completions request body
 - `request_timeout_seconds`: request timeout for both probe and run
+- `max_attempts`: bounded number of propose-check-repair rounds per task
 
 Useful commands:
 

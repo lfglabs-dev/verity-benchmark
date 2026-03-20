@@ -8,3 +8,5 @@ results/agent_runs/*.json
 results/agent_runs/**/*.json
 results/agent_summaries/**/*.json
 __pycache__/
+.env
+.env.*

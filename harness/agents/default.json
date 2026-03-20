@@ -15,12 +15,18 @@
   "system_prompt_files": [
     "harness/PROMPT.md",
     "harness/POLICY.md",
-    "harness/TOOLS.md"
+    "harness/TOOLS.md",
+    "harness/PROOF_PATTERNS.md"
   ],
   "temperature": 0.0,
-  "max_completion_tokens": 1200,
+  "max_completion_tokens": 2000,
+  "max_attempts": 8,
   "headers": {},
   "header_envs": {},
-  "extra_body": {},
+  "extra_body": {
+    "thinking": {
+      "type": "disabled"
+    }
+  },
   "request_timeout_seconds": 120
 }
