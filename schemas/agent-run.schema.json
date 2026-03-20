@@ -160,8 +160,8 @@
         "max_tool_calls": {
           "type": "integer"
         },
-        "require_run_lean_check_before_finalize": {
-          "type": "boolean"
+        "lean_checks_amount": {
+          "type": "integer"
         },
         "request_timeout_seconds": {
           "type": "integer"

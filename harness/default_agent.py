@@ -53,7 +53,7 @@ class ResolvedAgentConfig:
     max_completion_tokens: int
     max_attempts: int
     max_tool_calls: int
-    require_run_lean_check_before_finalize: bool
+    lean_checks_amount: int
     headers: dict[str, str]
     header_envs: dict[str, str]
     env_contract: dict[str, list[str]]
@@ -292,10 +292,12 @@ def validate_agent_contract(config: dict[str, Any], label: str) -> list[str]:
         errors.append(f"{label}: mode {mode!r} requires adapter 'openai_compatible'")
     if mode == "custom" and adapter != "command":
         errors.append(f"{label}: mode 'custom' requires adapter 'command'")
-    if "require_run_lean_check_before_finalize" in config and not isinstance(
-        config.get("require_run_lean_check_before_finalize"), bool
-    ):
-        errors.append(f"{label}: 'require_run_lean_check_before_finalize' must be a boolean")
+    if "lean_checks_amount" in config:
+        lean_checks_amount = config.get("lean_checks_amount")
+        if not isinstance(lean_checks_amount, int) or isinstance(lean_checks_amount, bool):
+            errors.append(f"{label}: 'lean_checks_amount' must be an integer")
+        elif lean_checks_amount < 0:
+            errors.append(f"{label}: 'lean_checks_amount' must be >= 0")
 
     prompt_files = config.get("system_prompt_files", [])
     if isinstance(prompt_files, list):
@@ -438,7 +440,7 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         max_completion_tokens=int(config["max_completion_tokens"]),
         max_attempts=int(config.get("max_attempts", 5)),
         max_tool_calls=int(config.get("max_tool_calls", 24)),
-        require_run_lean_check_before_finalize=bool(config.get("require_run_lean_check_before_finalize", False)),
+        lean_checks_amount=int(config.get("lean_checks_amount", 0)),
         headers=resolve_headers(config),
         header_envs={str(key): str(value) for key, value in dict(config.get("header_envs", {})).items()},
         env_contract=env_contract(config),
@@ -505,13 +507,19 @@ def build_proof_hints(task: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def build_user_prompt(task: dict[str, Any], *, interactive: bool) -> str:
+def build_user_prompt(task: dict[str, Any], *, interactive: bool, lean_checks_amount: int = 0) -> str:
     editable_file = task["editable_files"][0]
+    lean_check_instruction = ""
+    if interactive and lean_checks_amount > 0:
+        lean_check_instruction = (
+            "Before you finalize, use `run_lean_check`.\n"
+            f"If it has not passed yet, keep using it until it passes or you have used it {lean_checks_amount} time(s).\n"
+        )
     mode_instructions = (
         "You are in interactive mode.\n"
         "Use the provided tools to read task-scoped public files, write the editable proof, run the official Lean check, inspect goals if available, and search public definitions.\n"
         "Do not ask for or attempt arbitrary shell access, arbitrary filesystem access, or files outside this task.\n"
-        "Before you finalize, use `run_lean_check` on your current proof at least once.\n"
+        f"{lean_check_instruction}"
         "When you are satisfied, return the final complete Lean proof file or leave the final proof in the editable file via the tool.\n"
     ) if interactive else (
         "The harness may give you several bounded repair rounds for the same task.\n"
@@ -542,7 +550,14 @@ def build_user_prompt(task: dict[str, Any], *, interactive: bool) -> str:
 def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[dict[str, str]]:
     return [
         {"role": "system", "content": build_system_prompt(config)},
-        {"role": "user", "content": build_user_prompt(task, interactive=config.mode == "interactive")},
+        {
+            "role": "user",
+            "content": build_user_prompt(
+                task,
+                interactive=config.mode == "interactive",
+                lean_checks_amount=config.lean_checks_amount,
+            ),
+        },
     ]
 
 
@@ -660,14 +675,21 @@ def build_interactive_tool_requirement_prompt(
     *,
     tool_calls_used: int,
     lean_checks_used: int,
+    lean_checks_amount: int,
+    lean_check_passed: bool,
     attempt_index: int,
     max_attempts: int,
 ) -> str:
     missing: list[str] = []
     if tool_calls_used == 0:
         missing.append("use at least one interactive tool")
-    if lean_checks_used == 0:
-        missing.append("run `run_lean_check` on the current proof")
+    if lean_checks_used < lean_checks_amount and not lean_check_passed:
+        if lean_checks_used == 0:
+            missing.append("run `run_lean_check` on the current proof")
+        else:
+            missing.append(
+                f"use `run_lean_check` again until it passes or you reach {lean_checks_amount} total check call(s)"
+            )
     requirement_text = " and ".join(missing) if missing else "use the interactive tools"
     return (
         f"You must {requirement_text} before finalizing (attempt {attempt_index} of {max_attempts}).\n"
@@ -912,7 +934,7 @@ def build_command_adapter_request(
             "max_completion_tokens": config.max_completion_tokens,
             "max_attempts": config.max_attempts,
             "max_tool_calls": config.max_tool_calls,
-            "require_run_lean_check_before_finalize": config.require_run_lean_check_before_finalize,
+            "lean_checks_amount": config.lean_checks_amount,
             "headers": config.headers,
             "extra_body": config.extra_body,
             "request_timeout_seconds": config.request_timeout_seconds,
@@ -1049,7 +1071,7 @@ def build_result(
             "max_completion_tokens": config.max_completion_tokens,
             "max_attempts": config.max_attempts,
             "max_tool_calls": config.max_tool_calls,
-            "require_run_lean_check_before_finalize": config.require_run_lean_check_before_finalize,
+            "lean_checks_amount": config.lean_checks_amount,
             "request_timeout_seconds": config.request_timeout_seconds,
             "headers": redact_headers(config.headers),
             "header_envs": config.header_envs,
@@ -1144,7 +1166,7 @@ def describe_command(config_path: Path) -> int:
                 "max_completion_tokens": config.max_completion_tokens,
                 "max_attempts": config.max_attempts,
                 "max_tool_calls": config.max_tool_calls,
-                "require_run_lean_check_before_finalize": config.require_run_lean_check_before_finalize,
+                "lean_checks_amount": config.lean_checks_amount,
                 "headers": redact_headers(config.headers),
                 "header_envs": config.header_envs,
                 "env_contract": config.env_contract,
@@ -1296,6 +1318,7 @@ def execute_interactive_agent_task(
     response_text = ""
     tool_calls_used = 0
     lean_checks_used = 0
+    lean_check_passed = False
 
     for attempt_index in range(1, config.max_attempts + 1):
         response = send_chat_completion(config, transcript, tools=runtime.tool_specs())
@@ -1315,7 +1338,7 @@ def execute_interactive_agent_task(
             final_candidate = extract_candidate_file(response_text)
             if final_candidate.strip():
                 runtime.write_editable_proof(final_candidate)
-            if config.require_run_lean_check_before_finalize and lean_checks_used == 0:
+            if lean_checks_used < config.lean_checks_amount and not lean_check_passed:
                 evaluation = runtime.evaluate_current()
                 attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
                 attempts[-1]["evaluation"] = evaluation
@@ -1328,6 +1351,8 @@ def execute_interactive_agent_task(
                             "content": build_interactive_tool_requirement_prompt(
                                 tool_calls_used=tool_calls_used,
                                 lean_checks_used=lean_checks_used,
+                                lean_checks_amount=config.lean_checks_amount,
+                                lean_check_passed=lean_check_passed,
                                 attempt_index=attempt_index,
                                 max_attempts=config.max_attempts,
                             ),
@@ -1337,7 +1362,10 @@ def execute_interactive_agent_task(
                 evaluation = {
                     "status": "failed",
                     "failure_mode": "missing_required_tool_use",
-                    "details": "interactive mode requires at least one run_lean_check call before finalizing",
+                    "details": (
+                        "interactive mode requires enough run_lean_check calls before finalizing "
+                        "unless one has already passed"
+                    ),
                 }
                 attempts[-1]["evaluation"] = evaluation
                 return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
@@ -1403,6 +1431,8 @@ def execute_interactive_agent_task(
             tool_calls_used += 1
             if tool_name == "run_lean_check":
                 lean_checks_used += 1
+                if result.get("status") == "passed":
+                    lean_check_passed = True
             transcript.append(
                 {
                     "role": "tool",

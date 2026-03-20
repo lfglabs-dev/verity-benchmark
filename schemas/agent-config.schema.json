@@ -110,9 +110,10 @@
       "type": "integer",
       "minimum": 1
     },
-    "require_run_lean_check_before_finalize": {
-      "description": "Require interactive runs to call run_lean_check before the agent may finalize.",
-      "type": "boolean"
+    "lean_checks_amount": {
+      "description": "Minimum number of run_lean_check calls required before finalize unless one check has already passed.",
+      "type": "integer",
+      "minimum": 0
     },
     "headers": {
       "type": "object",

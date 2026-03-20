@@ -23,7 +23,7 @@
   "max_completion_tokens": 2000,
   "max_attempts": 1,
   "max_tool_calls": 24,
-  "require_run_lean_check_before_finalize": false,
+  "lean_checks_amount": 0,
   "headers": {},
   "header_envs": {},
   "extra_body": {
