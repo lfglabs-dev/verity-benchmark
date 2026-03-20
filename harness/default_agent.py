@@ -1192,41 +1192,21 @@ def execute_strict_agent_task(
     }
     attempts: list[dict[str, Any]] = []
 
-    for attempt_index in range(1, config.max_attempts + 1):
-        response = send_chat_completion(config, attempt_messages)
-        response_text = extract_text(response)
-        candidate_text = extract_candidate_file(response_text)
-        evaluation = evaluate_candidate_submission(task, candidate_text)
-        attempts.append(
-            {
-                "attempt": attempt_index,
-                "mode": "strict",
-                "messages": attempt_messages,
-                "response": response,
-                "response_text": response_text,
-                "candidate_file_contents": candidate_text,
-                "evaluation": evaluation,
-            }
-        )
-        if evaluation["status"] == "passed":
-            break
-        if evaluation.get("failure_mode") == "empty_response":
-            attempt_messages = build_finalization_messages(
-                messages,
-                response,
-                attempt_index=attempt_index,
-                max_attempts=config.max_attempts,
-            )
-            continue
-        if evaluation.get("failure_mode") != "lean_check_failed" or not candidate_text.strip():
-            break
-        attempt_messages = build_repair_messages(
-            messages,
-            candidate_text,
-            evaluation,
-            attempt_index=attempt_index,
-            max_attempts=config.max_attempts,
-        )
+    response = send_chat_completion(config, attempt_messages)
+    response_text = extract_text(response)
+    candidate_text = extract_candidate_file(response_text)
+    evaluation = evaluate_candidate_submission(task, candidate_text)
+    attempts.append(
+        {
+            "attempt": 1,
+            "mode": "strict",
+            "messages": attempt_messages,
+            "response": response,
+            "response_text": response_text,
+            "candidate_file_contents": candidate_text,
+            "evaluation": evaluation,
+        }
+    )
     return response, response_text, evaluation, attempts
 
 
