@@ -87,6 +87,7 @@ Optional config-only extensions for OpenAI-compatible backends:
 - `request_timeout_seconds`: request timeout for both probe and run
 - `attempts`: bounded number of propose-check-repair rounds per task
 - `max_tool_calls`: interactive-mode tool budget
+- `assistant_turns_per_attempt`: interactive-mode cap on assistant/tool exchanges before the harness evaluates the current proof as that attempt's submission
 
 Mode summary:
 

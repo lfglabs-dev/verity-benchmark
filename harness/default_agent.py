@@ -28,6 +28,8 @@ DEFAULT_AGENT_CONFIG_PATH = ROOT / BENCHMARK_DEFAULTS.default_agent_config
 PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
 MAX_ERROR_FEEDBACK_CHARS = 6000
 MAX_REASONING_SNIPPET_CHARS = 4000
+MAX_INTERACTIVE_TOOL_SUMMARY_ITEMS = 8
+MAX_INTERACTIVE_TOOL_DETAIL_CHARS = 1200
 ADAPTER_PROTOCOL_VERSION = 1
 
 
@@ -53,6 +55,7 @@ class ResolvedAgentConfig:
     max_completion_tokens: int
     attempts: int
     max_tool_calls: int
+    assistant_turns_per_attempt: int
     headers: dict[str, str]
     header_envs: dict[str, str]
     env_contract: dict[str, list[str]]
@@ -298,6 +301,13 @@ def validate_agent_contract(config: dict[str, Any], label: str) -> list[str]:
         elif attempts < 1:
             errors.append(f"{label}: 'attempts' must be >= 1")
 
+    turns_per_attempt = config.get("assistant_turns_per_attempt")
+    if turns_per_attempt is not None:
+        if not isinstance(turns_per_attempt, int) or isinstance(turns_per_attempt, bool):
+            errors.append(f"{label}: 'assistant_turns_per_attempt' must be an integer")
+        elif turns_per_attempt < 1:
+            errors.append(f"{label}: 'assistant_turns_per_attempt' must be >= 1")
+
     prompt_files = config.get("system_prompt_files", [])
     if isinstance(prompt_files, list):
         for index, item in enumerate(prompt_files):
@@ -439,6 +449,7 @@ def resolve_config(path: Path, *, require_secrets: bool, profile: str | None = N
         max_completion_tokens=int(config["max_completion_tokens"]),
         attempts=int(config.get("attempts", config.get("max_attempts", 5))),
         max_tool_calls=int(config.get("max_tool_calls", 24)),
+        assistant_turns_per_attempt=int(config.get("assistant_turns_per_attempt", 1)),
         headers=resolve_headers(config),
         header_envs={str(key): str(value) for key, value in dict(config.get("header_envs", {})).items()},
         env_contract=env_contract(config),
@@ -510,6 +521,9 @@ def build_user_prompt(task: dict[str, Any], *, interactive: bool) -> str:
     mode_instructions = (
         "You are in interactive mode.\n"
         "Use the provided tools to read task-scoped public files, write the editable proof, inspect goals after inserting explicit holes, and search public definitions.\n"
+        "Recommended workflow: read the editable file and only the most relevant public files, write a draft early, use explicit holes plus goal inspection when local proof state is unclear, and use definition search mainly for missing names.\n"
+        "Avoid spending many turns re-reading the same files or repeating broad searches without changing the proof.\n"
+        "Once you have a plausible draft, submit it and use checker feedback instead of extending the exploration loop.\n"
         "Do not ask for or attempt arbitrary shell access, arbitrary filesystem access, or files outside this task.\n"
         "When you are satisfied, return the final complete Lean proof file or leave the final proof in the editable file via the tool.\n"
     ) if interactive else (
@@ -572,6 +586,18 @@ def build_repair_guidance(details: str) -> str:
     if "unsolved goals" in details and "if " in details:
         hints.append(
             "- If `simp` leaves finite residual equalities or `if` expressions, finish those with `native_decide` or `decide`."
+        )
+    if "unsolved goals" in details:
+        hints.append(
+            "- Reduce the proof to one local subgoal at a time. If needed, replace the fragile tail with an explicit hole and inspect that goal before rewriting the whole file."
+        )
+    if "candidate proof contains a rejected placeholder token" in details:
+        hints.append(
+            "- Replace placeholders with a real proof. If the proof shape is unclear, write an explicit hole like `?_` and inspect goals before the next submission."
+        )
+    if "changed the editable theorem statement" in details:
+        hints.append(
+            "- Keep the theorem header and statement exactly as provided. Only change the proof body and any private helper lemmas."
         )
     return "\n".join(hints)
 
@@ -659,6 +685,114 @@ def build_interactive_repair_prompt(
     if guidance:
         prompt += f"\nGeneric repair guidance:\n{guidance}\n"
     return prompt
+
+
+def summarize_interactive_tool_result(tool_result: dict[str, Any]) -> str | None:
+    name = str(tool_result.get("name", ""))
+    result = tool_result.get("result", {})
+    if not isinstance(result, dict):
+        return None
+    if name == "read_public_file":
+        path = str(result.get("path", "")).strip()
+        status = str(result.get("status", "")).strip()
+        if path:
+            return f"Read `{path}` ({status})."
+        return None
+    if name == "write_editable_proof":
+        lines = result.get("lines")
+        if isinstance(lines, int):
+            return f"Wrote a new proof draft ({lines} lines)."
+        return "Wrote a new proof draft."
+    if name == "search_public_defs":
+        query = str(result.get("query", "")).strip()
+        matches = result.get("matches", [])
+        if not isinstance(matches, list):
+            matches = []
+        names: list[str] = []
+        for match in matches[:4]:
+            if not isinstance(match, dict):
+                continue
+            match_name = str(match.get("name", "")).strip()
+            if match_name:
+                names.append(match_name)
+        if query and names:
+            return f"Search `{query}` found: {', '.join(names)}."
+        if query:
+            return f"Search `{query}` found no matching declarations."
+        return None
+    if name == "inspect_lean_goals":
+        status = str(result.get("status", "")).strip()
+        holes = result.get("holes", [])
+        hole_suffix = ""
+        if isinstance(holes, list) and holes:
+            shown = ", ".join(str(item) for item in holes[:3])
+            hole_suffix = f" for holes {shown}"
+        details = " ".join(str(result.get("details", "")).split())
+        detail_suffix = f" Details: {details[:180]}" if details else ""
+        return f"Goal inspection returned {status}{hole_suffix}.{detail_suffix}".strip()
+    return None
+
+
+def build_interactive_tool_handoff(
+    attempts: list[dict[str, Any]],
+    *,
+    tool_calls_used: int,
+    max_tool_calls: int,
+) -> str:
+    items: list[str] = []
+    for attempt in reversed(attempts):
+        tool_results = attempt.get("tool_results", [])
+        if not isinstance(tool_results, list):
+            continue
+        for tool_result in reversed(tool_results):
+            if not isinstance(tool_result, dict):
+                continue
+            summary = summarize_interactive_tool_result(tool_result)
+            if summary and summary not in items:
+                items.append(summary)
+            if len(items) >= MAX_INTERACTIVE_TOOL_SUMMARY_ITEMS:
+                break
+        if len(items) >= MAX_INTERACTIVE_TOOL_SUMMARY_ITEMS:
+            break
+    lines = [
+        "Recent interactive working state:",
+        f"- Tool budget used: {tool_calls_used}/{max_tool_calls}.",
+    ]
+    if items:
+        lines.append("- Recent tool results:")
+        lines.extend(f"  * {item}" for item in reversed(items))
+    else:
+        lines.append("- No tool results were recorded yet.")
+    handoff = "\n".join(lines)
+    return handoff[:MAX_INTERACTIVE_TOOL_DETAIL_CHARS]
+
+
+def build_interactive_repair_messages(
+    base_messages: list[dict[str, Any]],
+    candidate_text: str,
+    evaluation: dict[str, Any],
+    attempts: list[dict[str, Any]],
+    *,
+    attempt_index: int,
+    max_attempts: int,
+    tool_calls_used: int,
+    max_tool_calls: int,
+) -> list[dict[str, Any]]:
+    repair_prompt = build_interactive_repair_prompt(
+        candidate_text,
+        evaluation,
+        attempt_index=attempt_index,
+        max_attempts=max_attempts,
+    )
+    handoff = build_interactive_tool_handoff(
+        attempts,
+        tool_calls_used=tool_calls_used,
+        max_tool_calls=max_tool_calls,
+    )
+    return [
+        *base_messages,
+        {"role": "user", "content": f"{handoff}\n\n{repair_prompt}"},
+    ]
 
 
 def send_chat_completion(
@@ -1033,6 +1167,7 @@ def build_result(
             "max_completion_tokens": config.max_completion_tokens,
             "attempts": config.attempts,
             "max_tool_calls": config.max_tool_calls,
+            "assistant_turns_per_attempt": config.assistant_turns_per_attempt,
             "request_timeout_seconds": config.request_timeout_seconds,
             "headers": redact_headers(config.headers),
             "header_envs": config.header_envs,
@@ -1127,6 +1262,7 @@ def describe_command(config_path: Path) -> int:
                 "max_completion_tokens": config.max_completion_tokens,
                 "attempts": config.attempts,
                 "max_tool_calls": config.max_tool_calls,
+                "assistant_turns_per_attempt": config.assistant_turns_per_attempt,
                 "headers": redact_headers(config.headers),
                 "header_envs": config.header_envs,
                 "env_contract": config.env_contract,
@@ -1277,99 +1413,99 @@ def execute_interactive_agent_task(
     response: dict[str, Any] = {}
     response_text = ""
     tool_calls_used = 0
+    assistant_turn_index = 0
 
     for attempt_index in range(1, config.attempts + 1):
-        response = send_chat_completion(config, transcript, tools=runtime.tool_specs())
-        response_text = extract_text(response)
-        tool_calls = extract_tool_calls(response)
-        attempts.append(
-            {
-                "attempt": attempt_index,
-                "mode": "interactive",
-                "messages": list(transcript),
-                "response": response,
-                "response_text": response_text,
-                "tool_calls": tool_calls,
-            }
-        )
-        if not tool_calls:
-            final_candidate = extract_candidate_file(response_text)
-            if final_candidate.strip():
-                runtime.write_editable_proof(final_candidate)
-            evaluation = runtime.evaluate_current()
-            if evaluation["status"] != "passed" and attempt_index < config.attempts:
-                transcript.append({"role": "assistant", "content": response_text})
-                if runtime.current_proof_text.strip():
-                    transcript.append(
-                        {
-                            "role": "user",
-                            "content": build_interactive_repair_prompt(
-                                runtime.current_proof_text,
-                                evaluation,
-                                attempt_index=attempt_index,
-                                max_attempts=config.attempts,
-                            ),
-                        }
-                    )
-                else:
-                    transcript.append(
-                        {
-                            "role": "user",
-                            "content": build_finalization_messages(
-                                messages,
-                                response,
-                                attempt_index=attempt_index,
-                                max_attempts=config.attempts,
-                            )[-1]["content"],
-                        }
-                    )
-                attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
-                attempts[-1]["evaluation"] = evaluation
-                continue
-            attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
-            attempts[-1]["evaluation"] = evaluation
-            return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
-
-        message = response.get("choices", [{}])[0].get("message", {})
-        transcript.append(
-            {
-                "role": "assistant",
-                "content": response_text,
-                "tool_calls": tool_calls,
-            }
-        )
-        for tool_call in tool_calls:
-            if tool_calls_used >= config.max_tool_calls:
-                evaluation = runtime.evaluate_current()
-                if evaluation.get("failure_mode") == "empty_response":
-                    evaluation = {
-                        "status": "failed",
-                        "failure_mode": "tool_budget_exhausted",
-                        "details": f"interactive tool-call budget exhausted after {tool_calls_used} tool calls",
-                    }
-                attempts[-1]["budget_exhausted"] = True
-                attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
-                attempts[-1]["evaluation"] = evaluation
-                return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
-            function_call = tool_call.get("function", {})
-            tool_name = str(function_call.get("name", ""))
-            arguments = parse_tool_arguments(function_call.get("arguments"))
-            result = runtime.execute_tool(tool_name, arguments)
-            tool_calls_used += 1
-            transcript.append(
+        attempt_start = len(attempts)
+        for turn_in_attempt in range(1, config.assistant_turns_per_attempt + 1):
+            assistant_turn_index += 1
+            response = send_chat_completion(config, transcript, tools=runtime.tool_specs())
+            response_text = extract_text(response)
+            tool_calls = extract_tool_calls(response)
+            attempts.append(
                 {
-                    "role": "tool",
-                    "tool_call_id": str(tool_call.get("id", "")),
-                    "content": tool_result_json(result),
+                    "attempt": attempt_index,
+                    "assistant_turn": assistant_turn_index,
+                    "turn_in_attempt": turn_in_attempt,
+                    "mode": "interactive",
+                    "messages": list(transcript),
+                    "response": response,
+                    "response_text": response_text,
+                    "tool_calls": tool_calls,
                 }
             )
-            attempts[-1].setdefault("tool_results", []).append(
+            if not tool_calls:
+                final_candidate = extract_candidate_file(response_text)
+                if final_candidate.strip():
+                    runtime.write_editable_proof(final_candidate)
+                break
+
+            transcript.append(
                 {
-                    "tool_call_id": str(tool_call.get("id", "")),
-                    "name": tool_name,
-                    "arguments": arguments,
-                    "result": result,
+                    "role": "assistant",
+                    "content": response_text,
+                    "tool_calls": tool_calls,
                 }
+            )
+            for tool_call in tool_calls:
+                if tool_calls_used >= config.max_tool_calls:
+                    evaluation = runtime.evaluate_current()
+                    if evaluation.get("failure_mode") == "empty_response":
+                        evaluation = {
+                            "status": "failed",
+                            "failure_mode": "tool_budget_exhausted",
+                            "details": f"interactive tool-call budget exhausted after {tool_calls_used} tool calls",
+                        }
+                    attempts[-1]["budget_exhausted"] = True
+                    attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
+                    attempts[-1]["evaluation"] = evaluation
+                    return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
+                function_call = tool_call.get("function", {})
+                tool_name = str(function_call.get("name", ""))
+                arguments = parse_tool_arguments(function_call.get("arguments"))
+                result = runtime.execute_tool(tool_name, arguments)
+                tool_calls_used += 1
+                transcript.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": str(tool_call.get("id", "")),
+                        "content": tool_result_json(result),
+                    }
+                )
+                attempts[-1].setdefault("tool_results", []).append(
+                    {
+                        "tool_call_id": str(tool_call.get("id", "")),
+                        "name": tool_name,
+                        "arguments": arguments,
+                        "result": result,
+                    }
+                )
+
+        evaluation = runtime.evaluate_current()
+        for attempt_record in attempts[attempt_start:]:
+            attempt_record["candidate_file_contents"] = runtime.current_proof_text
+            attempt_record["evaluation"] = evaluation
+        if evaluation["status"] == "passed":
+            return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
+        if attempt_index >= config.attempts:
+            break
+        if runtime.current_proof_text.strip():
+            transcript = build_interactive_repair_messages(
+                messages,
+                runtime.current_proof_text,
+                evaluation,
+                attempts,
+                attempt_index=attempt_index,
+                max_attempts=config.attempts,
+                tool_calls_used=tool_calls_used,
+                max_tool_calls=config.max_tool_calls,
+            )
+        else:
+            transcript = build_finalization_messages(
+                messages,
+                response,
+                attempt_index=attempt_index,
+                max_attempts=config.attempts,
             )
 
     evaluation = runtime.evaluate_current()
@@ -1377,13 +1513,18 @@ def execute_interactive_agent_task(
         evaluation = {
             "status": "failed",
             "failure_mode": "attempt_budget_exhausted",
-            "details": f"interactive attempt budget exhausted after {config.attempts} assistant turns",
+            "details": (
+                "interactive attempt budget exhausted after "
+                f"{config.attempts} submission attempts and "
+                f"{assistant_turn_index} assistant turns"
+            ),
         }
     attempts.append(
         {
             "attempt": config.attempts,
             "mode": "interactive",
             "budget_exhausted": True,
+            "assistant_turn": assistant_turn_index,
             "candidate_file_contents": runtime.current_proof_text,
             "evaluation": evaluation,
         }

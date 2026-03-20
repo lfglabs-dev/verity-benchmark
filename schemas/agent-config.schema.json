@@ -110,6 +110,11 @@
       "type": "integer",
       "minimum": 1
     },
+    "assistant_turns_per_attempt": {
+      "description": "Maximum number of assistant/tool exchanges allowed before the harness evaluates the current interactive proof as one submission attempt.",
+      "type": "integer",
+      "minimum": 1
+    },
     "headers": {
       "type": "object",
       "additionalProperties": {

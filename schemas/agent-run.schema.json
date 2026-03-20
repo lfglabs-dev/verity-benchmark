@@ -160,6 +160,9 @@
         "max_tool_calls": {
           "type": "integer"
         },
+        "assistant_turns_per_attempt": {
+          "type": "integer"
+        },
         "request_timeout_seconds": {
           "type": "integer"
         },

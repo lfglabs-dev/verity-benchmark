@@ -23,6 +23,7 @@
   "max_completion_tokens": 2000,
   "attempts": 8,
   "max_tool_calls": 24,
+  "assistant_turns_per_attempt": 1,
   "headers": {},
   "header_envs": {},
   "extra_body": {

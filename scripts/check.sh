@@ -102,6 +102,7 @@ config = ResolvedAgentConfig(
     max_completion_tokens=1,
     attempts=1,
     max_tool_calls=1,
+    assistant_turns_per_attempt=1,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
@@ -189,6 +190,7 @@ config = ResolvedAgentConfig(
     max_completion_tokens=1,
     attempts=2,
     max_tool_calls=1,
+    assistant_turns_per_attempt=1,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
@@ -251,6 +253,7 @@ config = ResolvedAgentConfig(
     max_completion_tokens=1,
     attempts=3,
     max_tool_calls=2,
+    assistant_turns_per_attempt=2,
     headers={},
     header_envs={},
     env_contract={"required": [], "optional": []},
@@ -300,6 +303,87 @@ finally:
 repair_prompt = attempts[2]["messages"][-1]["content"]
 if "Lean checker output:" not in repair_prompt:
     raise SystemExit("expected tool-written invalid proof to feed checker output into the next repair prompt")
+PY
+python3 - <<'PY'
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path("harness").resolve()))
+
+import default_agent
+from default_agent import ResolvedAgentConfig, build_messages, execute_interactive_agent_task, resolve_task
+
+task = resolve_task("ethereum/deposit_contract_minimal/deposit_count")
+config = ResolvedAgentConfig(
+    profile="interactive-test",
+    agent_id="agent",
+    mode="interactive",
+    track="custom",
+    run_slug="interactive-test",
+    adapter="openai_compatible",
+    config_path="harness/agents/interactive.json",
+    base_url="https://example.invalid",
+    base_url_env=None,
+    model="builtin/smart",
+    model_env="VERITY_BENCHMARK_AGENT_MODEL",
+    api_key="sk-test",
+    api_key_env="VERITY_BENCHMARK_AGENT_API_KEY",
+    chat_completions_path="/chat/completions",
+    models_path="/models",
+    system_prompt_files=[],
+    temperature=0.0,
+    max_completion_tokens=1,
+    attempts=2,
+    max_tool_calls=4,
+    assistant_turns_per_attempt=1,
+    headers={},
+    header_envs={},
+    env_contract={"required": [], "optional": []},
+    extra_body={},
+    request_timeout_seconds=1,
+    command=[],
+)
+
+responses = iter([
+    {
+        "choices": [
+            {
+                "message": {
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "call-1",
+                            "type": "function",
+                            "function": {
+                                "name": "write_editable_proof",
+                                "arguments": "{\"content\": \"theorem x : True := by\\n  trivial\\n\"}",
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
+    },
+    {"choices": [{"message": {"content": ""}}]},
+])
+evaluations = iter([
+    {"status": "failed", "failure_mode": "lean_check_failed", "details": "first forced submission"},
+    {"status": "passed"},
+])
+original_send = default_agent.send_chat_completion
+original_evaluate = default_agent.TaskProofRuntime.evaluate_current
+default_agent.send_chat_completion = lambda *_args, **_kwargs: next(responses)
+default_agent.TaskProofRuntime.evaluate_current = lambda self, **_kwargs: next(evaluations)
+try:
+    _, _, _, evaluation, attempts, _ = execute_interactive_agent_task(config, task, build_messages(config, task))
+finally:
+    default_agent.send_chat_completion = original_send
+    default_agent.TaskProofRuntime.evaluate_current = original_evaluate
+
+if attempts[0].get("turn_in_attempt") != 1 or attempts[0]["evaluation"]["failure_mode"] != "lean_check_failed":
+    raise SystemExit("expected the first interactive attempt to be evaluated after one assistant/tool turn")
+if evaluation.get("status") != "passed":
+    raise SystemExit(f"expected the second attempt to pass, got {evaluation!r}")
 PY
 python3 harness/default_agent.py describe --profile "$DEFAULT_AGENT_PROFILE"
 python3 harness/default_agent.py describe --profile "$CUSTOM_AGENT_PROFILE"
