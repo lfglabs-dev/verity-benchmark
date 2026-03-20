@@ -131,6 +131,8 @@ def main() -> int:
     families: dict[str, dict] = {}
     implementations: dict[tuple[str, str], dict] = {}
     cases: dict[str, dict] = {}
+    implementation_case_refs: dict[tuple[str, str], set[str]] = {}
+    discovered_task_refs: dict[str, list[str]] = {}
 
     for path in family_manifests:
         data = load_manifest(path)
@@ -141,23 +143,35 @@ def main() -> int:
 
     for path in implementation_manifests:
         data = load_manifest(path)
-        errors.extend(validate(data, schema_files["implementation"], str(path.relative_to(ROOT))))
+        rel = str(path.relative_to(ROOT))
+        errors.extend(validate(data, schema_files["implementation"], rel))
         family_id = data.get("family_id")
         implementation_id = data.get("implementation_id")
         if isinstance(family_id, str) and isinstance(implementation_id, str):
             implementations[(family_id, implementation_id)] = data
+            case_ids = data.get("case_ids")
+            if isinstance(case_ids, list):
+                implementation_case_refs[(family_id, implementation_id)] = {
+                    case_id for case_id in case_ids if isinstance(case_id, str)
+                }
 
     for path in case_manifests:
         data = load_manifest(path)
         rel = str(path.relative_to(ROOT))
         errors.extend(validate(data, schema_files["case"], rel))
         expected_split = "active" if path.parts[-4] == "cases" else "backlog"
+        expected_project = path.parent.parent.name
+        expected_case_id = path.parent.name
         if data.get("split") != expected_split:
             errors.append(f"{rel}: split must match containing suite directory ({expected_split!r})")
         project = data.get("project")
         case_id = data.get("case_id")
         family_id = data.get("family_id")
         implementation_id = data.get("implementation_id")
+        if project != expected_project:
+            errors.append(f"{rel}: project must match containing directory ({expected_project!r})")
+        if case_id != expected_case_id:
+            errors.append(f"{rel}: case_id must match containing directory ({expected_case_id!r})")
         if isinstance(project, str) and isinstance(case_id, str):
             full_case_id = f"{project}/{case_id}"
             cases[full_case_id] = data
@@ -184,6 +198,12 @@ def main() -> int:
         family_id = data.get("family_id")
         implementation_id = data.get("implementation_id")
         source_ref = data.get("source_ref")
+        task_id = data.get("task_id")
+        expected_split = "active" if path.parts[-5] == "cases" else "backlog"
+        if data.get("split") != expected_split:
+            errors.append(f"{rel}: split must match containing suite directory ({expected_split!r})")
+        if task_id != path.stem:
+            errors.append(f"{rel}: task_id must match filename stem ({path.stem!r})")
         if not isinstance(case_id, str) or case_id not in cases:
             errors.append(f"{rel}: unknown case_id {case_id!r}")
         else:
@@ -199,6 +219,9 @@ def main() -> int:
                     errors.append(
                         f"{rel}: source_ref {source_ref!r} does not match parent case source_ref {case_source_ref!r}"
                     )
+                case_split = cases[case_id].get("split")
+                if data.get("split") != case_split:
+                    errors.append(f"{rel}: split must match parent case split ({case_split!r})")
         if not isinstance(family_id, str) or family_id not in families:
             errors.append(f"{rel}: unknown family_id {family_id!r}")
         if not isinstance(family_id, str) or not isinstance(implementation_id, str):
@@ -255,6 +278,9 @@ def main() -> int:
             errors.append(f"{rel}: reference_solution_declaration must be a non-empty string")
         elif theorem_name != reference_solution_declaration:
             errors.append(f"{rel}: theorem_name must match reference_solution_declaration")
+        if isinstance(case_id, str) and isinstance(task_id, str):
+            task_ref = f"{case_id}/{task_id}"
+            discovered_task_refs.setdefault(task_ref, []).append(rel)
 
     for family_id, data in families.items():
         for case_id in data.get("case_ids", []):
@@ -265,6 +291,29 @@ def main() -> int:
                 errors.append(
                     f"families/{family_id}/family.yaml: missing implementation reference {implementation_id}"
                 )
+
+    for (family_id, implementation_id), data in implementations.items():
+        rel = f"families/{family_id}/implementations/{implementation_id}/implementation.yaml"
+        manifest_case_ids = implementation_case_refs.get((family_id, implementation_id), set())
+        actual_case_ids = {
+            case_id
+            for case_id, case_data in cases.items()
+            if case_data.get("family_id") == family_id and case_data.get("implementation_id") == implementation_id
+        }
+        for case_id in sorted(manifest_case_ids - actual_case_ids):
+            errors.append(f"{rel}: case_ids references unknown or mismatched case {case_id}")
+        for case_id in sorted(actual_case_ids - manifest_case_ids):
+            errors.append(f"{rel}: case_ids is missing case {case_id}")
+        split = data.get("split")
+        for case_id in sorted(actual_case_ids):
+            case_split = cases[case_id].get("split")
+            if split != case_split:
+                errors.append(f"{rel}: split {split!r} does not match case {case_id} split {case_split!r}")
+
+    for task_ref, paths in sorted(discovered_task_refs.items()):
+        if len(paths) > 1:
+            joined = ", ".join(paths)
+            errors.append(f"duplicate task ref {task_ref}: {joined}")
 
     if errors:
         print("manifest validation failed", file=sys.stderr)

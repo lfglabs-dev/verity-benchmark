@@ -93,6 +93,7 @@ def resolve_task_manifest(task_ref: str) -> Path:
 
 def discover_task_refs(suite_filter: str = "active") -> list[str]:
     refs: list[str] = []
+    seen_paths: dict[str, Path] = {}
     if suite_filter == "all":
         roots = [ROOT / "cases", ROOT / "backlog"]
     elif suite_filter == "backlog":
@@ -104,7 +105,15 @@ def discover_task_refs(suite_filter: str = "active") -> list[str]:
         if not root.exists():
             continue
         for task_manifest in sorted(root.glob("*/*/tasks/*.yaml")):
-            refs.append(task_ref_from_manifest(task_manifest))
+            task_ref = task_ref_from_manifest(task_manifest)
+            previous = seen_paths.get(task_ref)
+            if previous is not None:
+                raise SystemExit(
+                    "duplicate task ref discovered across suites: "
+                    f"{task_ref} ({previous.relative_to(ROOT)} and {task_manifest.relative_to(ROOT)})"
+                )
+            seen_paths[task_ref] = task_manifest
+            refs.append(task_ref)
     return refs
 
 
@@ -320,11 +329,15 @@ def load_case_records_for_suite(suite: str) -> list[dict[str, Any]]:
 
 
 def aggregate_results(task_refs: list[str], suite: str) -> dict[str, Any]:
+    explicit_task_refs = bool(task_refs)
     if not task_refs:
         task_refs = discover_task_refs(suite)
 
     results = []
+    selected_case_ids: set[str] = set()
     for task_ref in task_refs:
+        task_manifest = resolve_task_manifest(task_ref)
+        selected_case_ids.add(load_task_record(task_manifest)["case_id"])
         path = TASK_RESULTS_DIR / f"{task_ref.replace('/', '__')}.json"
         if path.exists():
             results.append(json.loads(path.read_text(encoding="utf-8")))
@@ -346,7 +359,12 @@ def aggregate_results(task_refs: list[str], suite: str) -> dict[str, Any]:
         readiness_counts[key] = dict(sorted(Counter(item["readiness"][key] for item in results).items()))
 
     case_rows = []
-    for case_record in load_case_records_for_suite(suite):
+    all_case_records = load_case_records_for_suite(suite)
+    if explicit_task_refs:
+        case_records = [record for record in all_case_records if record["case_id"] in selected_case_ids]
+    else:
+        case_records = all_case_records
+    for case_record in case_records:
         case_id = case_record["case_id"]
         case_results = by_case.get(case_id, [])
         statuses = [entry["status"] for entry in case_results]
