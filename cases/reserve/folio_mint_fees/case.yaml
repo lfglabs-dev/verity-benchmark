@@ -1,0 +1,38 @@
+manifest_kind: case
+project: reserve
+case_id: folio_mint_fees
+schema_version: 1
+split: active
+family_id: reserve
+implementation_id: reserve_index_dtf
+stage: build_green
+translation_status: translated
+spec_status: frozen
+proof_status: partial
+upstream_repo: https://github.com/reserve-protocol/reserve-index-dtf
+original_contract_path: contracts/utils/FolioLib.sol
+source_ref: https://github.com/reserve-protocol/reserve-index-dtf:contracts/utils/FolioLib.sol
+lean_target: Benchmark.Cases.Reserve.FolioMintFees.Compile
+selected_functions:
+  - computeMintFees
+source_language: solidity
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
+lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - dao_registry_elided
+  - erc20_transfers_elided
+  - tvl_fee_elided
+  - mint_fee_slice
+abstraction_notes: >
+  The benchmark isolates the fee-split arithmetic from FolioLib.computeMintFees.
+  The DAO fee registry is abstracted as direct parameters (daoFeeNumerator,
+  daoFeeDenominator, daoFeeFloor). Token transfers and share minting are omitted
+  so tasks focus on the ceiling-division rounding and DAO floor enforcement.
+unsupported_feature_codes: []
+spec_target: Benchmark.Cases.Reserve.FolioMintFees.Specs
+proof_target: Benchmark.Cases.Reserve.FolioMintFees.Proofs
+notes: >
+  Mint fee slice of Reserve Protocol Folio. The Verity model keeps the three-way
+  fee split (receiver, DAO, fee recipients) with DAO floor enforcement and
+  self-fee burn, omitting the ERC20 mechanics and registry calls.

@@ -1,0 +1,34 @@
+manifest_kind: task
+schema_version: 1
+task_id: minter_pays_at_least_dao
+case_id: reserve/folio_mint_fees
+split: active
+family_id: reserve
+implementation_id: reserve_index_dtf
+source_ref: https://github.com/reserve-protocol/reserve-index-dtf:contracts/utils/FolioLib.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.Reserve.FolioMintFees.minter_pays_at_least_dao
+proof_family: functional_correctness
+property_class: fee_ordering
+difficulty: easy
+category: arithmetic-invariant
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/reserve/folio_mint_fees/verity/Contract.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Contract.lean
+specification_files:
+  - cases/reserve/folio_mint_fees/verity/Specs.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Specs.lean
+editable_files:
+  - Benchmark/Generated/Reserve/FolioMintFees/Tasks/MinterPaysAtLeastDao.lean
+reference_solution_module: Benchmark.Cases.Reserve.FolioMintFees.Proofs
+reference_solution_declaration: Benchmark.Cases.Reserve.FolioMintFees.minter_pays_at_least_dao
+abstraction_level: protocol_slice
+abstraction_notes: >
+  Proves that the total fee deducted from the minter (shares - sharesOut) is at
+  least the DAO's portion. This follows from totalFeeShares >= daoFeeShares by
+  the max() operation in the fee computation.
+unsupported_feature_codes: []

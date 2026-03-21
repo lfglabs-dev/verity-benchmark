@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: no_value_creation
+case_id: reserve/folio_mint_fees
+split: active
+family_id: reserve
+implementation_id: reserve_index_dtf
+source_ref: https://github.com/reserve-protocol/reserve-index-dtf:contracts/utils/FolioLib.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.Reserve.FolioMintFees.no_value_creation
+proof_family: functional_correctness
+property_class: conservation
+difficulty: medium
+category: arithmetic-invariant
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/reserve/folio_mint_fees/verity/Contract.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Contract.lean
+specification_files:
+  - cases/reserve/folio_mint_fees/verity/Specs.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Specs.lean
+editable_files:
+  - Benchmark/Generated/Reserve/FolioMintFees/Tasks/NoValueCreation.lean
+reference_solution_module: Benchmark.Cases.Reserve.FolioMintFees.Proofs
+reference_solution_declaration: Benchmark.Cases.Reserve.FolioMintFees.no_value_creation
+abstraction_level: protocol_slice
+abstraction_notes: >
+  Proves that the three returned share amounts (receiver, DAO, fee recipients)
+  never exceed the original share input. The gap is folioSelfShares burned.
+unsupported_feature_codes: []

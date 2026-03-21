@@ -1,0 +1,34 @@
+manifest_kind: task
+schema_version: 1
+task_id: dao_floor_enforced
+case_id: reserve/folio_mint_fees
+split: active
+family_id: reserve
+implementation_id: reserve_index_dtf
+source_ref: https://github.com/reserve-protocol/reserve-index-dtf:contracts/utils/FolioLib.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.Reserve.FolioMintFees.dao_floor_enforced
+proof_family: functional_correctness
+property_class: fee_floor
+difficulty: medium
+category: arithmetic-invariant
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/reserve/folio_mint_fees/verity/Contract.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Contract.lean
+specification_files:
+  - cases/reserve/folio_mint_fees/verity/Specs.lean
+  - Benchmark/Cases/Reserve/FolioMintFees/Specs.lean
+editable_files:
+  - Benchmark/Generated/Reserve/FolioMintFees/Tasks/DaoFloorEnforced.lean
+reference_solution_module: Benchmark.Cases.Reserve.FolioMintFees.Proofs
+reference_solution_declaration: Benchmark.Cases.Reserve.FolioMintFees.dao_floor_enforced
+abstraction_level: protocol_slice
+abstraction_notes: >
+  Proves the DAO always receives at least ceilDiv(shares * effectiveFloor, 1e18)
+  where effectiveFloor = max(daoFeeFloor, MIN_MINT_FEE). The key reasoning
+  involves the max() operation that bumps daoFeeShares up to minDaoShares.
+unsupported_feature_codes: []
