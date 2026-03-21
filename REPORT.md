@@ -4,12 +4,12 @@ This report is generated from the benchmark manifests.
 
 ## Summary
 
-- Families: 6
-- Implementations: 6
+- Families: 7
+- Implementations: 7
 - Active cases: 4
 - Buildable active cases: 4
 - Active tasks: 18
-- Backlog cases: 2
+- Backlog cases: 3
 
 ## Buildable active cases
 
@@ -240,6 +240,17 @@ This report is generated from the benchmark manifests.
 - Hidden reference solution: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs`
 
 ## Backlog
+
+### `uniswap_v2/pair_fee_adjusted_swap`
+- Family / implementation: `uniswap_v2` / `v2_core`
+- Stage: `candidate`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`blocked`
+- Lean target: `Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs`
+- Failure reason: `reference_proofs_withheld`
+- Source ref: `https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol`
+- Selected functions: `swap`
+- Source artifact: `contracts/UniswapV2Pair.sol`
+- Notes: Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path.
 
 ### `unlink_xyz/placeholder`
 - Family / implementation: `unlink_xyz` / `monorepo`

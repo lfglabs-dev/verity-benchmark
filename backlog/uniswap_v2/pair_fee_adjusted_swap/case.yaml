@@ -1,0 +1,40 @@
+manifest_kind: case
+project: uniswap_v2
+case_id: pair_fee_adjusted_swap
+schema_version: 1
+split: backlog
+family_id: uniswap_v2
+implementation_id: v2_core
+stage: candidate
+translation_status: translated
+spec_status: frozen
+proof_status: blocked
+upstream_repo: https://github.com/Uniswap/v2-core
+upstream_commit: ee547b17853e71ed4e0101ccfd52e70d5acded58
+original_contract_path: contracts/UniswapV2Pair.sol
+source_ref: https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol
+lean_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs
+selected_functions:
+  - swap
+failure_reason: reference_proofs_withheld
+source_language: solidity
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
+lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - amm_invariant
+  - fee_adjusted_product
+  - reserve_update
+  - transfers_elided
+  - callback_elided
+abstraction_notes: >
+  The slice starts after the optimistic transfer path and callback, taking the observed
+  token balances and inferred input amounts as arguments. It keeps the SafeMath-backed
+  fee-adjusted product guard and the final reserve writes while omitting token movement,
+  oracle accumulation, and event emission.
+unsupported_feature_codes: []
+spec_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs
+proof_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs
+notes: >
+  Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards
+  and post-swap reserve synchronization without exposing the full Uniswap execution path.

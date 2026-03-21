@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: swap_sets_reserve0
+case_id: uniswap_v2/pair_fee_adjusted_swap
+split: backlog
+family_id: uniswap_v2
+implementation_id: v2_core
+source_ref: https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve0
+proof_family: state_preservation_local_effects
+property_class: storage_write
+difficulty: easy
+category: state-transition
+track: proof-only
+translation_status: translated
+proof_status: blocked
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean
+  - Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean
+specification_files:
+  - backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Specs.lean
+  - Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Specs.lean
+editable_files:
+  - Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/SwapSetsReserve0.lean
+reference_solution_module: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs
+reference_solution_declaration: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve0
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task isolates the first post-guard reserve write in the fee-adjusted Uniswap V2
+  swap slice.
+unsupported_feature_codes: []

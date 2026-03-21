@@ -1,0 +1,16 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: uniswap_v2
+implementation_id: v2_core
+display_name: Uniswap V2 Core
+split: backlog
+status: translated
+upstream_repo: https://github.com/Uniswap/v2-core
+upstream_commit: ee547b17853e71ed4e0101ccfd52e70d5acded58
+source_language: solidity
+source_artifact_path: contracts/UniswapV2Pair.sol
+case_ids:
+  - uniswap_v2/pair_fee_adjusted_swap
+notes: >
+  Backlog implementation entry for the canonical Uniswap V2 pair contract, scoped
+  to a compact swap invariant and reserve-update slice.
