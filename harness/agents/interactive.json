@@ -21,8 +21,10 @@
   ],
   "temperature": 0.0,
   "max_completion_tokens": 2000,
-  "max_attempts": 8,
+  "attempts": 16,
   "max_tool_calls": 24,
+  "assistant_turns_per_attempt": 1,
+  "exploratory_turns_per_attempt": 1,
   "headers": {},
   "header_envs": {},
   "extra_body": {
