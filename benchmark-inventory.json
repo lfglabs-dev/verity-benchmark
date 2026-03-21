@@ -10,38 +10,38 @@
     "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "family_count": 6,
-    "implementation_count": 6,
+    "family_count": 7,
+    "implementation_count": 7,
     "active_case_count": 4,
-    "backlog_case_count": 2,
+    "backlog_case_count": 3,
     "active_task_count": 18,
-    "backlog_task_count": 0,
+    "backlog_task_count": 4,
     "buildable_case_count": 4,
     "runnable_task_count": 18,
     "case_stage_counts": {
       "build_green": 4,
-      "candidate": 2
+      "candidate": 3
     },
     "translation_status_counts": {
       "blocked": 2,
-      "translated": 4
+      "translated": 5
     },
     "proof_status_counts": {
-      "blocked": 2,
+      "blocked": 3,
       "partial": 4
     },
     "task_track_counts": {
-      "proof-only": 18
+      "proof-only": 22
     },
     "task_property_class_counts": {
-      "accounting_bound": 1,
-      "accounting_conservation": 2,
+      "accounting_bound": 2,
+      "accounting_conservation": 3,
       "authorization_state": 1,
       "mapping_consistency": 1,
       "monotonic_counter": 2,
       "output_range": 1,
       "price_computation": 3,
-      "storage_write": 1,
+      "storage_write": 3,
       "subtree_partition": 1,
       "threshold_activation": 1,
       "threshold_partition": 1,
@@ -51,14 +51,14 @@
     },
     "task_proof_family_counts": {
       "authorization_enablement": 2,
-      "functional_correctness": 5,
+      "functional_correctness": 6,
       "protocol_transition_correctness": 2,
-      "refinement_equivalence": 4,
-      "state_preservation_local_effects": 5
+      "refinement_equivalence": 5,
+      "state_preservation_local_effects": 7
     },
     "family_split_counts": {
       "active": 4,
-      "backlog": 2
+      "backlog": 3
     }
   },
   "families": [
@@ -129,6 +129,23 @@
         "solidity"
       ],
       "manifest_path": "families/paladin_votes/family.yaml"
+    },
+    {
+      "family_id": "uniswap_v2",
+      "display_name": "Uniswap V2",
+      "split": "backlog",
+      "status": "backlog",
+      "description": "Backlog benchmark family for Uniswap V2 core logic, starting with a fee-adjusted swap invariant slice over reserve updates.",
+      "implementation_ids": [
+        "v2_core"
+      ],
+      "case_ids": [
+        "uniswap_v2/pair_fee_adjusted_swap"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/uniswap_v2/family.yaml"
     },
     {
       "family_id": "unlink_xyz",
@@ -229,6 +246,22 @@
       ],
       "notes": "Claim accounting contract translated as a single-round slice with Merkle verification abstracted away from the benchmark.",
       "manifest_path": "families/paladin_votes/implementations/stream_recovery_claim/implementation.yaml"
+    },
+    {
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "display_name": "Uniswap V2 Core",
+      "split": "backlog",
+      "status": "translated",
+      "upstream_repo": "https://github.com/Uniswap/v2-core",
+      "upstream_commit": "ee547b17853e71ed4e0101ccfd52e70d5acded58",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/UniswapV2Pair.sol",
+      "case_ids": [
+        "uniswap_v2/pair_fee_adjusted_swap"
+      ],
+      "notes": "Backlog implementation entry for the canonical Uniswap V2 pair contract, scoped to a compact swap invariant and reserve-update slice.",
+      "manifest_path": "families/uniswap_v2/implementations/v2_core/implementation.yaml"
     },
     {
       "family_id": "unlink_xyz",
@@ -431,6 +464,47 @@
     }
   ],
   "backlog": [
+    {
+      "case_id": "uniswap_v2/pair_fee_adjusted_swap",
+      "project": "uniswap_v2",
+      "case_name": "pair_fee_adjusted_swap",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/uniswap_v2/pair_fee_adjusted_swap/case.yaml",
+      "split": "backlog",
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "stage": "candidate",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "blocked",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/Uniswap/v2-core",
+      "upstream_commit": "ee547b17853e71ed4e0101ccfd52e70d5acded58",
+      "original_contract_path": "contracts/UniswapV2Pair.sol",
+      "source_ref": "https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol",
+      "selected_functions": [
+        "swap"
+      ],
+      "lean_target": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs",
+      "failure_reason": "reference_proofs_withheld",
+      "notes": "Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path.",
+      "buildable": false,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "amm_invariant",
+        "fee_adjusted_product",
+        "reserve_update",
+        "transfers_elided",
+        "callback_elided"
+      ],
+      "abstraction_notes": "The slice starts after the optimistic transfer path and callback, taking the observed token balances and inferred input amounts as arguments. It keeps the SafeMath-backed fee-adjusted product guard and the final reserve writes while omitting token movement, oracle accumulation, and event emission.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs",
+      "proof_target": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs"
+    },
     {
       "case_id": "unlink_xyz/placeholder",
       "project": "unlink_xyz",
@@ -1320,6 +1394,187 @@
       }
     }
   ],
-  "backlog_tasks": [],
-  "generated_at": "2026-03-19T16:33:49.377168+00:00"
+  "backlog_tasks": [
+    {
+      "task_ref": "uniswap_v2/pair_fee_adjusted_swap/swap_enforces_fee_adjusted_invariant",
+      "task_id": "swap_enforces_fee_adjusted_invariant",
+      "case_id": "uniswap_v2/pair_fee_adjusted_swap",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/uniswap_v2/pair_fee_adjusted_swap/tasks/swap_enforces_fee_adjusted_invariant.yaml",
+      "split": "backlog",
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "source_ref": "https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_enforces_fee_adjusted_invariant",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Specs.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/SwapEnforcesFeeAdjustedInvariant.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task captures the core Uniswap V2 fee-adjusted constant-product guard in the abstracted swap slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "uniswap_v2/pair_fee_adjusted_swap/swap_sets_reserve0",
+      "task_id": "swap_sets_reserve0",
+      "case_id": "uniswap_v2/pair_fee_adjusted_swap",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/uniswap_v2/pair_fee_adjusted_swap/tasks/swap_sets_reserve0.yaml",
+      "split": "backlog",
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "source_ref": "https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_write",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve0",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Specs.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/SwapSetsReserve0.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the first post-guard reserve write in the fee-adjusted Uniswap V2 swap slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "uniswap_v2/pair_fee_adjusted_swap/swap_sets_reserve1",
+      "task_id": "swap_sets_reserve1",
+      "case_id": "uniswap_v2/pair_fee_adjusted_swap",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/uniswap_v2/pair_fee_adjusted_swap/tasks/swap_sets_reserve1.yaml",
+      "split": "backlog",
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "source_ref": "https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_write",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve1",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Specs.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/SwapSetsReserve1.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the second post-guard reserve write in the fee-adjusted Uniswap V2 swap slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "uniswap_v2/pair_fee_adjusted_swap/swap_sets_reserve_product",
+      "task_id": "swap_sets_reserve_product",
+      "case_id": "uniswap_v2/pair_fee_adjusted_swap",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/uniswap_v2/pair_fee_adjusted_swap/tasks/swap_sets_reserve_product.yaml",
+      "split": "backlog",
+      "family_id": "uniswap_v2",
+      "implementation_id": "v2_core",
+      "source_ref": "https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_conservation",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve_product",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Specs.lean",
+        "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/SwapSetsReserveProduct.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task composes the two reserve writes into a single post-state arithmetic identity over the stored reserve product.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    }
+  ],
+  "generated_at": "2026-03-21T21:40:30.815636+00:00"
 }
