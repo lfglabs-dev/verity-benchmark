@@ -8,7 +8,7 @@ This report is generated from the benchmark manifests.
 - Implementations: 9
 - Active cases: 5
 - Buildable active cases: 5
-- Active tasks: 22
+- Active tasks: 25
 - Backlog cases: 4
 
 ## Buildable active cases
@@ -71,7 +71,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/deposit_sets_pool_balance`
 - Track / property class / proof family: `proof-only` / `storage_update` / `state_preservation_local_effects`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_pool_balance`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -81,7 +81,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/deposit_sets_sender_credit`
 - Track / property class / proof family: `proof-only` / `balance_credit_update` / `state_preservation_local_effects`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_sender_credit`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -91,7 +91,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/exploit_trace_drains_pool`
 - Track / property class / proof family: `proof-only` / `exploit_trace` / `refinement_equivalence`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.exploit_trace_drains_pool`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -101,12 +101,22 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_preserves_pool_balance`
 - Track / property class / proof family: `proof-only` / `accounting_invariant_break` / `protocol_transition_correctness`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
 - Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
 - Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositPreservesPoolBalance.lean`
+- Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
+
+### `damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_sets_sender_credit`
+- Track / property class / proof family: `proof-only` / `balance_credit_update` / `protocol_transition_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_sets_sender_credit`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
+- Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
+- Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositSetsSenderCredit.lean`
 - Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
 
 ### `ethereum/deposit_contract_minimal/chain_start_threshold`
@@ -267,6 +277,26 @@ This report is generated from the benchmark manifests.
 - Implementation files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean`
 - Specification files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean`
 - Editable proof file: `Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimMarksUser.lean`
+- Hidden reference solution: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs`
+
+### `paladin_votes/stream_recovery_claim_usdc/claim_updates_round_claimed`
+- Track / property class / proof family: `proof-only` / `accounting_update` / `protocol_transition_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_round_claimed`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean`
+- Specification files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean`
+- Editable proof file: `Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimUpdatesRoundClaimed.lean`
+- Hidden reference solution: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs`
+
+### `paladin_votes/stream_recovery_claim_usdc/claim_updates_total_allocated`
+- Track / property class / proof family: `proof-only` / `accounting_update` / `protocol_transition_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_total_allocated`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean`
+- Specification files: `cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean`, `Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean`
+- Editable proof file: `Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimUpdatesTotalAllocated.lean`
 - Hidden reference solution: `Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs`
 
 ### `paladin_votes/stream_recovery_claim_usdc/claimed_plus_allocated_conserved`

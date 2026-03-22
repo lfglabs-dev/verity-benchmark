@@ -14,10 +14,10 @@
     "implementation_count": 9,
     "active_case_count": 5,
     "backlog_case_count": 4,
-    "active_task_count": 22,
+    "active_task_count": 25,
     "backlog_task_count": 8,
     "buildable_case_count": 5,
-    "runnable_task_count": 22,
+    "runnable_task_count": 25,
     "case_stage_counts": {
       "build_green": 5,
       "candidate": 4
@@ -31,14 +31,15 @@
       "partial": 5
     },
     "task_track_counts": {
-      "proof-only": 30
+      "proof-only": 33
     },
     "task_property_class_counts": {
       "accounting_bound": 3,
       "accounting_conservation": 3,
       "accounting_invariant_break": 1,
+      "accounting_update": 2,
       "authorization_state": 1,
-      "balance_credit_update": 1,
+      "balance_credit_update": 2,
       "exploit_trace": 1,
       "mapping_consistency": 1,
       "monotonic_counter": 2,
@@ -56,7 +57,7 @@
     "task_proof_family_counts": {
       "authorization_enablement": 2,
       "functional_correctness": 8,
-      "protocol_transition_correctness": 3,
+      "protocol_transition_correctness": 6,
       "refinement_equivalence": 6,
       "state_preservation_local_effects": 11
     },
@@ -405,7 +406,7 @@
         "deposit_coupling",
         "single_caller_credit"
       ],
-      "abstraction_notes": "The benchmark compresses the Side Entrance exploit into a two-slot state: tracked pool ETH and the current caller's withdrawable credit. The flash-loan callback is summarized as an atomic loan-plus-deposit step that restores pool ETH while still minting fresh credit.",
+      "abstraction_notes": "The benchmark compresses the Side Entrance exploit into a compact state: tracked pool ETH, aggregate credited liabilities, and the current caller's withdrawable credit. The flash-loan callback is summarized as an atomic loan-plus-deposit step that restores pool ETH while still minting fresh credit.",
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Specs",
       "proof_target": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs"
@@ -780,7 +781,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "ready"
+        "reference_solution": "blocked"
       }
     },
     {
@@ -825,7 +826,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "ready"
+        "reference_solution": "blocked"
       }
     },
     {
@@ -870,7 +871,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "ready"
+        "reference_solution": "blocked"
       }
     },
     {
@@ -915,7 +916,52 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "ready"
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_sets_sender_credit",
+      "task_id": "flash_loan_via_deposit_sets_sender_credit",
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/tasks/flash_loan_via_deposit_sets_sender_credit.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "balance_credit_update",
+      "category": "flash-loan",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_sets_sender_credit",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositSetsSenderCredit.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task captures the hidden liability-side effect of the summarized flash loan path: apparent repayment leaves pool ETH unchanged while still minting withdrawable caller credit.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "blocked"
       }
     },
     {
@@ -1639,6 +1685,96 @@
       }
     },
     {
+      "task_ref": "paladin_votes/stream_recovery_claim_usdc/claim_updates_round_claimed",
+      "task_id": "claim_updates_round_claimed",
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/tasks/claim_updates_round_claimed.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_update",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_round_claimed",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimUpdatesRoundClaimed.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the direct round-level accounting increment on the successful claim path.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "paladin_votes/stream_recovery_claim_usdc/claim_updates_total_allocated",
+      "task_id": "claim_updates_total_allocated",
+      "case_id": "paladin_votes/stream_recovery_claim_usdc",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/paladin_votes/stream_recovery_claim_usdc/tasks/claim_updates_total_allocated.yaml",
+      "split": "active",
+      "family_id": "paladin_votes",
+      "implementation_id": "stream_recovery_claim",
+      "source_ref": "https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_update",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_total_allocated",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean",
+        "Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimUpdatesTotalAllocated.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the compensating decrease in remaining allocated USDC on the successful claim path.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
       "task_ref": "paladin_votes/stream_recovery_claim_usdc/claimed_plus_allocated_conserved",
       "task_id": "claimed_plus_allocated_conserved",
       "case_id": "paladin_votes/stream_recovery_claim_usdc",
@@ -2091,5 +2227,5 @@
       }
     }
   ],
-  "generated_at": "2026-03-22T16:17:04.430144+00:00"
+  "generated_at": "2026-03-22T18:35:19.721362+00:00"
 }

@@ -53,6 +53,10 @@ def normalize_string_list(path: Path, key: str, value: object) -> list[str]:
     return [str(item).strip() for item in value]
 
 
+def lean_module_path(module_name: str) -> Path:
+    return ROOT.joinpath(*module_name.split(".")).with_suffix(".lean")
+
+
 def evaluation_ready(
     case_entry: dict,
     editable_files: list[str],
@@ -67,6 +71,7 @@ def evaluation_ready(
         bool(editable_files and theorem_name and reference_solution_module)
         and translation_status in RUNNABLE_TRANSLATION_STATUSES
         and proof_status in RUNNABLE_PROOF_STATUSES
+        and lean_module_path(reference_solution_module).is_file()
     )
 
 
