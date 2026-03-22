@@ -4,14 +4,24 @@ This report is generated from the benchmark manifests.
 
 ## Summary
 
-- Families: 8
-- Implementations: 8
-- Active cases: 4
-- Buildable active cases: 4
-- Active tasks: 18
+- Families: 9
+- Implementations: 9
+- Active cases: 5
+- Buildable active cases: 5
+- Active tasks: 22
 - Backlog cases: 4
 
 ## Buildable active cases
+
+### `damn_vulnerable_defi/side_entrance`
+- Family / implementation: `damn_vulnerable_defi` / `v2`
+- Stage: `build_green`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`partial`
+- Lean target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Compile`
+- Source ref: `https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol`
+- Selected functions: `deposit`, `flashLoan`, `withdraw`
+- Source artifact: `contracts/side-entrance/SideEntranceLenderPool.sol`
+- Notes: Compact Side Entrance benchmark focused on the broken coherence between pool assets and withdrawable credit when flash-loan repayment is routed through the deposit path.
 
 ### `ethereum/deposit_contract_minimal`
 - Family / implementation: `ethereum` / `deposit_contract`
@@ -58,6 +68,46 @@ This report is generated from the benchmark manifests.
 - None
 
 ## Active tasks
+
+### `damn_vulnerable_defi/side_entrance/deposit_sets_pool_balance`
+- Track / property class / proof family: `proof-only` / `storage_update` / `state_preservation_local_effects`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_pool_balance`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
+- Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
+- Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/DepositSetsPoolBalance.lean`
+- Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
+
+### `damn_vulnerable_defi/side_entrance/deposit_sets_sender_credit`
+- Track / property class / proof family: `proof-only` / `balance_credit_update` / `state_preservation_local_effects`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_sender_credit`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
+- Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
+- Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/DepositSetsSenderCredit.lean`
+- Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
+
+### `damn_vulnerable_defi/side_entrance/exploit_trace_drains_pool`
+- Track / property class / proof family: `proof-only` / `exploit_trace` / `refinement_equivalence`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.exploit_trace_drains_pool`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
+- Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
+- Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/ExploitTraceDrainsPool.lean`
+- Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
+
+### `damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_preserves_pool_balance`
+- Track / property class / proof family: `proof-only` / `accounting_invariant_break` / `protocol_transition_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
+- Specification files: `cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean`
+- Editable proof file: `Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositPreservesPoolBalance.lean`
+- Hidden reference solution: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs`
 
 ### `ethereum/deposit_contract_minimal/chain_start_threshold`
 - Track / property class / proof family: `proof-only` / `threshold_activation` / `protocol_transition_correctness`

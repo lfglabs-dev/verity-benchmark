@@ -10,37 +10,41 @@
     "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "family_count": 8,
-    "implementation_count": 8,
-    "active_case_count": 4,
+    "family_count": 9,
+    "implementation_count": 9,
+    "active_case_count": 5,
     "backlog_case_count": 4,
-    "active_task_count": 18,
+    "active_task_count": 22,
     "backlog_task_count": 8,
-    "buildable_case_count": 4,
-    "runnable_task_count": 18,
+    "buildable_case_count": 5,
+    "runnable_task_count": 22,
     "case_stage_counts": {
-      "build_green": 4,
+      "build_green": 5,
       "candidate": 4
     },
     "translation_status_counts": {
       "blocked": 2,
-      "translated": 6
+      "translated": 7
     },
     "proof_status_counts": {
       "blocked": 4,
-      "partial": 4
+      "partial": 5
     },
     "task_track_counts": {
-      "proof-only": 26
+      "proof-only": 30
     },
     "task_property_class_counts": {
       "accounting_bound": 3,
       "accounting_conservation": 3,
+      "accounting_invariant_break": 1,
       "authorization_state": 1,
+      "balance_credit_update": 1,
+      "exploit_trace": 1,
       "mapping_consistency": 1,
       "monotonic_counter": 2,
       "output_range": 2,
       "price_computation": 3,
+      "storage_update": 1,
       "storage_write": 5,
       "subtree_partition": 1,
       "threshold_activation": 1,
@@ -52,16 +56,33 @@
     "task_proof_family_counts": {
       "authorization_enablement": 2,
       "functional_correctness": 8,
-      "protocol_transition_correctness": 2,
-      "refinement_equivalence": 5,
-      "state_preservation_local_effects": 9
+      "protocol_transition_correctness": 3,
+      "refinement_equivalence": 6,
+      "state_preservation_local_effects": 11
     },
     "family_split_counts": {
-      "active": 4,
+      "active": 5,
       "backlog": 4
     }
   },
   "families": [
+    {
+      "family_id": "damn_vulnerable_defi",
+      "display_name": "Damn Vulnerable DeFi",
+      "split": "active",
+      "status": "active",
+      "description": "Active benchmark family for compact Damn Vulnerable DeFi protocol slices that isolate high-signal exploit patterns from the training challenges.",
+      "implementation_ids": [
+        "v2"
+      ],
+      "case_ids": [
+        "damn_vulnerable_defi/side_entrance"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/damn_vulnerable_defi/family.yaml"
+    },
     {
       "family_id": "ethereum",
       "display_name": "Ethereum",
@@ -201,6 +222,22 @@
   ],
   "implementations": [
     {
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "display_name": "Damn Vulnerable DeFi v2",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/OpenZeppelin/damn-vulnerable-defi",
+      "upstream_commit": "master",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/side-entrance/SideEntranceLenderPool.sol",
+      "case_ids": [
+        "damn_vulnerable_defi/side_entrance"
+      ],
+      "notes": "Active implementation entry for the Damn Vulnerable DeFi challenge set, starting with the Side Entrance flash-loan repayment bug modeled as a compact pool-balance versus credited-liability slice.",
+      "manifest_path": "families/damn_vulnerable_defi/implementations/v2/implementation.yaml"
+    },
+    {
       "family_id": "ethereum",
       "implementation_id": "deposit_contract",
       "display_name": "Ethereum Deposit Contract",
@@ -330,6 +367,49 @@
     }
   ],
   "cases": [
+    {
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "project": "damn_vulnerable_defi",
+      "case_name": "side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/case.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/OpenZeppelin/damn-vulnerable-defi",
+      "upstream_commit": "master",
+      "original_contract_path": "contracts/side-entrance/SideEntranceLenderPool.sol",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "selected_functions": [
+        "deposit",
+        "flashLoan",
+        "withdraw"
+      ],
+      "lean_target": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Compile",
+      "failure_reason": null,
+      "notes": "Compact Side Entrance benchmark focused on the broken coherence between pool assets and withdrawable credit when flash-loan repayment is routed through the deposit path.",
+      "buildable": true,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "callback_elided",
+        "ether_transfer_elided",
+        "flash_loan_slice",
+        "deposit_coupling",
+        "single_caller_credit"
+      ],
+      "abstraction_notes": "The benchmark compresses the Side Entrance exploit into a two-slot state: tracked pool ETH and the current caller's withdrawable credit. The flash-loan callback is summarized as an atomic loan-plus-deposit step that restores pool ETH while still minting fresh credit.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Specs",
+      "proof_target": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs"
+    },
     {
       "case_id": "ethereum/deposit_contract_minimal",
       "project": "ethereum",
@@ -658,6 +738,186 @@
     }
   ],
   "tasks": [
+    {
+      "task_ref": "damn_vulnerable_defi/side_entrance/deposit_sets_pool_balance",
+      "task_id": "deposit_sets_pool_balance",
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/tasks/deposit_sets_pool_balance.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_update",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_pool_balance",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/DepositSetsPoolBalance.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The task checks the direct pool-balance write of the simplified deposit path.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "damn_vulnerable_defi/side_entrance/deposit_sets_sender_credit",
+      "task_id": "deposit_sets_sender_credit",
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/tasks/deposit_sets_sender_credit.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "balance_credit_update",
+      "category": "accounting",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_sender_credit",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/DepositSetsSenderCredit.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "The task isolates the caller-credit write of the simplified deposit path.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "damn_vulnerable_defi/side_entrance/exploit_trace_drains_pool",
+      "task_id": "exploit_trace_drains_pool",
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/tasks/exploit_trace_drains_pool.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "exploit_trace",
+      "category": "flash-loan",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.exploit_trace_drains_pool",
+      "proof_family": "refinement_equivalence",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/ExploitTraceDrainsPool.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task composes the flash-loan-plus-deposit step with withdraw to expose the bug: a caller that starts with zero credit can still reduce pool ETH by exactly the borrowed amount.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_preserves_pool_balance",
+      "task_id": "flash_loan_via_deposit_preserves_pool_balance",
+      "case_id": "damn_vulnerable_defi/side_entrance",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/damn_vulnerable_defi/side_entrance/tasks/flash_loan_via_deposit_preserves_pool_balance.yaml",
+      "split": "active",
+      "family_id": "damn_vulnerable_defi",
+      "implementation_id": "v2",
+      "source_ref": "https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_invariant_break",
+      "category": "flash-loan",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance",
+      "proof_family": "protocol_transition_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean",
+        "Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositPreservesPoolBalance.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task captures the key bug precondition: loan repayment through deposit restores tracked pool ETH even though it also mints withdrawable credit.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
     {
       "task_ref": "ethereum/deposit_contract_minimal/chain_start_threshold",
       "task_id": "chain_start_threshold",
@@ -1831,5 +2091,5 @@
       }
     }
   ],
-  "generated_at": "2026-03-22T09:48:34.426940+00:00"
+  "generated_at": "2026-03-22T16:17:04.430144+00:00"
 }
