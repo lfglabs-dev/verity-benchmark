@@ -38,3 +38,6 @@ proof_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs
 notes: >
   Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards
   and post-swap reserve synchronization without exposing the full Uniswap execution path.
+  Reference proofs were validated locally on 2026-03-22 in an intentionally untracked
+  proof module, so the committed tree remains a backlog candidate rather than an active
+  runnable case.
