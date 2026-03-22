@@ -1,0 +1,17 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: damn_vulnerable_defi
+implementation_id: v2
+display_name: Damn Vulnerable DeFi v2
+split: active
+status: translated
+upstream_repo: https://github.com/OpenZeppelin/damn-vulnerable-defi
+upstream_commit: master
+source_language: solidity
+source_artifact_path: contracts/side-entrance/SideEntranceLenderPool.sol
+case_ids:
+  - damn_vulnerable_defi/side_entrance
+notes: >
+  Active implementation entry for the Damn Vulnerable DeFi challenge set,
+  starting with the Side Entrance flash-loan repayment bug modeled as a compact
+  pool-balance versus credited-liability slice.

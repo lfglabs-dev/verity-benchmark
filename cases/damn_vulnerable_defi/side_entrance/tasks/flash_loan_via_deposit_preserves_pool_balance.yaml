@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: flash_loan_via_deposit_preserves_pool_balance
+case_id: damn_vulnerable_defi/side_entrance
+split: active
+family_id: damn_vulnerable_defi
+implementation_id: v2
+source_ref: https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance
+proof_family: protocol_transition_correctness
+property_class: accounting_invariant_break
+difficulty: medium
+category: flash-loan
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean
+  - Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean
+specification_files:
+  - cases/damn_vulnerable_defi/side_entrance/verity/Specs.lean
+  - Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Specs.lean
+editable_files:
+  - Benchmark/Generated/DamnVulnerableDeFi/SideEntrance/Tasks/FlashLoanViaDepositPreservesPoolBalance.lean
+reference_solution_module: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs
+reference_solution_declaration: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task captures the key bug precondition: loan repayment through deposit
+  restores tracked pool ETH even though it also mints withdrawable credit.
+unsupported_feature_codes: []
