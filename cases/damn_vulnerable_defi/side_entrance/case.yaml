@@ -1,0 +1,42 @@
+manifest_kind: case
+project: damn_vulnerable_defi
+case_id: side_entrance
+schema_version: 1
+split: active
+family_id: damn_vulnerable_defi
+implementation_id: v2
+stage: build_green
+translation_status: translated
+spec_status: frozen
+proof_status: partial
+upstream_repo: https://github.com/OpenZeppelin/damn-vulnerable-defi
+upstream_commit: master
+original_contract_path: contracts/side-entrance/SideEntranceLenderPool.sol
+source_ref: https://github.com/OpenZeppelin/damn-vulnerable-defi@master:contracts/side-entrance/SideEntranceLenderPool.sol
+lean_target: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Compile
+selected_functions:
+  - deposit
+  - flashLoan
+  - withdraw
+source_language: solidity
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
+lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - callback_elided
+  - ether_transfer_elided
+  - flash_loan_slice
+  - deposit_coupling
+  - single_caller_credit
+abstraction_notes: >
+  The benchmark compresses the Side Entrance exploit into a two-slot state:
+  tracked pool ETH and the current caller's withdrawable credit. The flash-loan
+  callback is summarized as an atomic loan-plus-deposit step that restores pool
+  ETH while still minting fresh credit.
+unsupported_feature_codes: []
+spec_target: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Specs
+proof_target: Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.Proofs
+notes: >
+  Compact Side Entrance benchmark focused on the broken coherence between pool
+  assets and withdrawable credit when flash-loan repayment is routed through the
+  deposit path.
