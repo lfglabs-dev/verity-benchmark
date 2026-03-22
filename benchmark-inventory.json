@@ -20,14 +20,16 @@
     "runnable_task_count": 25,
     "case_stage_counts": {
       "build_green": 5,
-      "candidate": 4
+      "candidate": 2,
+      "proof_complete": 2
     },
     "translation_status_counts": {
       "blocked": 2,
       "translated": 7
     },
     "proof_status_counts": {
-      "blocked": 4,
+      "blocked": 2,
+      "complete": 2,
       "partial": 5
     },
     "task_track_counts": {
@@ -588,10 +590,10 @@
       "split": "backlog",
       "family_id": "openzeppelin",
       "implementation_id": "contracts",
-      "stage": "candidate",
+      "stage": "proof_complete",
       "translation_status": "translated",
       "spec_status": "frozen",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "source_language": "solidity",
       "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
       "upstream_commit": "master",
@@ -602,9 +604,9 @@
         "deposit"
       ],
       "lean_target": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs",
-      "failure_reason": "reference_proofs_withheld",
-      "notes": "Candidate ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. Reference proofs can validate the four arithmetic/state-transition theorems locally in an intentionally untracked proof module, leaving the committed tree as a backlog candidate.",
-      "buildable": false,
+      "failure_reason": null,
+      "notes": "Backlog ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. The committed proof module validates the four arithmetic and state-transition theorems, so the case is runnable in the reference-solution benchmark path while remaining backlog-scoped.",
+      "buildable": true,
       "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
       "lean_toolchain": "leanprover/lean4:v4.22.0",
       "abstraction_level": "protocol_slice",
@@ -630,10 +632,10 @@
       "split": "backlog",
       "family_id": "uniswap_v2",
       "implementation_id": "v2_core",
-      "stage": "candidate",
+      "stage": "proof_complete",
       "translation_status": "translated",
       "spec_status": "frozen",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "source_language": "solidity",
       "upstream_repo": "https://github.com/Uniswap/v2-core",
       "upstream_commit": "ee547b17853e71ed4e0101ccfd52e70d5acded58",
@@ -643,9 +645,9 @@
         "swap"
       ],
       "lean_target": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs",
-      "failure_reason": "reference_proofs_withheld",
-      "notes": "Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. Reference proofs were validated locally on 2026-03-22 in an intentionally untracked proof module, so the committed tree remains a backlog candidate rather than an active runnable case.",
-      "buildable": false,
+      "failure_reason": null,
+      "notes": "Backlog AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. The committed proof module makes the case runnable in the reference-solution benchmark path while it remains backlog-scoped.",
+      "buildable": true,
       "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
       "lean_toolchain": "leanprover/lean4:v4.22.0",
       "abstraction_level": "protocol_slice",
@@ -781,7 +783,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "blocked"
+        "reference_solution": "ready"
       }
     },
     {
@@ -826,7 +828,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "blocked"
+        "reference_solution": "ready"
       }
     },
     {
@@ -871,7 +873,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "blocked"
+        "reference_solution": "ready"
       }
     },
     {
@@ -916,7 +918,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "blocked"
+        "reference_solution": "ready"
       }
     },
     {
@@ -961,7 +963,7 @@
       "readiness": {
         "prompt_context": "ready",
         "editable_proof": "ready",
-        "reference_solution": "blocked"
+        "reference_solution": "ready"
       }
     },
     {
@@ -1885,7 +1887,7 @@
       "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.deposit_sets_totalAssets",
       "proof_family": "state_preservation_local_effects",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
         "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
@@ -1907,8 +1909,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -1930,7 +1932,7 @@
       "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.deposit_sets_totalShares",
       "proof_family": "state_preservation_local_effects",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
         "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
@@ -1952,8 +1954,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -1975,7 +1977,7 @@
       "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.positive_deposit_mints_positive_shares_under_rate_bound",
       "proof_family": "functional_correctness",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
         "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
@@ -1997,8 +1999,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -2020,7 +2022,7 @@
       "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.previewDeposit_rounds_down",
       "proof_family": "functional_correctness",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
         "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
@@ -2042,8 +2044,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -2065,7 +2067,7 @@
       "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_enforces_fee_adjusted_invariant",
       "proof_family": "functional_correctness",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
         "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
@@ -2087,8 +2089,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -2110,7 +2112,7 @@
       "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve0",
       "proof_family": "state_preservation_local_effects",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
         "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
@@ -2132,8 +2134,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -2155,7 +2157,7 @@
       "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve1",
       "proof_family": "state_preservation_local_effects",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
         "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
@@ -2177,8 +2179,8 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     },
     {
@@ -2200,7 +2202,7 @@
       "theorem_name": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.applySwap_sets_reserve_product",
       "proof_family": "refinement_equivalence",
       "translation_status": "translated",
-      "proof_status": "blocked",
+      "proof_status": "complete",
       "implementation_files": [
         "backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean",
         "Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Contract.lean"
@@ -2222,10 +2224,10 @@
       },
       "readiness": {
         "prompt_context": "ready",
-        "editable_proof": "blocked",
-        "reference_solution": "blocked"
+        "editable_proof": "ready",
+        "reference_solution": "ready"
       }
     }
   ],
-  "generated_at": "2026-03-22T18:35:19.721362+00:00"
+  "generated_at": "2026-03-22T21:20:56.366870+00:00"
 }

@@ -5,10 +5,10 @@ schema_version: 1
 split: backlog
 family_id: uniswap_v2
 implementation_id: v2_core
-stage: candidate
+stage: proof_complete
 translation_status: translated
 spec_status: frozen
-proof_status: blocked
+proof_status: complete
 upstream_repo: https://github.com/Uniswap/v2-core
 upstream_commit: ee547b17853e71ed4e0101ccfd52e70d5acded58
 original_contract_path: contracts/UniswapV2Pair.sol
@@ -16,7 +16,7 @@ source_ref: https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5
 lean_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs
 selected_functions:
   - swap
-failure_reason: reference_proofs_withheld
+failure_reason:
 source_language: solidity
 verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
 lean_toolchain: leanprover/lean4:v4.22.0
@@ -36,8 +36,7 @@ unsupported_feature_codes: []
 spec_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs
 proof_target: Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs
 notes: >
-  Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards
-  and post-swap reserve synchronization without exposing the full Uniswap execution path.
-  Reference proofs were validated locally on 2026-03-22 in an intentionally untracked
-  proof module, so the committed tree remains a backlog candidate rather than an active
-  runnable case.
+  Backlog AMM benchmark slice for reasoning about fee-adjusted constant-product
+  guards and post-swap reserve synchronization without exposing the full
+  Uniswap execution path. The committed proof module makes the case runnable in
+  the reference-solution benchmark path while it remains backlog-scoped.

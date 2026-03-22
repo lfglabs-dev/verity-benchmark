@@ -71,7 +71,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/deposit_sets_pool_balance`
 - Track / property class / proof family: `proof-only` / `storage_update` / `state_preservation_local_effects`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_pool_balance`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -81,7 +81,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/deposit_sets_sender_credit`
 - Track / property class / proof family: `proof-only` / `balance_credit_update` / `state_preservation_local_effects`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.deposit_sets_sender_credit`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -91,7 +91,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/exploit_trace_drains_pool`
 - Track / property class / proof family: `proof-only` / `exploit_trace` / `refinement_equivalence`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.exploit_trace_drains_pool`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -101,7 +101,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_preserves_pool_balance`
 - Track / property class / proof family: `proof-only` / `accounting_invariant_break` / `protocol_transition_correctness`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_preserves_pool_balance`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -111,7 +111,7 @@ This report is generated from the benchmark manifests.
 
 ### `damn_vulnerable_defi/side_entrance/flash_loan_via_deposit_sets_sender_credit`
 - Track / property class / proof family: `proof-only` / `balance_credit_update` / `protocol_transition_correctness`
-- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`blocked`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
 - Theorem target: `Benchmark.Cases.DamnVulnerableDeFi.SideEntrance.flashLoanViaDeposit_sets_sender_credit`
 - Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
 - Implementation files: `cases/damn_vulnerable_defi/side_entrance/verity/Contract.lean`, `Benchmark/Cases/DamnVulnerableDeFi/SideEntrance/Contract.lean`
@@ -323,25 +323,23 @@ This report is generated from the benchmark manifests.
 
 ### `openzeppelin/erc4626_virtual_offset_deposit`
 - Family / implementation: `openzeppelin` / `contracts`
-- Stage: `candidate`
-- Status dimensions: translation=`translated`, spec=`frozen`, proof=`blocked`
+- Stage: `proof_complete`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`complete`
 - Lean target: `Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs`
-- Failure reason: `reference_proofs_withheld`
 - Source ref: `https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol`
 - Selected functions: `previewDeposit`, `deposit`
 - Source artifact: `contracts/token/ERC20/extensions/ERC4626.sol`
-- Notes: Candidate ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. Reference proofs can validate the four arithmetic/state-transition theorems locally in an intentionally untracked proof module, leaving the committed tree as a backlog candidate.
+- Notes: Backlog ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. The committed proof module validates the four arithmetic and state-transition theorems, so the case is runnable in the reference-solution benchmark path while remaining backlog-scoped.
 
 ### `uniswap_v2/pair_fee_adjusted_swap`
 - Family / implementation: `uniswap_v2` / `v2_core`
-- Stage: `candidate`
-- Status dimensions: translation=`translated`, spec=`frozen`, proof=`blocked`
+- Stage: `proof_complete`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`complete`
 - Lean target: `Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs`
-- Failure reason: `reference_proofs_withheld`
 - Source ref: `https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol`
 - Selected functions: `swap`
 - Source artifact: `contracts/UniswapV2Pair.sol`
-- Notes: Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. Reference proofs were validated locally on 2026-03-22 in an intentionally untracked proof module, so the committed tree remains a backlog candidate rather than an active runnable case.
+- Notes: Backlog AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. The committed proof module makes the case runnable in the reference-solution benchmark path while it remains backlog-scoped.
 
 ### `unlink_xyz/placeholder`
 - Family / implementation: `unlink_xyz` / `monorepo`
