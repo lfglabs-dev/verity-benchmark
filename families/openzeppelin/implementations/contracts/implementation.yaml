@@ -1,0 +1,17 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: openzeppelin
+implementation_id: contracts
+display_name: OpenZeppelin Contracts
+split: backlog
+status: translated
+upstream_repo: https://github.com/OpenZeppelin/openzeppelin-contracts
+upstream_commit: master
+source_language: solidity
+source_artifact_path: contracts/token/ERC20/extensions/ERC4626.sol
+case_ids:
+  - openzeppelin/erc4626_virtual_offset_deposit
+notes: >
+  Backlog implementation entry for the OpenZeppelin ERC-4626 reference
+  implementation, scoped to a compact virtual-offset deposit slice that captures
+  rounding-sensitive share minting behavior.

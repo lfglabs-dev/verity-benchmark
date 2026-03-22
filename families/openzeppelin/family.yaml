@@ -1,0 +1,16 @@
+manifest_kind: family
+schema_version: 1
+family_id: openzeppelin
+display_name: OpenZeppelin
+split: backlog
+status: backlog
+description: >
+  Backlog benchmark family for OpenZeppelin contract logic, starting with an
+  ERC-4626 virtual-offset deposit slice focused on rounding and inflation-attack
+  mitigation.
+implementation_ids:
+  - contracts
+case_ids:
+  - openzeppelin/erc4626_virtual_offset_deposit
+source_languages:
+  - solidity

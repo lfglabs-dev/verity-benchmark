@@ -10,38 +10,38 @@
     "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "family_count": 7,
-    "implementation_count": 7,
+    "family_count": 8,
+    "implementation_count": 8,
     "active_case_count": 4,
-    "backlog_case_count": 3,
+    "backlog_case_count": 4,
     "active_task_count": 18,
-    "backlog_task_count": 4,
+    "backlog_task_count": 8,
     "buildable_case_count": 4,
     "runnable_task_count": 18,
     "case_stage_counts": {
       "build_green": 4,
-      "candidate": 3
+      "candidate": 4
     },
     "translation_status_counts": {
       "blocked": 2,
-      "translated": 5
+      "translated": 6
     },
     "proof_status_counts": {
-      "blocked": 3,
+      "blocked": 4,
       "partial": 4
     },
     "task_track_counts": {
-      "proof-only": 22
+      "proof-only": 26
     },
     "task_property_class_counts": {
-      "accounting_bound": 2,
+      "accounting_bound": 3,
       "accounting_conservation": 3,
       "authorization_state": 1,
       "mapping_consistency": 1,
       "monotonic_counter": 2,
-      "output_range": 1,
+      "output_range": 2,
       "price_computation": 3,
-      "storage_write": 3,
+      "storage_write": 5,
       "subtree_partition": 1,
       "threshold_activation": 1,
       "threshold_partition": 1,
@@ -51,14 +51,14 @@
     },
     "task_proof_family_counts": {
       "authorization_enablement": 2,
-      "functional_correctness": 6,
+      "functional_correctness": 8,
       "protocol_transition_correctness": 2,
       "refinement_equivalence": 5,
-      "state_preservation_local_effects": 7
+      "state_preservation_local_effects": 9
     },
     "family_split_counts": {
       "active": 4,
-      "backlog": 3
+      "backlog": 4
     }
   },
   "families": [
@@ -112,6 +112,23 @@
         "solidity"
       ],
       "manifest_path": "families/nexus_mutual/family.yaml"
+    },
+    {
+      "family_id": "openzeppelin",
+      "display_name": "OpenZeppelin",
+      "split": "backlog",
+      "status": "backlog",
+      "description": "Backlog benchmark family for OpenZeppelin contract logic, starting with an ERC-4626 virtual-offset deposit slice focused on rounding and inflation-attack mitigation.",
+      "implementation_ids": [
+        "contracts"
+      ],
+      "case_ids": [
+        "openzeppelin/erc4626_virtual_offset_deposit"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/openzeppelin/family.yaml"
     },
     {
       "family_id": "paladin_votes",
@@ -230,6 +247,22 @@
       ],
       "notes": "Active implementation entry for the Nexus Mutual smart-contract repository, currently benchmarking the RAMM price-band slice.",
       "manifest_path": "families/nexus_mutual/implementations/smart_contracts/implementation.yaml"
+    },
+    {
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "display_name": "OpenZeppelin Contracts",
+      "split": "backlog",
+      "status": "translated",
+      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+      "upstream_commit": "master",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/token/ERC20/extensions/ERC4626.sol",
+      "case_ids": [
+        "openzeppelin/erc4626_virtual_offset_deposit"
+      ],
+      "notes": "Backlog implementation entry for the OpenZeppelin ERC-4626 reference implementation, scoped to a compact virtual-offset deposit slice that captures rounding-sensitive share minting behavior.",
+      "manifest_path": "families/openzeppelin/implementations/contracts/implementation.yaml"
     },
     {
       "family_id": "paladin_votes",
@@ -465,6 +498,48 @@
   ],
   "backlog": [
     {
+      "case_id": "openzeppelin/erc4626_virtual_offset_deposit",
+      "project": "openzeppelin",
+      "case_name": "erc4626_virtual_offset_deposit",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/openzeppelin/erc4626_virtual_offset_deposit/case.yaml",
+      "split": "backlog",
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "stage": "candidate",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "blocked",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+      "upstream_commit": "master",
+      "original_contract_path": "contracts/token/ERC20/extensions/ERC4626.sol",
+      "source_ref": "https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol",
+      "selected_functions": [
+        "previewDeposit",
+        "deposit"
+      ],
+      "lean_target": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs",
+      "failure_reason": "reference_proofs_withheld",
+      "notes": "Candidate ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. Reference proofs can validate the four arithmetic/state-transition theorems locally in an intentionally untracked proof module, leaving the committed tree as a backlog candidate.",
+      "buildable": false,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "erc4626",
+        "preview_execution_consistency",
+        "virtual_offset",
+        "rounding_down",
+        "inflation_attack_surface"
+      ],
+      "abstraction_notes": "The slice models only `previewDeposit` and `deposit` using total-assets and total-shares storage together with fixed virtual offsets. Token transfers, fees, hooks, and withdrawals are omitted so the benchmark can focus on rounding-sensitive share minting and the virtual-liquidity defense surface.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs",
+      "proof_target": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs"
+    },
+    {
       "case_id": "uniswap_v2/pair_fee_adjusted_swap",
       "project": "uniswap_v2",
       "case_name": "pair_fee_adjusted_swap",
@@ -488,7 +563,7 @@
       ],
       "lean_target": "Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Specs",
       "failure_reason": "reference_proofs_withheld",
-      "notes": "Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path.",
+      "notes": "Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. Reference proofs were validated locally on 2026-03-22 in an intentionally untracked proof module, so the committed tree remains a backlog candidate rather than an active runnable case.",
       "buildable": false,
       "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
       "lean_toolchain": "leanprover/lean4:v4.22.0",
@@ -1396,6 +1471,186 @@
   ],
   "backlog_tasks": [
     {
+      "task_ref": "openzeppelin/erc4626_virtual_offset_deposit/deposit_sets_total_assets",
+      "task_id": "deposit_sets_total_assets",
+      "case_id": "openzeppelin/erc4626_virtual_offset_deposit",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/openzeppelin/erc4626_virtual_offset_deposit/tasks/deposit_sets_total_assets.yaml",
+      "split": "backlog",
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "source_ref": "https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_write",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.deposit_sets_totalAssets",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Specs.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/OpenZeppelin/ERC4626VirtualOffsetDeposit/Tasks/DepositSetsTotalAssets.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the `totalAssets` post-state write performed by the virtual-offset deposit slice.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "openzeppelin/erc4626_virtual_offset_deposit/deposit_sets_total_shares",
+      "task_id": "deposit_sets_total_shares",
+      "case_id": "openzeppelin/erc4626_virtual_offset_deposit",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/openzeppelin/erc4626_virtual_offset_deposit/tasks/deposit_sets_total_shares.yaml",
+      "split": "backlog",
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "source_ref": "https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "storage_write",
+      "category": "state-transition",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.deposit_sets_totalShares",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Specs.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/OpenZeppelin/ERC4626VirtualOffsetDeposit/Tasks/DepositSetsTotalShares.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task isolates the share-supply update and ties it to the previewed minted amount from the old state.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "openzeppelin/erc4626_virtual_offset_deposit/positive_deposit_mints_positive_shares_under_rate_bound",
+      "task_id": "positive_deposit_mints_positive_shares_under_rate_bound",
+      "case_id": "openzeppelin/erc4626_virtual_offset_deposit",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/openzeppelin/erc4626_virtual_offset_deposit/tasks/positive_deposit_mints_positive_shares_under_rate_bound.yaml",
+      "split": "backlog",
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "source_ref": "https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "output_range",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.positive_deposit_mints_positive_shares_under_rate_bound",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Specs.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/OpenZeppelin/ERC4626VirtualOffsetDeposit/Tasks/PositiveDepositMintsPositiveSharesUnderRateBound.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task expresses the virtual-offset guarantee that a positively sized deposit mints a positive number of shares once the exchange-rate lower bound is met.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
+      "task_ref": "openzeppelin/erc4626_virtual_offset_deposit/preview_deposit_rounds_down",
+      "task_id": "preview_deposit_rounds_down",
+      "case_id": "openzeppelin/erc4626_virtual_offset_deposit",
+      "suite": "backlog",
+      "schema_version": 1,
+      "manifest_path": "backlog/openzeppelin/erc4626_virtual_offset_deposit/tasks/preview_deposit_rounds_down.yaml",
+      "split": "backlog",
+      "family_id": "openzeppelin",
+      "implementation_id": "contracts",
+      "source_ref": "https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "arithmetic-invariant",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.previewDeposit_rounds_down",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "blocked",
+      "implementation_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean"
+      ],
+      "specification_files": [
+        "backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Specs.lean",
+        "Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/OpenZeppelin/ERC4626VirtualOffsetDeposit/Tasks/PreviewDepositRoundsDown.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "This task captures the floor-division bound for ERC-4626 previewed shares under the virtual-offset rule.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "blocked",
+        "reference_solution": "blocked"
+      }
+    },
+    {
       "task_ref": "uniswap_v2/pair_fee_adjusted_swap/swap_enforces_fee_adjusted_invariant",
       "task_id": "swap_enforces_fee_adjusted_invariant",
       "case_id": "uniswap_v2/pair_fee_adjusted_swap",
@@ -1576,5 +1831,5 @@
       }
     }
   ],
-  "generated_at": "2026-03-21T21:40:30.815636+00:00"
+  "generated_at": "2026-03-22T09:48:34.426940+00:00"
 }

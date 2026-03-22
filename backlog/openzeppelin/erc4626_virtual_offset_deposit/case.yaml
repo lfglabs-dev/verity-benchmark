@@ -1,0 +1,43 @@
+manifest_kind: case
+project: openzeppelin
+case_id: erc4626_virtual_offset_deposit
+schema_version: 1
+split: backlog
+family_id: openzeppelin
+implementation_id: contracts
+stage: candidate
+translation_status: translated
+spec_status: frozen
+proof_status: blocked
+upstream_repo: https://github.com/OpenZeppelin/openzeppelin-contracts
+upstream_commit: master
+original_contract_path: contracts/token/ERC20/extensions/ERC4626.sol
+source_ref: https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol
+lean_target: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs
+selected_functions:
+  - previewDeposit
+  - deposit
+failure_reason: reference_proofs_withheld
+source_language: solidity
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
+lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - erc4626
+  - preview_execution_consistency
+  - virtual_offset
+  - rounding_down
+  - inflation_attack_surface
+abstraction_notes: >
+  The slice models only `previewDeposit` and `deposit` using total-assets and
+  total-shares storage together with fixed virtual offsets. Token transfers,
+  fees, hooks, and withdrawals are omitted so the benchmark can focus on
+  rounding-sensitive share minting and the virtual-liquidity defense surface.
+unsupported_feature_codes: []
+spec_target: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs
+proof_target: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs
+notes: >
+  Candidate ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset
+  design and inflation-attack analysis. Reference proofs can validate the four
+  arithmetic/state-transition theorems locally in an intentionally untracked
+  proof module, leaving the committed tree as a backlog candidate.

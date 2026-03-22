@@ -4,12 +4,12 @@ This report is generated from the benchmark manifests.
 
 ## Summary
 
-- Families: 7
-- Implementations: 7
+- Families: 8
+- Implementations: 8
 - Active cases: 4
 - Buildable active cases: 4
 - Active tasks: 18
-- Backlog cases: 3
+- Backlog cases: 4
 
 ## Buildable active cases
 
@@ -241,6 +241,17 @@ This report is generated from the benchmark manifests.
 
 ## Backlog
 
+### `openzeppelin/erc4626_virtual_offset_deposit`
+- Family / implementation: `openzeppelin` / `contracts`
+- Stage: `candidate`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`blocked`
+- Lean target: `Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Specs`
+- Failure reason: `reference_proofs_withheld`
+- Source ref: `https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol`
+- Selected functions: `previewDeposit`, `deposit`
+- Source artifact: `contracts/token/ERC20/extensions/ERC4626.sol`
+- Notes: Candidate ERC-4626 benchmark slice derived from OpenZeppelin's virtual-offset design and inflation-attack analysis. Reference proofs can validate the four arithmetic/state-transition theorems locally in an intentionally untracked proof module, leaving the committed tree as a backlog candidate.
+
 ### `uniswap_v2/pair_fee_adjusted_swap`
 - Family / implementation: `uniswap_v2` / `v2_core`
 - Stage: `candidate`
@@ -250,7 +261,7 @@ This report is generated from the benchmark manifests.
 - Source ref: `https://github.com/Uniswap/v2-core@ee547b17853e71ed4e0101ccfd52e70d5acded58:contracts/UniswapV2Pair.sol`
 - Selected functions: `swap`
 - Source artifact: `contracts/UniswapV2Pair.sol`
-- Notes: Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path.
+- Notes: Candidate AMM benchmark slice for reasoning about fee-adjusted constant-product guards and post-swap reserve synchronization without exposing the full Uniswap execution path. Reference proofs were validated locally on 2026-03-22 in an intentionally untracked proof module, so the committed tree remains a backlog candidate rather than an active runnable case.
 
 ### `unlink_xyz/placeholder`
 - Family / implementation: `unlink_xyz` / `monorepo`

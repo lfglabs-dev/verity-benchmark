@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: positive_deposit_mints_positive_shares_under_rate_bound
+case_id: openzeppelin/erc4626_virtual_offset_deposit
+split: backlog
+family_id: openzeppelin
+implementation_id: contracts
+source_ref: https://github.com/OpenZeppelin/openzeppelin-contracts@master:contracts/token/ERC20/extensions/ERC4626.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.positive_deposit_mints_positive_shares_under_rate_bound
+proof_family: functional_correctness
+property_class: output_range
+difficulty: medium
+category: arithmetic-invariant
+track: proof-only
+translation_status: translated
+proof_status: blocked
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Contract.lean
+  - Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Contract.lean
+specification_files:
+  - backlog/openzeppelin/erc4626_virtual_offset_deposit/verity/Specs.lean
+  - Benchmark/Cases/OpenZeppelin/ERC4626VirtualOffsetDeposit/Specs.lean
+editable_files:
+  - Benchmark/Generated/OpenZeppelin/ERC4626VirtualOffsetDeposit/Tasks/PositiveDepositMintsPositiveSharesUnderRateBound.lean
+reference_solution_module: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.Proofs
+reference_solution_declaration: Benchmark.Cases.OpenZeppelin.ERC4626VirtualOffsetDeposit.positive_deposit_mints_positive_shares_under_rate_bound
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task expresses the virtual-offset guarantee that a positively sized deposit
+  mints a positive number of shares once the exchange-rate lower bound is met.
+unsupported_feature_codes: []
