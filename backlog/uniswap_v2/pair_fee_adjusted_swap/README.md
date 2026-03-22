@@ -1,18 +1,19 @@
-# Uniswap V2 Pair Fee-Adjusted Swap
+## Status
 
-This candidate benchmark slice comes from the guarded reserve update in
-`UniswapV2Pair.swap`, where Uniswap V2 enforces its fee-adjusted constant-product
-condition before storing the new reserves.
+This case remains a backlog candidate.
 
-Why this belongs in the benchmark:
+On 2026-03-22, the four reference theorems for
+`Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap` were proved and validated
+locally in an untracked `Benchmark/Cases/UniswapV2/PairFeeAdjustedSwap/Proofs.lean`
+file, but that proof source is intentionally not committed.
 
-- It adds AMM invariant reasoning, which is not covered by the current active suite.
-- It stays close to economically meaningful production logic from a canonical protocol.
-- The slice is compact enough for Lean/Verity while still requiring nontrivial guarded
-  arithmetic reasoning over pre-state and post-state values.
+Validation run locally:
 
-Abstraction choices:
+```bash
+python3 scripts/validate_manifests.py
+timeout 600s lake build Benchmark.Cases.UniswapV2.PairFeeAdjustedSwap.Proofs
+```
 
-- Token transfers, callbacks, and routing are omitted.
-- The benchmark takes post-transfer balances and inferred input amounts as direct inputs.
-- The slice preserves the 0.3% fee-adjusted product guard and the final reserve writes.
+Because the proof module is not committed, the generated task stubs in
+`Benchmark/Generated/UniswapV2/PairFeeAdjustedSwap/Tasks/` still contain
+`exact ?_` holes and this case is not promoted into the active suite.
