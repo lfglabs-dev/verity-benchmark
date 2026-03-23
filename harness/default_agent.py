@@ -550,8 +550,10 @@ def build_proof_hints(task: dict[str, Any]) -> str:
         "CRITICAL: Include ALL storage field definitions (e.g., `ContractName.depositCount`, `ContractName.chainStarted`) in the simp set so that `.slot` reduces to concrete slot numbers. Without these, simp leaves unresolved `if` expressions.",
         "CRITICAL: Pass ALL precondition hypotheses (`hCount`, `hMin`, etc.) to simp so it can evaluate `if` branches. Simp needs the hypotheses to reduce conditional execution paths.",
         "For mapping storage, the contract may use `setMappingUint`/`getMappingUint`. Include `setMappingUint`/`getMappingUint` and the mapping field definitions in simp.",
-        "If the contract has conditional branches (e.g., `if depositAmount >= threshold then ...`), use `by_cases` on each condition BEFORE calling `simp`, not `split` after. Pass ALL case hypotheses to `simp`. For nested conditionals, nest `by_cases`. Example pattern:\n  ```\n  by_cases hBig : depositAmount >= 32000000000\n  · by_cases hThresh : add (s.storage 1) 1 = 65536\n    · simp [..., hBig, hThresh]\n    · simp [..., hBig, hThresh]\n  · simp [..., hBig]\n  ```",
+        "If the contract has conditional branches (e.g., `if depositAmount >= threshold then ...`), use `by_cases` on each condition BEFORE calling `simp`, not `split` after. CRITICAL: In each `by_cases` branch, repeat the FULL simp set PLUS the case hypothesis. Do NOT use bare `simp [hBig]` - you must include ALL contract definitions, storage fields, and operational symbols in every simp call. Example pattern:\n  ```\n  by_cases hBig : depositAmount >= 32000000000\n  · by_cases hThresh : add (s.storage 1) 1 = 65536\n    · simp [ContractName.fn, ContractName.field1, ContractName.field2, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig, hThresh]\n    · simp [ContractName.fn, ContractName.field1, ContractName.field2, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig, hThresh]\n  · simp [ContractName.fn, ContractName.field1, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig]\n  ```",
         "If `simp` leaves unsolved goals because a hypothesis (e.g., `hBound`) uses a spec helper name while the goal has it unfolded, use `simp_all` instead of `simp`. `simp_all` rewrites hypotheses into the goal context, allowing it to match and discharge conditions that `simp` alone cannot.",
+        "IMPORTANT: Verity contracts compile conditions like `x < y` into `decide (x < y) = true`. Do NOT use `decide_True` or `decide_False` - these identifiers do not exist. Instead, pass the precondition hypotheses (e.g., `hCount`, `hMin`) directly to `simp` and it will handle the `decide` reduction automatically.",
+        "For negated branch conditions in `by_cases`: when `h : ¬ (x >= c)`, you can derive `have hLt : x < c := Nat.lt_of_not_ge h` and vice versa with `Nat.not_le_of_lt`. But usually just passing `h` to `simp` is sufficient.",
         "If helpful, add imports required for proof automation, for example `import Verity.Proofs.Stdlib.Automation`.",
     ]
     family_specific: list[str] = []
@@ -577,10 +579,14 @@ def build_proof_hints(task: dict[str, Any]) -> str:
             "For functional-correctness theorems, unfold the spec to the mathematical target form before simplifying the execution result.",
         ]
     lines = ["Public proof hints:"] + [f"- {item}" for item in [*shared, *family_specific]]
+    full_simp_set = ", ".join(contract_terms) if contract_terms else ""
+    if full_simp_set:
+        full_simp_set += ", "
+    full_simp_set += "getStorage, setStorage, getMapping, setMapping, getMappingUint, setMappingUint, msgSender, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd"
     if contract_terms:
-        lines.append(f"\nContract-specific simp terms for this task (include ALL of these in your simp calls):")
-        lines.append(f"  simp_all [{', '.join(contract_terms)}, getStorage, setStorage, getMapping, setMapping, getMappingUint, setMappingUint, msgSender, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]")
-        lines.append(f"  (Use `simp_all` instead of `simp` when hypotheses reference spec helpers like `computedClaimAmount`. If `simp_all` is too aggressive, fall back to `simp [..., <hypotheses>]`.)")
+        lines.append(f"\nFull simp set for this task (copy-paste this into EVERY simp call, including inside by_cases branches):")
+        lines.append(f"  [{full_simp_set}]")
+        lines.append(f"  IMPORTANT: Inside each `by_cases` branch, use `simp [{full_simp_set}, <all_hypotheses>]`. Never use bare `simp [h]`.")
     # Extract and show branch conditions
     branches = extract_contract_branches(task)
     if branches:
@@ -1190,6 +1196,12 @@ def extract_tool_calls(response: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _looks_like_lean(text: str) -> bool:
+    """Check if text looks like Lean code rather than natural-language explanation."""
+    lean_keywords = ("import ", "theorem ", "def ", "lemma ", "namespace ", "open ", ":= by", "simp", "exact")
+    return any(kw in text for kw in lean_keywords)
+
+
 def extract_candidate_file(response_text: str) -> str:
     text = response_text.strip()
     fenced = re.findall(r"```(?:lean)?\s*\n(.*?)```", text, flags=re.DOTALL)
@@ -1691,7 +1703,9 @@ def execute_interactive_agent_task(
         attempts[-1]["tool_calls"] = tool_calls
         if not tool_calls:
             final_candidate = extract_candidate_file(response_text)
-            if final_candidate.strip():
+            # Only overwrite the stored proof if the response looks like Lean code,
+            # not natural-language explanation.
+            if final_candidate.strip() and _looks_like_lean(final_candidate):
                 runtime.write_editable_proof(final_candidate)
             evaluation = runtime.evaluate_current()
             refresh_attempt_record(
@@ -1749,6 +1763,17 @@ def execute_interactive_agent_task(
                     "result": result,
                 }
             )
+            # Early exit: if a verification tool passed, stop immediately
+            if tool_name in ("run_lean_check", "try_tactic_at_hole") and result.get("status") == "passed":
+                evaluation = result
+                refresh_attempt_record(
+                    attempts[-1],
+                    candidate_text=runtime.current_proof_text,
+                    evaluation=evaluation,
+                    previous_attempt=previous_attempt,
+                    latency_seconds=time.perf_counter() - attempt_start,
+                )
+                return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
 
     evaluation = runtime.evaluate_current()
     if evaluation.get("failure_mode") == "empty_response":

@@ -10,6 +10,13 @@ from typing import Any
 
 from task_runner import ROOT, run_command as lean_run_command
 
+# Optional: PyPantograph for structured tactic execution
+try:
+    import pantograph  # type: ignore[import-untyped]
+    PANTOGRAPH_AVAILABLE = True
+except ImportError:
+    PANTOGRAPH_AVAILABLE = False
+
 PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
 HOLE_PATTERN = re.compile(r"\?(?:_|\w+)")
 DEF_PATTERN = re.compile(r"^\s*(?:def|theorem|lemma|abbrev|opaque)\s+([A-Za-z0-9_'.]+)")
@@ -122,6 +129,38 @@ class TaskProofRuntime:
             "holes": holes,
             "details": evaluation["details"],
             "command": evaluation.get("command"),
+        }
+
+    def try_tactic_at_hole(self, tactic: str) -> dict[str, Any]:
+        """Try replacing all ?_ holes with a specific tactic and check if it works.
+
+        This is a lightweight alternative to PyPantograph for targeted tactic execution.
+        The original proof is preserved if the tactic fails.
+        """
+        if not tactic.strip():
+            return {"status": "rejected", "reason": "tactic_must_not_be_empty"}
+        original = self.current_proof_text
+        # Replace all ?_ holes with the given tactic
+        modified = re.sub(r"\?_", tactic.strip(), original)
+        if modified == original:
+            return {
+                "status": "unsupported",
+                "reason": "no_holes_found",
+                "details": "No `?_` holes in the current proof. Write a proof with `?_` holes first.",
+            }
+        evaluation = self.evaluate_candidate(modified)
+        if evaluation.get("status") == "passed":
+            self.current_proof_text = modified
+            return {
+                "status": "passed",
+                "tactic": tactic.strip(),
+                "details": "Tactic succeeded. Proof updated.",
+            }
+        return {
+            "status": "failed",
+            "tactic": tactic.strip(),
+            "details": evaluation.get("details", "")[:2000],
+            "failure_class": _classify_failure(str(evaluation.get("details", ""))),
         }
 
     def evaluate_current(self, *, check_goals: bool = False) -> dict[str, Any]:
@@ -279,6 +318,24 @@ class TaskProofRuntime:
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "try_tactic_at_hole",
+                    "description": "Try replacing all `?_` holes in the current proof with a specific tactic and check if it compiles. Preserves the original proof if it fails. Useful for testing tactics like `simp_all [...]`, `omega`, `decide`, or `duper [...]`.",
+                    "parameters": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["tactic"],
+                        "properties": {
+                            "tactic": {
+                                "type": "string",
+                                "description": "The Lean tactic to try at each ?_ hole.",
+                            }
+                        },
+                    },
+                },
+            },
         ]
 
     def execute_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -296,6 +353,8 @@ class TaskProofRuntime:
         if name == "search_public_defs":
             limit = int(arguments.get("limit", 20))
             return self.search_public_defs(str(arguments.get("query", "")), limit=limit)
+        if name == "try_tactic_at_hole":
+            return self.try_tactic_at_hole(str(arguments.get("tactic", "")))
         return {"status": "rejected", "reason": "unknown_tool", "tool": name}
 
     def _annotate_check_result(self, result: dict[str, Any]) -> dict[str, Any]:
@@ -414,7 +473,10 @@ def _build_check_hints(failure_class: str, details: str) -> list[str]:
     """Build targeted repair hints based on failure classification."""
     hints: list[str] = []
     if failure_class == "unknown_identifier":
-        hints.append("Use search_public_defs to find correct names from spec/impl files.")
+        if "decide_True" in details or "decide_False" in details:
+            hints.append("CRITICAL: `decide_True` and `decide_False` do not exist. Remove them. Instead, pass precondition hypotheses directly to `simp` - it handles `decide` reduction automatically.")
+        else:
+            hints.append("Use search_public_defs to find correct names from spec/impl files.")
         hints.append("Check imports. Standard names: Nat.lt_of_not_ge, Nat.not_le_of_lt.")
     elif failure_class == "unsolved_goals":
         hints.append("Use inspect_lean_goals with a ?_ hole to see exact goal state.")
@@ -424,6 +486,8 @@ def _build_check_hints(failure_class: str, details: str) -> list[str]:
             hints.append("If a hypothesis is reported as unused by simp, try `simp_all` instead of `simp`. `simp_all` rewrites hypotheses into the goal, resolving mismatches between spec helper names and unfolded definitions.")
         hints.append("Try restructuring: `by_cases h : condition · simp [..., h] · simp [..., h]`.")
     elif failure_class == "type_mismatch":
+        if "decide" in details:
+            hints.append("The goal contains `decide` expressions. Pass all precondition hypotheses to `simp` and it will reduce `decide` automatically. Do NOT try to manually match `decide` types.")
         hints.append("Unfold definitions to align types. Check spec matches impl.")
     elif failure_class == "split_failed":
         hints.append("Do not split the post-state. Use by_cases with branch-specific helpers.")
@@ -434,8 +498,7 @@ def _build_check_hints(failure_class: str, details: str) -> list[str]:
     elif failure_class == "unknown_tactic":
         hints.append("Use standard Lean 4 / Mathlib tactics only.")
     elif failure_class == "simp_no_progress":
-        hints.append("simp/dsimp made no progress. The simp lemmas may be wrong or unnecessary.")
-        hints.append("If this is after a `split` or `by_cases`, provide the full simp set AND all case hypotheses. Bare `simp` won't work.")
+        hints.append("simp/dsimp made no progress. CRITICAL: In each `by_cases` branch, you MUST repeat the FULL simp set (all contract definitions, storage fields, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd) PLUS the case hypothesis and all preconditions. Bare `simp [h]` will never work.")
         hints.append("Check that you are using the correct function name from the implementation file.")
     elif failure_class == "unfold_failed":
         hints.append("unfold failed. The definition name may be wrong or not unfoldable.")
