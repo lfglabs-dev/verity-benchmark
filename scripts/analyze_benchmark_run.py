@@ -18,6 +18,14 @@ FAILURE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("lean_check_failed", re.compile(r"CandidateCheck\.lean:|unsolved goals|type mismatch|simp made no progress|error:", re.I)),
 ]
 
+LEAN_DETAIL_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("unsolved_goals", re.compile(r"unsolved goals", re.I)),
+    ("simp_no_progress", re.compile(r"simp made no progress", re.I)),
+    ("type_mismatch", re.compile(r"type mismatch", re.I)),
+    ("unknown_identifier", re.compile(r"Unknown identifier", re.I)),
+    ("free_variable_issue", re.compile(r"expected type must not contain free variables", re.I)),
+]
+
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -58,6 +66,21 @@ def attempt_has_candidate_state(attempt: dict[str, Any]) -> bool:
     return bool((isinstance(status, str) and status) or (isinstance(failure_mode, str) and failure_mode))
 
 
+def classify_lean_detail(payload: dict[str, Any]) -> str | None:
+    evaluation = payload.get("evaluation")
+    if not isinstance(evaluation, dict):
+        return None
+    if evaluation.get("failure_mode") != "lean_check_failed":
+        return None
+    details = evaluation.get("details")
+    if not isinstance(details, str):
+        return "other_lean_failure"
+    for label, pattern in LEAN_DETAIL_PATTERNS:
+        if pattern.search(details):
+            return label
+    return "other_lean_failure"
+
+
 def summarize_summary_file(summary_path: Path) -> None:
     data = load_json(summary_path)
     by_module: OrderedDict[str, dict[str, int]] = OrderedDict()
@@ -68,6 +91,7 @@ def summarize_summary_file(summary_path: Path) -> None:
     candidate_changes = 0
     failure_mode_changes = 0
     solved_after_retry = 0
+    lean_failure_details: Counter[str] = Counter()
 
     for task in data["tasks"]:
         task_ref = task["task_ref"]
@@ -100,7 +124,11 @@ def summarize_summary_file(summary_path: Path) -> None:
                     failure_mode_changes += 1
 
         if task["status"] == "failed":
-            failure_modes[classify_failure(payload)] += 1
+            failure_mode = classify_failure(payload)
+            failure_modes[failure_mode] += 1
+            lean_detail = classify_lean_detail(payload)
+            if lean_detail:
+                lean_failure_details[lean_detail] += 1
 
     print(f"summary: {summary_path}")
     print(f"run_slug: {data['run_slug']}")
@@ -111,6 +139,10 @@ def summarize_summary_file(summary_path: Path) -> None:
     if failure_modes:
         print("failure_modes:")
         for label, count in failure_modes.most_common():
+            print(f"  {label}: {count}")
+    if lean_failure_details:
+        print("lean_failure_details:")
+        for label, count in lean_failure_details.most_common():
             print(f"  {label}: {count}")
     if retry_histogram:
         print("attempt_histogram:")
@@ -139,6 +171,7 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
     candidate_changes = 0
     failure_mode_changes = 0
     solved_after_retry = 0
+    lean_failure_details: Counter[str] = Counter()
 
     files = sorted(artifact_dir.glob("*.json"))
     for path in files:
@@ -180,7 +213,11 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
                     failure_mode_changes += 1
 
         if status == "failed":
-            failure_modes[classify_failure(payload)] += 1
+            failure_mode = classify_failure(payload)
+            failure_modes[failure_mode] += 1
+            lean_detail = classify_lean_detail(payload)
+            if lean_detail:
+                lean_failure_details[lean_detail] += 1
 
     print(f"artifacts: {artifact_dir}")
     print(f"completed: {len(files)} passed={sum(v['passed'] for v in by_module.values())} failed={sum(v['failed'] for v in by_module.values())}")
@@ -190,6 +227,10 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
     if failure_modes:
         print("failure_modes:")
         for label, count in failure_modes.most_common():
+            print(f"  {label}: {count}")
+    if lean_failure_details:
+        print("lean_failure_details:")
+        for label, count in lean_failure_details.most_common():
             print(f"  {label}: {count}")
     if retry_histogram:
         print("attempt_histogram:")

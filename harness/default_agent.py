@@ -542,7 +542,31 @@ def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[di
 
 
 def build_repair_guidance(details: str) -> str:
+    return build_failure_mode_guidance(None, details)
+
+
+def build_failure_mode_guidance(failure_mode: str | None, details: str) -> str:
     hints: list[str] = []
+    if failure_mode == "empty_response":
+        hints.append(
+            "- Your previous reply did not include a usable Lean file. Return only the complete Lean proof file."
+        )
+    if failure_mode == "placeholder_detected":
+        hints.append(
+            "- Do not use `sorry`, `admit`, or `axiom`. Finish the proof with real Lean code."
+        )
+    if failure_mode == "theorem_statement_mismatch":
+        hints.append(
+            "- Keep the editable theorem statement byte-for-byte compatible. Change only the proof body or add private helper lemmas."
+        )
+    if failure_mode == "hidden_proof_import_detected":
+        hints.append(
+            "- Remove any `Benchmark.Cases.*.Proofs` imports. Hidden proof modules are forbidden."
+        )
+    if failure_mode == "hidden_case_import_detected":
+        hints.append(
+            "- Only import task-public modules plus general Lean/Verity libraries. Do not import other case modules."
+        )
     if "tactic 'split' failed" in details:
         hints.append(
             "- Do not `split` the final post-state blindly. Prove branch-specific helper theorems first, then use `by_cases` plus `simpa`."
@@ -559,6 +583,18 @@ def build_repair_guidance(details: str) -> str:
         hints.append(
             "- Fix typos or missing imports directly. Standard names such as `Nat.lt_of_not_ge` and `Nat.not_le_of_lt` are often useful."
         )
+    if "simp made no progress" in details:
+        hints.append(
+            "- Unfold the concrete execution definition first, then simplify with only relevant hypotheses and definitions. Add a helper lemma for the blocked branch if needed."
+        )
+    if "type mismatch" in details:
+        hints.append(
+            "- Normalize both sides to the same state/update shape before applying `rfl`, `simpa`, or congruence steps."
+        )
+    if "unsolved goals" in details:
+        hints.append(
+            "- Focus on the first remaining goal. Introduce a private helper theorem for that exact state expression instead of enlarging the final proof."
+        )
     if "unsolved goals" in details and "if " in details:
         hints.append(
             "- If `simp` leaves finite residual equalities or `if` expressions, finish those with `native_decide` or `decide`."
@@ -574,13 +610,16 @@ def build_repair_messages(
     attempt_index: int,
     max_attempts: int,
 ) -> list[dict[str, Any]]:
+    failure_mode = str(evaluation.get("failure_mode") or "").strip() or None
     details = str(evaluation.get("details", "")).strip()
     trimmed_details = details[:MAX_ERROR_FEEDBACK_CHARS]
-    guidance = build_repair_guidance(trimmed_details)
+    guidance = build_failure_mode_guidance(failure_mode, trimmed_details)
+    failure_summary = f"Failure mode: {failure_mode}\n" if failure_mode else ""
     repair_prompt = (
         f"The previous Lean file did not pass the checker (attempt {attempt_index} of {max_attempts}).\n"
         "Return a corrected complete replacement for the editable Lean proof file.\n"
         "Return Lean code only, with no markdown fences or extra explanation.\n\n"
+        f"{failure_summary}"
         "Previous candidate file:\n"
         f"{candidate_text.rstrip()}\n\n"
         "Lean checker output:\n"
@@ -1377,36 +1416,62 @@ def execute_strict_agent_task(
     task: dict[str, Any],
     messages: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], str, dict[str, Any], list[dict[str, Any]]]:
-    attempt_messages = messages
-    response: dict[str, Any] = {}
-    response_text = ""
-    candidate_text = ""
-    evaluation: dict[str, Any] = {
+    runtime = TaskProofRuntime(task)
+    attempt_messages = list(messages)
+    final_response: dict[str, Any] = {}
+    final_response_text = ""
+    final_evaluation: dict[str, Any] = {
         "status": "failed",
         "failure_mode": "agent_not_run",
         "details": "agent invocation did not start",
     }
     attempts: list[dict[str, Any]] = []
+    previous_attempt: dict[str, Any] | None = None
 
-    attempt_start = time.perf_counter()
-    response = send_chat_completion(config, attempt_messages)
-    attempt_latency = time.perf_counter() - attempt_start
-    response_text = extract_text(response)
-    candidate_text = extract_candidate_file(response_text)
-    evaluation = evaluate_candidate_submission(task, candidate_text)
-    attempts.append(
-        build_attempt_record(
-            attempt_index=1,
+    for attempt_index in range(1, config.max_attempts + 1):
+        attempt_start = time.perf_counter()
+        response = send_chat_completion(config, attempt_messages)
+        attempt_latency = time.perf_counter() - attempt_start
+        response_text = extract_text(response)
+        candidate_text = extract_candidate_file(response_text)
+        evaluation = runtime.preflight_candidate(candidate_text) or evaluate_candidate_submission(task, candidate_text)
+        attempt_record = build_attempt_record(
+            attempt_index=attempt_index,
             mode="strict",
             messages=attempt_messages,
             response=response,
             candidate_text=candidate_text,
             evaluation=evaluation,
-            previous_attempt=None,
+            previous_attempt=previous_attempt,
             latency_seconds=attempt_latency,
         )
-    )
-    return response, response_text, evaluation, attempts
+        attempts.append(attempt_record)
+        if attempt_has_candidate_state(attempt_record):
+            previous_attempt = attempt_record
+        final_response = response
+        final_response_text = response_text
+        final_evaluation = evaluation
+        if evaluation.get("status") == "passed":
+            break
+        if attempt_index >= config.max_attempts:
+            break
+        if evaluation.get("failure_mode") == "empty_response":
+            attempt_messages = build_finalization_messages(
+                messages,
+                response,
+                attempt_index=attempt_index,
+                max_attempts=config.max_attempts,
+            )
+            continue
+        attempt_messages = build_repair_messages(
+            messages,
+            candidate_text,
+            evaluation,
+            attempt_index=attempt_index,
+            max_attempts=config.max_attempts,
+        )
+
+    return final_response, final_response_text, final_evaluation, attempts
 
 
 def execute_interactive_agent_task(
