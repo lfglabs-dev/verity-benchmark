@@ -37,6 +37,14 @@ class BenchmarkTarget:
     repeats: int
 
 
+TARGET_CONFIGS: dict[str, Path] = {
+    "builtin-fast": ROOT / "harness/agents/default.json",
+    "builtin-smart": ROOT / "harness/agents/builtin-smart.json",
+    "openrouter-gemini-3.1-flash-lite-preview": ROOT / "harness/agents/openrouter-gemini-3.1-flash-lite-preview.json",
+    "leanstral": ROOT / "harness/agents/leanstral.json",
+}
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -135,16 +143,22 @@ def run_suite(config_path: Path, *, log_handle: Any) -> Path:
     return summary_path
 
 
+def benchmark_target(key: str, repeats: int) -> BenchmarkTarget:
+    config_path = TARGET_CONFIGS.get(key)
+    if config_path is None:
+        raise SystemExit(f"unknown target key {key!r}")
+    return BenchmarkTarget(key=key, config_path=config_path, repeats=repeats)
+
+
 def target_specs(args: argparse.Namespace) -> list[BenchmarkTarget]:
-    return [
-        BenchmarkTarget("builtin-fast", ROOT / "harness/agents/default.json", args.fast_repeats),
-        BenchmarkTarget("builtin-smart", ROOT / "harness/agents/builtin-smart.json", args.smart_repeats),
-        BenchmarkTarget(
-            "openrouter-gemini-3.1-flash-lite-preview",
-            ROOT / "harness/agents/openrouter-gemini-3.1-flash-lite-preview.json",
-            args.openrouter_repeats,
-        ),
-    ]
+    requested_keys = list(args.target_key) if getattr(args, "target_key", None) else list(TARGET_CONFIGS)
+    repeat_map = {
+        "builtin-fast": args.fast_repeats,
+        "builtin-smart": args.smart_repeats,
+        "openrouter-gemini-3.1-flash-lite-preview": args.openrouter_repeats,
+        "leanstral": args.leanstral_repeats,
+    }
+    return [benchmark_target(key, repeat_map[key]) for key in requested_keys]
 
 
 def resolve_state_dir(run_id: str | None) -> Path:
@@ -442,6 +456,49 @@ def command_start(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_add_target(args: argparse.Namespace) -> int:
+    state_dir = resolve_state_dir(args.run_id)
+    state = load_json(state_dir / "state.json")
+    existing_keys = {str(item["key"]) for item in state["targets"]}
+    if args.target_key in existing_keys:
+        raise SystemExit(f"target {args.target_key!r} already exists in run {state['run_id']}")
+
+    target = benchmark_target(args.target_key, args.repeats)
+    config = load_config(target.config_path)
+    log_path = state_dir / "logs" / f"{target.key}.log"
+    worker_payload = {
+        "schema_version": 2,
+        "target_key": target.key,
+        "status": "starting",
+        "pid": 0,
+        "model": str(config["model"]),
+        "repeats": target.repeats,
+        "completed_runs": 0,
+        "current_run_index": 1 if target.repeats > 0 else 0,
+        "log_path": relative(log_path),
+        "started_at": utc_now(),
+        "runs": [],
+    }
+    write_worker_state(state_dir, target.key, worker_payload)
+    state["targets"].append(
+        {
+            "key": target.key,
+            "model": str(config["model"]),
+            "config_path": relative(target.config_path),
+            "repeats": target.repeats,
+            "log_path": relative(log_path),
+            "worker_state_path": relative(worker_state_path(state_dir, target.key)),
+        }
+    )
+    write_json(state_dir / "state.json", state)
+
+    pid = spawn_worker(state_dir, state["run_id"], target.key, log_path)
+    worker_payload.update({"status": "running", "pid": pid})
+    write_worker_state(state_dir, target.key, worker_payload)
+    print(f"{target.key}: started pid={pid}")
+    return 0
+
+
 def command_retry_target(args: argparse.Namespace) -> int:
     state_dir = resolve_state_dir(args.run_id)
     state = load_json(state_dir / "state.json")
@@ -698,6 +755,13 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument("--fast-repeats", type=int, default=3)
     start_parser.add_argument("--smart-repeats", type=int, default=3)
     start_parser.add_argument("--openrouter-repeats", type=int, default=1)
+    start_parser.add_argument("--leanstral-repeats", type=int, default=1)
+    start_parser.add_argument(
+        "--target-key",
+        action="append",
+        choices=sorted(TARGET_CONFIGS),
+        help="Restrict the started run to one or more named targets",
+    )
 
     worker_parser = subparsers.add_parser("worker", help=argparse.SUPPRESS)
     worker_parser.add_argument("--run-id", required=True)
@@ -737,6 +801,11 @@ def build_parser() -> argparse.ArgumentParser:
     retry_parser.add_argument("--target-key", required=True)
     retry_parser.add_argument("--clear-log", action="store_true")
 
+    add_target_parser = subparsers.add_parser("add-target", help="Add and start a new target in an existing matrix run")
+    add_target_parser.add_argument("--run-id")
+    add_target_parser.add_argument("--target-key", required=True, choices=sorted(TARGET_CONFIGS))
+    add_target_parser.add_argument("--repeats", type=int, default=1)
+
     return parser
 
 
@@ -764,6 +833,8 @@ def main() -> int:
         return command_wait(args)
     if args.command == "retry-target":
         return command_retry_target(args)
+    if args.command == "add-target":
+        return command_add_target(args)
     raise SystemExit(f"unsupported command {args.command!r}")
 
 

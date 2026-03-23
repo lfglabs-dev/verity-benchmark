@@ -57,10 +57,12 @@ Benchmark matrix:
 
 ```bash
 python3 scripts/run_benchmark_matrix.py start
+python3 scripts/run_benchmark_matrix.py start --target-key leanstral
 python3 scripts/run_benchmark_matrix.py status
 python3 scripts/run_benchmark_matrix.py logs --target-key builtin-fast
 python3 scripts/run_benchmark_matrix.py pause --target-key builtin-fast
 python3 scripts/run_benchmark_matrix.py resume --target-key builtin-fast
+python3 scripts/run_benchmark_matrix.py add-target --run-id <run_id> --target-key leanstral --repeats 1
 python3 scripts/run_benchmark_matrix.py wait
 ```
 
