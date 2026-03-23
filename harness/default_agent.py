@@ -1252,6 +1252,9 @@ def execute_strict_agent_task(
     return response, response_text, evaluation, attempts
 
 
+RESTART_AFTER_CONSECUTIVE_FAILURES = 6
+
+
 def _compact_interactive_transcript(
     transcript: list[dict[str, Any]],
     base_message_count: int,
@@ -1259,12 +1262,17 @@ def _compact_interactive_transcript(
     error_details: str,
     attempt_index: int,
     max_attempts: int,
+    consecutive_failures: int = 0,
 ) -> list[dict[str, Any]]:
     """Compact transcript by keeping base messages + first exploration + compact repair.
 
     We preserve the initial exploration (file reads, searches) but drop intermediate
     failed write-check cycles to prevent context pollution and save tokens.
     The latest failed proof and error are injected as a single user message.
+
+    After RESTART_AFTER_CONSECUTIVE_FAILURES consecutive lean check failures, we drop
+    the failed proof from the repair message and instead instruct the model to try a
+    completely different proof strategy (a "restart").
     """
     # Find the first write_editable_proof call to split exploration from repair
     cutoff = len(transcript)
@@ -1283,15 +1291,31 @@ def _compact_interactive_transcript(
 
     # Keep base messages + exploration phase (up to first write), then add repair
     kept = transcript[:cutoff]
-    guidance = build_repair_guidance(error_details)
-    repair_msg = (
-        f"Your proof attempt (attempt {attempt_index} of {max_attempts}) failed the Lean checker.\n"
-        "Fix the proof and resubmit using write_editable_proof, then call run_lean_check.\n\n"
-        f"Failed proof:\n```lean\n{proof_text.rstrip()}\n```\n\n"
-        f"Lean checker output:\n{error_details}\n"
-    )
-    if guidance:
-        repair_msg += f"\nRepair guidance:\n{guidance}\n"
+
+    if consecutive_failures >= RESTART_AFTER_CONSECUTIVE_FAILURES:
+        # Strategy restart: don't show the failed proof, ask for a fresh approach
+        repair_msg = (
+            f"You have failed {consecutive_failures} consecutive Lean check attempts "
+            f"(attempt {attempt_index} of {max_attempts}).\n"
+            "Your current approach is not working. Try a fundamentally different proof strategy:\n"
+            "- If you were using `simp` with many definitions, try proving with `by_cases` and smaller helper lemmas.\n"
+            "- If you were using `by_cases`, try a direct `simp` with all relevant definitions.\n"
+            "- If you were using named lemmas, switch to `omega`, `decide`, or `native_decide`.\n"
+            "- Consider unfolding the spec first with `unfold` before applying tactics.\n\n"
+            f"Last error:\n{error_details[:2000]}\n\n"
+            "Submit a completely new proof using write_editable_proof, then call run_lean_check.\n"
+        )
+    else:
+        guidance = build_repair_guidance(error_details)
+        repair_msg = (
+            f"Your proof attempt (attempt {attempt_index} of {max_attempts}) failed the Lean checker.\n"
+            "Fix the proof and resubmit using write_editable_proof, then call run_lean_check.\n\n"
+            f"Failed proof:\n```lean\n{proof_text.rstrip()}\n```\n\n"
+            f"Lean checker output:\n{error_details}\n"
+        )
+        if guidance:
+            repair_msg += f"\nRepair guidance:\n{guidance}\n"
+
     kept.append({"role": "user", "content": repair_msg})
     return kept
 
@@ -1309,6 +1333,7 @@ def execute_interactive_agent_task(
     response_text = ""
     tool_calls_used = 0
     last_lean_error: str | None = None
+    consecutive_lean_failures = 0
 
     for attempt_index in range(1, config.max_attempts + 1):
         response = send_chat_completion(config, transcript, tools=runtime.tool_specs())
@@ -1336,10 +1361,12 @@ def execute_interactive_agent_task(
             # Failed candidate without tool calls: compact and retry
             failure_mode = evaluation.get("failure_mode", "")
             if failure_mode == "lean_check_failed":
+                consecutive_lean_failures += 1
                 details = str(evaluation.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
                 transcript = _compact_interactive_transcript(
                     transcript, len(base_messages), runtime.current_proof_text, details,
                     attempt_index, config.max_attempts,
+                    consecutive_failures=consecutive_lean_failures,
                 )
             elif failure_mode in ("empty_response", "placeholder_detected", "theorem_statement_mismatch"):
                 retry_msg = (
@@ -1400,6 +1427,7 @@ def execute_interactive_agent_task(
             if tool_name == "run_lean_check" and result.get("failure_mode") == "lean_check_failed":
                 last_lean_error = str(result.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
                 saw_lean_failure = True
+                consecutive_lean_failures += 1
             elif tool_name == "run_lean_check" and result.get("status") == "passed":
                 evaluation = result
                 attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
@@ -1411,6 +1439,7 @@ def execute_interactive_agent_task(
             transcript = _compact_interactive_transcript(
                 transcript, len(base_messages), runtime.current_proof_text, last_lean_error,
                 attempt_index, config.max_attempts,
+                consecutive_failures=consecutive_lean_failures,
             )
 
     evaluation = runtime.evaluate_current()
