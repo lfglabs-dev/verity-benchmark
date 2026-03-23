@@ -556,9 +556,11 @@ def build_repair_guidance(details: str) -> str:
         hints.append(
             "- Do not use `native_decide` or `decide` on goals that still contain parameters. First reduce to concrete equalities."
         )
-    if "Unknown identifier" in details or "unknown identifier" in details:
+    if "unknown constant" in details or "Unknown identifier" in details or "unknown identifier" in details:
         hints.append(
-            "- Fix typos or missing imports directly. Standard names such as `Nat.lt_of_not_ge` and `Nat.not_le_of_lt` are often useful."
+            "- You are referencing a lemma or constant that does not exist in this Lean 4 environment. "
+            "Do not guess lemma names. Instead, use `simp` with the relevant definitions, `omega` for arithmetic, "
+            "or `decide`/`native_decide` for decidable propositions. Remove all references to unknown names."
         )
     if "unsolved goals" in details and "if " in details:
         hints.append(
@@ -571,6 +573,15 @@ def build_repair_guidance(details: str) -> str:
     if "type mismatch" in details:
         hints.append(
             "- A type mismatch often means the proof term or tactic result does not match the goal. Re-read the spec and ensure your proof targets the correct type."
+        )
+    if "simp made no progress" in details:
+        hints.append(
+            "- `simp` made no progress with the given arguments. Add more definitions to unfold, "
+            "or the simp arguments may already be fully reduced. Try removing the unproductive simp call."
+        )
+    if "failed to infer binder type" in details:
+        hints.append(
+            "- Lean cannot infer a binder type. Add explicit type annotations to your helper lemma parameters."
         )
     return "\n".join(hints)
 
