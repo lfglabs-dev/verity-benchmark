@@ -1715,7 +1715,23 @@ def execute_interactive_agent_task(
                 previous_attempt=previous_attempt,
                 latency_seconds=attempt_latency,
             )
-            return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
+            if evaluation.get("status") == "passed":
+                return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
+            # Proof failed — feed the failure back and continue the loop
+            details = str(evaluation.get("details", ""))[:2000]
+            failure_class = evaluation.get("failure_class", "")
+            transcript.append({"role": "assistant", "content": response_text or ""})
+            transcript.append({
+                "role": "user",
+                "content": (
+                    f"Your proof did not pass (attempt {attempt_index} of {config.max_attempts}). "
+                    f"Failure: {failure_class or 'unknown'}.\n"
+                    f"Details: {details}\n\n"
+                    "Use write_editable_proof to write a corrected proof, then run_lean_check to verify. "
+                    "Do not return text — use the tools."
+                ),
+            })
+            continue
 
         message = response.get("choices", [{}])[0].get("message", {})
         transcript.append(

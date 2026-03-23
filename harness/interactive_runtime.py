@@ -39,6 +39,8 @@ class TaskProofRuntime:
         if len(editable_files) != 1:
             raise ValueError("tasks must declare exactly one editable Lean file")
         editable_rel_path = editable_files[0]
+        self._check_history: list[str] = []  # failure_class history for stagnation detection
+        self._task = task  # store for hint escalation
         self.paths = RuntimePaths(
             editable_rel_path=editable_rel_path,
             theorem_name=str(task["theorem_name"]),
@@ -364,6 +366,35 @@ class TaskProofRuntime:
         hints = _build_check_hints(failure_class, details)
         annotated = dict(result)
         annotated["failure_class"] = failure_class
+
+        # Track failure history for stagnation detection
+        self._check_history.append(failure_class)
+        total_failures = len(self._check_history)
+
+        # Count consecutive same-class failures
+        same_class_count = 0
+        for fc in reversed(self._check_history):
+            if fc == failure_class:
+                same_class_count += 1
+            else:
+                break
+
+        # Escalate on either: 2+ consecutive same-class failures, or 4+ total failures
+        if same_class_count >= 2 or total_failures >= 4:
+            if same_class_count >= 2:
+                annotated["stagnation_warning"] = (
+                    f"Same failure class '{failure_class}' repeated {same_class_count} times. "
+                    "Your current approach is not working. Try a fundamentally different proof structure."
+                )
+            else:
+                annotated["stagnation_warning"] = (
+                    f"You have failed {total_failures} times across different error classes. "
+                    "Step back and reconsider your proof strategy from scratch."
+                )
+            escalation = self._build_escalation_hint(failure_class)
+            if escalation:
+                hints.append(escalation)
+
         if hints:
             annotated["repair_hints"] = hints
 
@@ -376,6 +407,39 @@ class TaskProofRuntime:
             annotated["first_error_line"] = min(error_lines)
 
         return annotated
+
+    def _build_escalation_hint(self, failure_class: str) -> str | None:
+        """Build an escalation hint when the model is stagnating on a failure class."""
+        terms = _extract_simp_terms_for_task(self._task)
+        if terms:
+            full_set = ", ".join(terms)
+            full_set += ", getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd"
+        else:
+            full_set = ""
+
+        if failure_class in ("simp_no_progress", "unsolved_goals", "rfl_failed", "unfold_failed"):
+            if full_set:
+                return (
+                    f"ESCALATION: You are stuck. Do NOT use `unfold` on contract functions. "
+                    f"Instead, pass them to `simp`. Here is the proof template:\n"
+                    f"1. Start with `unfold <spec_name>` to unfold the spec definition only\n"
+                    f"2. Use `by_cases` on each conditional branch BEFORE calling simp\n"
+                    f"3. In EVERY branch, use: simp [{full_set}, <all hypotheses including by_cases vars>]\n"
+                    f"4. For nested conditionals, nest `by_cases` inside the outer branch\n"
+                    f"5. Never use bare `simp [h]` or `unfold ContractName.functionName`"
+                )
+        if failure_class == "unknown_identifier":
+            return (
+                "ESCALATION: Stop guessing identifier names. Use the search_public_defs tool "
+                "to find the exact names from the implementation and specification files."
+            )
+        if failure_class == "type_mismatch":
+            if full_set:
+                return (
+                    f"ESCALATION: Type mismatch usually means you're not simplifying enough. "
+                    f"Use simp [{full_set}, <all hypotheses>] to fully reduce the expression."
+                )
+        return None
 
     def _materialize_workspace(self, workspace: Path) -> None:
         workspace.mkdir(parents=True, exist_ok=True)
@@ -433,6 +497,42 @@ class TaskProofRuntime:
         if suffix:
             module_path = module_path[: -len(suffix)]
         return module_path.replace("/", ".")
+
+
+def _extract_simp_terms_for_task(task: dict[str, Any]) -> list[str]:
+    """Extract concrete simp terms from implementation files for escalation hints."""
+    terms: list[str] = []
+    contract_name = ""
+    for rel_path in task.get("implementation_files", []):
+        path = ROOT / rel_path
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        contract_match = re.search(r"verity_contract\s+(\w+)\s+where", content)
+        if contract_match:
+            contract_name = contract_match.group(1)
+        for field_match in re.finditer(
+            r"^\s+(\w+)\s*:.*:=\s*slot\s+\d+", content, re.MULTILINE
+        ):
+            field_name = field_match.group(1)
+            if contract_name:
+                terms.append(f"{contract_name}.{field_name}")
+        for fn_match in re.finditer(
+            r"^\s+function\s+(\w+)\s*\(", content, re.MULTILINE
+        ):
+            fn_name = fn_match.group(1)
+            if contract_name:
+                terms.append(f"{contract_name}.{fn_name}")
+    for rel_path in task.get("specification_files", []):
+        path = ROOT / rel_path
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        for def_match in re.finditer(r"^def\s+(\w+)\b", content, re.MULTILINE):
+            def_name = def_match.group(1)
+            if not def_name.endswith("_spec") and def_name not in terms:
+                terms.append(def_name)
+    return terms
 
 
 def _classify_failure(details: str) -> str:
