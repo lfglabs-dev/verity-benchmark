@@ -21,9 +21,8 @@ private theorem deposit_small_slot_writes
       DepositContractMinimal.depositCount, getStorage, setStorage, Verity.require, Verity.bind,
       Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
   · simp [DepositContractMinimal.deposit, hCount, hMin, hNotFull,
-      DepositContractMinimal.depositCount, DepositContractMinimal.fullDepositCount, getStorage,
-      setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run,
-      ContractResult.snd]
+      DepositContractMinimal.depositCount, getStorage, setStorage, Verity.require, Verity.bind,
+      Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
 
 private theorem deposit_full_slot_writes
     (depositAmount : Uint256) (s : ContractState)
@@ -38,20 +37,20 @@ private theorem deposit_full_slot_writes
     · simp [DepositContractMinimal.deposit, hCount, hMin, hFull, hThreshold,
         DepositContractMinimal.depositCount, DepositContractMinimal.fullDepositCount,
         DepositContractMinimal.chainStarted, getStorage, setStorage, Verity.require, Verity.bind,
-        Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
+        Bind.bind, Contract.run, ContractResult.snd]
     · simp [DepositContractMinimal.deposit, hCount, hMin, hFull, hThreshold,
         DepositContractMinimal.depositCount, DepositContractMinimal.fullDepositCount,
         DepositContractMinimal.chainStarted, getStorage, setStorage, Verity.require, Verity.bind,
-        Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
+        Bind.bind, Contract.run, ContractResult.snd]
   · constructor
     · simp [DepositContractMinimal.deposit, hCount, hMin, hFull, hThreshold,
         DepositContractMinimal.depositCount, DepositContractMinimal.fullDepositCount,
-        DepositContractMinimal.chainStarted, getStorage, setStorage, Verity.require, Verity.bind,
-        Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
+        getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure,
+        Contract.run, ContractResult.snd]
     · simp [DepositContractMinimal.deposit, hCount, hMin, hFull, hThreshold,
         DepositContractMinimal.depositCount, DepositContractMinimal.fullDepositCount,
-        DepositContractMinimal.chainStarted, getStorage, setStorage, Verity.require, Verity.bind,
-        Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
+        getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure,
+        Contract.run, ContractResult.snd]
 
 private theorem deposit_full_sets_chain_started
     (depositAmount : Uint256) (s : ContractState)

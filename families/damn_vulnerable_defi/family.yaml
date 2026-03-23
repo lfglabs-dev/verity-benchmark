@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: damn_vulnerable_defi
+display_name: Damn Vulnerable DeFi
+split: active
+status: active
+description: >
+  Active benchmark family for compact Damn Vulnerable DeFi protocol slices that
+  isolate high-signal exploit patterns from the training challenges.
+implementation_ids:
+  - v2
+case_ids:
+  - damn_vulnerable_defi/side_entrance
+source_languages:
+  - solidity

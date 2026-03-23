@@ -4,6 +4,7 @@ Plain-English mapping:
 - `claimUsdc_marks_claimed_spec`: after a successful claim, the sender is marked as claimed.
 - `claimUsdc_updates_round_claimed_spec`: the round's claimed amount increases by exactly the computed payout.
 - `claimUsdc_updates_total_allocated_spec`: remaining global allocated USDC decreases by that payout.
+- `claimUsdc_claimed_plus_allocated_conserved_spec`: the claim moves value from the allocated bucket into the claimed bucket without changing their sum.
 - `claimUsdc_preserves_round_bound_spec`: the post-state never exceeds the round total.
 
 Why this matches the intended property:
