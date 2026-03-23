@@ -20,7 +20,7 @@ HARNESS_DIR = ROOT / "harness"
 if str(HARNESS_DIR) not in sys.path:
     sys.path.insert(0, str(HARNESS_DIR))
 
-from default_agent import load_config, resolve_config  # type: ignore
+from default_agent import load_config  # type: ignore
 from task_runner import discover_task_refs  # type: ignore
 
 README_PATH = ROOT / "README.md"
@@ -117,8 +117,8 @@ def build_temp_config(base_config_path: Path, run_slug: str, state_dir: Path) ->
 
 
 def run_suite(config_path: Path, *, log_handle: Any) -> Path:
-    resolved = resolve_config(config_path, require_secrets=True)
-    summary_path = ROOT / "results" / "agent_summaries" / resolved.track / f"{resolved.run_slug}.json"
+    config = load_config(config_path)
+    summary_path = ROOT / "results" / "agent_summaries" / str(config["track"]) / f"{config['run_slug']}.json"
     command = [
         str(ROOT / "scripts" / "exec_with_dotenvx.sh"),
         "python3",
@@ -238,10 +238,15 @@ def collect_run_metrics(summary: dict[str, Any], modules: list[str]) -> tuple[di
         if not isinstance(task_entry, dict):
             continue
         task_ref = str(task_entry.get("task_ref"))
+        module = task_to_module(task_ref)
+        summary_status = str(task_entry.get("status"))
         artifact = task_entry.get("artifact")
         if not isinstance(artifact, str):
+            if summary_status == "passed":
+                module_counts[module]["passed"] += 1
+            else:
+                module_counts[module]["failed"] += 1
             continue
-        module = task_to_module(task_ref)
         task_result = load_json(ROOT / artifact)
         status = str(task_result.get("status"))
         if status == "passed":
@@ -346,7 +351,7 @@ def build_markdown(report: dict[str, Any]) -> str:
         row = [module]
         for target in targets:
             if target["completed_runs"] == 0:
-                row.append("pending")
+                row.append("failed" if target["status"] == "failed" else "pending")
                 continue
             counts = target["modules"][module]
             row.append(f"{format_average(counts['passed'])}/{format_average(counts['failed'])}")
@@ -355,7 +360,7 @@ def build_markdown(report: dict[str, Any]) -> str:
     total_row = ["Total time / tokens"]
     for target in targets:
         if target["completed_runs"] == 0:
-            total_row.append("pending")
+            total_row.append("failed" if target["status"] == "failed" else "pending")
             continue
         total_row.append(
             f"{format_seconds(target['average_total_elapsed_seconds'])} / "
@@ -398,13 +403,11 @@ def command_start(args: argparse.Namespace) -> int:
     for target in targets:
         config = load_config(target.config_path)
         log_path = state_dir / "logs" / f"{target.key}.log"
-        pid = spawn_worker(state_dir, run_id, target.key, log_path)
-
         worker_payload = {
             "schema_version": 2,
             "target_key": target.key,
-            "status": "running",
-            "pid": pid,
+            "status": "starting",
+            "pid": 0,
             "model": str(config["model"]),
             "repeats": target.repeats,
             "completed_runs": 0,
@@ -427,6 +430,13 @@ def command_start(args: argparse.Namespace) -> int:
 
     write_json(state_dir / "state.json", state_payload)
     write_latest_run(run_id)
+
+    for target in targets:
+        log_path = state_dir / "logs" / f"{target.key}.log"
+        pid = spawn_worker(state_dir, run_id, target.key, log_path)
+        worker = load_worker_state(state_dir, target.key)
+        worker.update({"status": "running", "pid": pid})
+        write_worker_state(state_dir, target.key, worker)
     print(f"started matrix run {run_id}")
     print(relative(state_dir))
     return 0
@@ -672,7 +682,12 @@ def command_wait(args: argparse.Namespace) -> int:
             raise SystemExit("timed out waiting for matrix run to finish")
         time.sleep(args.poll_seconds)
 
-    return command_render(argparse.Namespace(run_id=state_dir.name))
+    render_result = command_render(argparse.Namespace(run_id=state_dir.name))
+    failed_targets = [worker["target_key"] for worker in workers if str(worker.get("status")) == "failed"]
+    if failed_targets:
+        print("matrix targets failed: " + ", ".join(failed_targets), file=sys.stderr)
+        return 1
+    return render_result
 
 
 def build_parser() -> argparse.ArgumentParser:
