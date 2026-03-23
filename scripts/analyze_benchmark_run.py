@@ -27,6 +27,9 @@ def classify_failure(payload: dict[str, Any]) -> str:
     evaluation = payload.get("evaluation")
     details = ""
     if isinstance(evaluation, dict):
+        failure_mode = evaluation.get("failure_mode")
+        if isinstance(failure_mode, str) and failure_mode:
+            return failure_mode
         maybe_details = evaluation.get("details")
         if isinstance(maybe_details, str):
             details = maybe_details
@@ -49,6 +52,10 @@ def summarize_summary_file(summary_path: Path) -> None:
     failure_modes: Counter[str] = Counter()
     retry_histogram: Counter[int] = Counter()
     models: Counter[str] = Counter()
+    reasoning_attempts = 0
+    candidate_changes = 0
+    failure_mode_changes = 0
+    solved_after_retry = 0
 
     for task in data["tasks"]:
         task_ref = task["task_ref"]
@@ -66,6 +73,18 @@ def summarize_summary_file(summary_path: Path) -> None:
         attempts = payload.get("attempts")
         if isinstance(attempts, list):
             retry_histogram[len(attempts)] += 1
+            if task["status"] == "passed" and len(attempts) > 1:
+                solved_after_retry += 1
+            for attempt in attempts:
+                trace = attempt.get("trace")
+                if not isinstance(trace, dict):
+                    continue
+                if int(trace.get("provider_reasoning_chars") or 0) > 0:
+                    reasoning_attempts += 1
+                if trace.get("candidate_changed_from_previous") is True:
+                    candidate_changes += 1
+                if trace.get("failure_mode_changed_from_previous") is True:
+                    failure_mode_changes += 1
 
         if task["status"] == "failed":
             failure_modes[classify_failure(payload)] += 1
@@ -84,6 +103,11 @@ def summarize_summary_file(summary_path: Path) -> None:
         print("attempt_histogram:")
         for attempt_count, count in sorted(retry_histogram.items()):
             print(f"  {attempt_count} attempts: {count} tasks")
+        print("retry_productivity:")
+        print(f"  solved_after_retry: {solved_after_retry}")
+        print(f"  candidate_changes: {candidate_changes}")
+        print(f"  failure_mode_changes: {failure_mode_changes}")
+        print(f"  attempts_with_provider_reasoning: {reasoning_attempts}")
     if models:
         print("response_models:")
         for model, count in models.most_common():
@@ -98,6 +122,10 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
     failure_modes: Counter[str] = Counter()
     retry_histogram: Counter[int] = Counter()
     models: Counter[str] = Counter()
+    reasoning_attempts = 0
+    candidate_changes = 0
+    failure_mode_changes = 0
+    solved_after_retry = 0
 
     files = sorted(artifact_dir.glob("*.json"))
     for path in files:
@@ -124,6 +152,18 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
         attempts = payload.get("attempts")
         if isinstance(attempts, list):
             retry_histogram[len(attempts)] += 1
+            if status == "passed" and len(attempts) > 1:
+                solved_after_retry += 1
+            for attempt in attempts:
+                trace = attempt.get("trace")
+                if not isinstance(trace, dict):
+                    continue
+                if int(trace.get("provider_reasoning_chars") or 0) > 0:
+                    reasoning_attempts += 1
+                if trace.get("candidate_changed_from_previous") is True:
+                    candidate_changes += 1
+                if trace.get("failure_mode_changed_from_previous") is True:
+                    failure_mode_changes += 1
 
         if status == "failed":
             failure_modes[classify_failure(payload)] += 1
@@ -141,6 +181,11 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
         print("attempt_histogram:")
         for attempt_count, count in sorted(retry_histogram.items()):
             print(f"  {attempt_count} attempts: {count} tasks")
+        print("retry_productivity:")
+        print(f"  solved_after_retry: {solved_after_retry}")
+        print(f"  candidate_changes: {candidate_changes}")
+        print(f"  failure_mode_changes: {failure_mode_changes}")
+        print(f"  attempts_with_provider_reasoning: {reasoning_attempts}")
     if models:
         print("response_models:")
         for model, count in models.most_common():
@@ -160,15 +205,36 @@ def show_attempts(path: Path, limit: int) -> None:
         model = response.get("model") if isinstance(response, dict) else None
         usage = response.get("usage") if isinstance(response, dict) else None
         evaluation = attempt.get("evaluation") if isinstance(attempt.get("evaluation"), dict) else {}
+        trace = attempt.get("trace") if isinstance(attempt.get("trace"), dict) else {}
         response_text = attempt.get("response_text")
         response_head = response_text[:240].replace("\n", " ") if isinstance(response_text, str) else ""
+        raw_text = attempt.get("response_text_raw")
+        raw_head = raw_text[:240].replace("\n", " ") if isinstance(raw_text, str) else ""
+        reasoning = attempt.get("provider_reasoning_text")
+        reasoning_head = reasoning[:240].replace("\n", " ") if isinstance(reasoning, str) else ""
         details = evaluation.get("details")
         details_head = details[:240].replace("\n", " ") if isinstance(details, str) else ""
-        print(f"  attempt {attempt.get('attempt')}: status={evaluation.get('status')} model={model}")
+        print(
+            "  attempt "
+            f"{attempt.get('attempt')}: status={evaluation.get('status')} "
+            f"failure_mode={evaluation.get('failure_mode')} model={model} "
+            f"finish_reason={trace.get('finish_reason')} latency={trace.get('latency_seconds')}"
+        )
         if usage:
             print(f"    usage={usage}")
+        if trace:
+            print(
+                "    trace="
+                f"candidate_changed={trace.get('candidate_changed_from_previous')} "
+                f"failure_mode_changed={trace.get('failure_mode_changed_from_previous')} "
+                f"reasoning_chars={trace.get('provider_reasoning_chars')}"
+            )
         if response_head:
             print(f"    response_head={response_head}")
+        if raw_head and raw_head != response_head:
+            print(f"    response_raw_head={raw_head}")
+        if reasoning_head:
+            print(f"    reasoning_head={reasoning_head}")
         if details_head:
             print(f"    checker_head={details_head}")
 

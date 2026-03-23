@@ -101,6 +101,13 @@ def extract_text(response: dict[str, Any]) -> str:
     return ""
 
 
+def extract_reasoning(response: dict[str, Any]) -> str:
+    reasoning = response.get("reasoning")
+    if isinstance(reasoning, str):
+        return reasoning.strip()
+    return ""
+
+
 def extract_candidate_file(response_text: str) -> str:
     text = response_text.strip()
     fenced = re.findall(r"```(?:lean)?\s*\n(.*?)```", text, flags=re.DOTALL)
@@ -130,6 +137,8 @@ def run_request(payload: dict[str, Any]) -> dict[str, Any]:
         "protocol_version": 1,
         "response": response,
         "response_text": response_text,
+        "response_text_raw": response_text,
+        "provider_reasoning_text": extract_reasoning(response),
         "candidate_file_contents": extract_candidate_file(response_text),
     }
 

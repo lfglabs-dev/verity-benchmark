@@ -262,6 +262,12 @@
     "response_text": {
       "type": "string"
     },
+    "response_text_raw": {
+      "type": "string"
+    },
+    "provider_reasoning_text": {
+      "type": "string"
+    },
     "candidate_file_contents": {
       "type": "string"
     },
@@ -274,6 +280,9 @@
       "items": {
         "type": "object"
       }
+    },
+    "analysis": {
+      "type": "object"
     }
   }
 }
