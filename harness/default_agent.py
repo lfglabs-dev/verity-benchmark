@@ -1334,14 +1334,20 @@ def execute_interactive_agent_task(
     tool_calls_used = 0
     last_lean_error: str | None = None
     consecutive_lean_failures = 0
+    proof_attempts = 0
+    consecutive_search_turns = 0
+    max_total_turns = config.max_attempts * 2  # hard cap to prevent infinite loops
 
-    for attempt_index in range(1, config.max_attempts + 1):
+    turn = 0
+    while proof_attempts < config.max_attempts and turn < max_total_turns:
+        turn += 1
         response = send_chat_completion(config, transcript, tools=runtime.tool_specs())
         response_text = extract_text(response)
         tool_calls = extract_tool_calls(response)
         attempts.append(
             {
-                "attempt": attempt_index,
+                "attempt": turn,
+                "proof_attempt": proof_attempts + 1,
                 "mode": "interactive",
                 "messages": list(transcript),
                 "response": response,
@@ -1353,6 +1359,7 @@ def execute_interactive_agent_task(
             final_candidate = extract_candidate_file(response_text)
             if final_candidate.strip():
                 runtime.write_editable_proof(final_candidate)
+                proof_attempts += 1
             evaluation = runtime.evaluate_current()
             attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
             attempts[-1]["evaluation"] = evaluation
@@ -1365,12 +1372,12 @@ def execute_interactive_agent_task(
                 details = str(evaluation.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
                 transcript = _compact_interactive_transcript(
                     transcript, len(base_messages), runtime.current_proof_text, details,
-                    attempt_index, config.max_attempts,
+                    proof_attempts, config.max_attempts,
                     consecutive_failures=consecutive_lean_failures,
                 )
             elif failure_mode in ("empty_response", "placeholder_detected", "theorem_statement_mismatch"):
                 retry_msg = (
-                    f"Your response did not produce a valid proof candidate (attempt {attempt_index} of {config.max_attempts}, "
+                    f"Your response did not produce a valid proof candidate (proof attempt {proof_attempts} of {config.max_attempts}, "
                     f"failure: {failure_mode}).\n"
                     "Use the write_editable_proof tool to submit the complete editable Lean proof file, "
                     "then use run_lean_check to verify it.\n"
@@ -1382,7 +1389,6 @@ def execute_interactive_agent_task(
                 return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
             continue
 
-        message = response.get("choices", [{}])[0].get("message", {})
         transcript.append(
             {
                 "role": "assistant",
@@ -1391,6 +1397,7 @@ def execute_interactive_agent_task(
             }
         )
         saw_lean_failure = False
+        turn_had_proof_action = False
         for tool_call in tool_calls:
             if tool_calls_used >= config.max_tool_calls:
                 evaluation = runtime.evaluate_current()
@@ -1409,6 +1416,8 @@ def execute_interactive_agent_task(
             arguments = parse_tool_arguments(function_call.get("arguments"))
             result = runtime.execute_tool(tool_name, arguments)
             tool_calls_used += 1
+            if tool_name in ("write_editable_proof", "run_lean_check"):
+                turn_had_proof_action = True
             transcript.append(
                 {
                     "role": "tool",
@@ -1434,11 +1443,29 @@ def execute_interactive_agent_task(
                 attempts[-1]["evaluation"] = evaluation
                 return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
 
+        if turn_had_proof_action:
+            proof_attempts += 1
+            consecutive_search_turns = 0
+        else:
+            consecutive_search_turns += 1
+            if consecutive_search_turns >= 2:
+                transcript.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Stop searching and write a proof now. The search_public_defs tool only searches "
+                            "this task's implementation and specification files, not the Lean standard library. "
+                            "Use write_editable_proof to submit your best proof attempt, then run_lean_check to verify."
+                        ),
+                    }
+                )
+                consecutive_search_turns = 0
+
         # After processing all tool calls, compact transcript if we saw a lean failure
         if saw_lean_failure and last_lean_error:
             transcript = _compact_interactive_transcript(
                 transcript, len(base_messages), runtime.current_proof_text, last_lean_error,
-                attempt_index, config.max_attempts,
+                proof_attempts, config.max_attempts,
                 consecutive_failures=consecutive_lean_failures,
             )
 
@@ -1447,11 +1474,12 @@ def execute_interactive_agent_task(
         evaluation = {
             "status": "failed",
             "failure_mode": "attempt_budget_exhausted",
-            "details": f"interactive attempt budget exhausted after {config.max_attempts} assistant turns",
+            "details": f"interactive attempt budget exhausted after {proof_attempts} proof attempts ({turn} total turns)",
         }
     attempts.append(
         {
-            "attempt": config.max_attempts,
+            "attempt": turn,
+            "proof_attempt": proof_attempts,
             "mode": "interactive",
             "budget_exhausted": True,
             "candidate_file_contents": runtime.current_proof_text,
