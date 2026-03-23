@@ -583,6 +583,16 @@ def build_repair_guidance(details: str) -> str:
         hints.append(
             "- Lean cannot infer a binder type. Add explicit type annotations to your helper lemma parameters."
         )
+    if "unexpected token" in details or "expected 'by'" in details:
+        hints.append(
+            "- Syntax error. Ensure the theorem body uses `:= by` followed by tactics. "
+            "Do not use `:=` with a term-mode proof unless you are certain of the syntax."
+        )
+    if "Function expected at" in details or "unknown identifier" in details:
+        hints.append(
+            "- Use `s.storage 0` (function application) not `s.storage[0]` or `s.storage.0`. "
+            "ContractState.storage is a function `Nat → Uint256`."
+        )
     return "\n".join(hints)
 
 
