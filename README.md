@@ -53,6 +53,17 @@ python3 harness/default_agent.py describe --profile openai-compatible
 ./scripts/run_custom_agent_all.sh
 ```
 
+Benchmark matrix:
+
+```bash
+python3 scripts/run_benchmark_matrix.py start
+python3 scripts/run_benchmark_matrix.py status
+python3 scripts/run_benchmark_matrix.py logs --target-key builtin-fast
+python3 scripts/run_benchmark_matrix.py pause --target-key builtin-fast
+python3 scripts/run_benchmark_matrix.py resume --target-key builtin-fast
+python3 scripts/run_benchmark_matrix.py wait
+```
+
 Env handling:
 - `.env` is committed in encrypted `dotenvx` form
 - `.env.keys` is local-only and gitignored
@@ -65,3 +76,9 @@ More detail:
 - [`harness/README.md`](./harness/README.md)
 - [`docs/architecture/task-api.md`](./docs/architecture/task-api.md)
 - [`docs/architecture/runtime-modes.md`](./docs/architecture/runtime-modes.md)
+
+<!-- BENCHMARK_MATRIX:START -->
+## Benchmark Results
+
+Run `python3 scripts/run_benchmark_matrix.py render` after the matrix finishes to refresh this section.
+<!-- BENCHMARK_MATRIX:END -->
