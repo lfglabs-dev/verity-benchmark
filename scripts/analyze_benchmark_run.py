@@ -46,6 +46,18 @@ def artifact_path(task_entry: dict[str, Any]) -> Path:
     return ROOT / task_entry["artifact"]
 
 
+def attempt_has_candidate_state(attempt: dict[str, Any]) -> bool:
+    candidate_text = attempt.get("candidate_file_contents")
+    if isinstance(candidate_text, str) and candidate_text.strip():
+        return True
+    evaluation = attempt.get("evaluation")
+    if not isinstance(evaluation, dict):
+        return False
+    status = evaluation.get("status")
+    failure_mode = evaluation.get("failure_mode")
+    return bool((isinstance(status, str) and status) or (isinstance(failure_mode, str) and failure_mode))
+
+
 def summarize_summary_file(summary_path: Path) -> None:
     data = load_json(summary_path)
     by_module: OrderedDict[str, dict[str, int]] = OrderedDict()
@@ -72,8 +84,9 @@ def summarize_summary_file(summary_path: Path) -> None:
 
         attempts = payload.get("attempts")
         if isinstance(attempts, list):
+            proof_attempts = [attempt for attempt in attempts if isinstance(attempt, dict) and attempt_has_candidate_state(attempt)]
             retry_histogram[len(attempts)] += 1
-            if task["status"] == "passed" and len(attempts) > 1:
+            if task["status"] == "passed" and len(proof_attempts) > 1:
                 solved_after_retry += 1
             for attempt in attempts:
                 trace = attempt.get("trace")
@@ -151,8 +164,9 @@ def summarize_artifact_dir(artifact_dir: Path) -> None:
 
         attempts = payload.get("attempts")
         if isinstance(attempts, list):
+            proof_attempts = [attempt for attempt in attempts if isinstance(attempt, dict) and attempt_has_candidate_state(attempt)]
             retry_histogram[len(attempts)] += 1
-            if status == "passed" and len(attempts) > 1:
+            if status == "passed" and len(proof_attempts) > 1:
                 solved_after_retry += 1
             for attempt in attempts:
                 trace = attempt.get("trace")

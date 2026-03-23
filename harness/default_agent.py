@@ -662,6 +662,27 @@ def prompt_chars(messages: list[dict[str, Any]]) -> int:
     return total
 
 
+def attempt_has_candidate_state(attempt: dict[str, Any] | None) -> bool:
+    if not isinstance(attempt, dict):
+        return False
+    candidate_text = attempt.get("candidate_file_contents")
+    if isinstance(candidate_text, str) and candidate_text.strip():
+        return True
+    evaluation = attempt.get("evaluation")
+    if not isinstance(evaluation, dict):
+        return False
+    status = evaluation.get("status")
+    failure_mode = evaluation.get("failure_mode")
+    return bool((isinstance(status, str) and status) or (isinstance(failure_mode, str) and failure_mode))
+
+
+def latest_candidate_attempt(attempts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for attempt in reversed(attempts):
+        if attempt_has_candidate_state(attempt):
+            return attempt
+    return None
+
+
 def build_attempt_trace(
     *,
     messages: list[dict[str, Any]],
@@ -1367,7 +1388,9 @@ def execute_strict_agent_task(
     }
     attempts: list[dict[str, Any]] = []
 
+    attempt_start = time.perf_counter()
     response = send_chat_completion(config, attempt_messages)
+    attempt_latency = time.perf_counter() - attempt_start
     response_text = extract_text(response)
     candidate_text = extract_candidate_file(response_text)
     evaluation = evaluate_candidate_submission(task, candidate_text)
@@ -1380,7 +1403,7 @@ def execute_strict_agent_task(
             candidate_text=candidate_text,
             evaluation=evaluation,
             previous_attempt=None,
-            latency_seconds=None,
+            latency_seconds=attempt_latency,
         )
     )
     return response, response_text, evaluation, attempts
@@ -1404,7 +1427,7 @@ def execute_interactive_agent_task(
         attempt_latency = time.perf_counter() - attempt_start
         response_text = extract_text(response)
         tool_calls = extract_tool_calls(response)
-        previous_attempt = attempts[-1] if attempts else None
+        previous_attempt = latest_candidate_attempt(attempts)
         attempts.append(
             build_attempt_record(
                 attempt_index=attempt_index,
@@ -1494,7 +1517,7 @@ def execute_interactive_agent_task(
             response={},
             candidate_text=runtime.current_proof_text,
             evaluation=evaluation,
-            previous_attempt=attempts[-1] if attempts else None,
+            previous_attempt=latest_candidate_attempt(attempts),
             latency_seconds=None,
         )
     )
