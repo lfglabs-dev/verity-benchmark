@@ -544,8 +544,28 @@ def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[di
     ]
 
 
-def build_repair_guidance(details: str) -> str:
+def build_repair_guidance(details: str, failure_mode: str | None = None) -> str:
     hints: list[str] = []
+    if failure_mode == "empty_response":
+        hints.append(
+            "- Your previous reply did not include a usable Lean file. Return only the complete Lean proof file."
+        )
+    if failure_mode == "placeholder_detected":
+        hints.append(
+            "- Do not use `sorry`, `admit`, or `axiom`. Replace every placeholder with a real proof term or tactic."
+        )
+    if failure_mode == "theorem_statement_mismatch":
+        hints.append(
+            "- Keep the editable theorem statement byte-for-byte identical to the original. Only change the proof body."
+        )
+    if failure_mode == "hidden_proof_import_detected":
+        hints.append(
+            "- Remove any `Benchmark.Cases.*.Proofs` imports. Only import task-public modules."
+        )
+    if failure_mode == "hidden_case_import_detected":
+        hints.append(
+            "- Only import task-public modules. Remove any non-public `Benchmark.Cases` imports."
+        )
     if "tactic 'split' failed" in details:
         hints.append(
             "- Do not `split` the final post-state blindly. Prove branch-specific helper theorems first, then use `by_cases` plus `simpa`."
@@ -613,11 +633,14 @@ def build_repair_messages(
     attempt_index: int,
     max_attempts: int,
 ) -> list[dict[str, Any]]:
+    failure_mode = str(evaluation.get("failure_mode") or "").strip() or None
     details = str(evaluation.get("details", "")).strip()
     trimmed_details = details[:MAX_ERROR_FEEDBACK_CHARS]
-    guidance = build_repair_guidance(trimmed_details)
+    guidance = build_repair_guidance(trimmed_details, failure_mode=failure_mode)
+    failure_summary = f"Failure mode: {failure_mode}\n" if failure_mode else ""
     repair_prompt = (
         f"The previous Lean file did not pass the checker (attempt {attempt_index} of {max_attempts}).\n"
+        f"{failure_summary}"
         "Return a corrected complete replacement for the editable Lean proof file.\n"
         "Return Lean code only, with no markdown fences or extra explanation.\n\n"
         "Previous candidate file:\n"
@@ -1417,7 +1440,7 @@ def execute_strict_agent_task(
     task: dict[str, Any],
     messages: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], str, dict[str, Any], list[dict[str, Any]]]:
-    attempt_messages = messages
+    attempt_messages = list(messages)
     response: dict[str, Any] = {}
     response_text = ""
     candidate_text = ""
@@ -1428,24 +1451,38 @@ def execute_strict_agent_task(
     }
     attempts: list[dict[str, Any]] = []
 
-    attempt_start = time.perf_counter()
-    response = send_chat_completion(config, attempt_messages)
-    attempt_latency = time.perf_counter() - attempt_start
-    response_text = extract_text(response)
-    candidate_text = extract_candidate_file(response_text)
-    evaluation = evaluate_candidate_submission(task, candidate_text)
-    attempts.append(
-        build_attempt_record(
-            attempt_index=1,
-            mode="strict",
-            messages=attempt_messages,
-            response=response,
-            candidate_text=candidate_text,
-            evaluation=evaluation,
-            previous_attempt=None,
-            latency_seconds=attempt_latency,
+    for attempt_index in range(1, config.max_attempts + 1):
+        attempt_start = time.perf_counter()
+        response = send_chat_completion(config, attempt_messages)
+        attempt_latency = time.perf_counter() - attempt_start
+        response_text = extract_text(response)
+        candidate_text = extract_candidate_file(response_text)
+        evaluation = evaluate_candidate_submission(task, candidate_text)
+        previous_attempt = latest_candidate_attempt(attempts)
+        attempts.append(
+            build_attempt_record(
+                attempt_index=attempt_index,
+                mode="strict",
+                messages=attempt_messages,
+                response=response,
+                candidate_text=candidate_text,
+                evaluation=evaluation,
+                previous_attempt=previous_attempt,
+                latency_seconds=attempt_latency,
+            )
         )
-    )
+        if evaluation.get("status") == "passed":
+            break
+        if attempt_index >= config.max_attempts:
+            break
+        # Build repair messages for the next attempt
+        attempt_messages = build_repair_messages(
+            messages,
+            candidate_text,
+            evaluation,
+            attempt_index=attempt_index,
+            max_attempts=config.max_attempts,
+        )
     return response, response_text, evaluation, attempts
 
 

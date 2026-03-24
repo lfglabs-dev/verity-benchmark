@@ -127,7 +127,8 @@ class TaskProofRuntime:
     def evaluate_current(self, *, check_goals: bool = False) -> dict[str, Any]:
         return self.evaluate_candidate(self.current_proof_text, check_goals=check_goals)
 
-    def evaluate_candidate(self, candidate_text: str, *, check_goals: bool = False) -> dict[str, Any]:
+    def preflight_candidate(self, candidate_text: str) -> dict[str, Any] | None:
+        """Fast local checks that don't require running Lean. Returns a failure dict or None if OK."""
         if not candidate_text.strip():
             return {
                 "status": "failed",
@@ -167,6 +168,13 @@ class TaskProofRuntime:
                 "failure_mode": "theorem_statement_mismatch",
                 "details": "candidate proof changed the editable theorem statement",
             }
+
+        return None
+
+    def evaluate_candidate(self, candidate_text: str, *, check_goals: bool = False) -> dict[str, Any]:
+        preflight_failure = self.preflight_candidate(candidate_text)
+        if preflight_failure is not None:
+            return preflight_failure
 
         with tempfile.TemporaryDirectory(prefix="verity-benchmark-agent-") as tmp_dir:
             workspace = Path(tmp_dir) / "workspace"
