@@ -1,0 +1,43 @@
+manifest_kind: case
+project: lido
+case_id: vaulthub_locked
+schema_version: 1
+split: active
+family_id: lido
+implementation_id: core
+stage: build_green
+translation_status: translated
+spec_status: frozen
+proof_status: partial
+upstream_repo: https://github.com/lidofinance/core
+upstream_commit: 5e51ea044b09e1e2606074e1fe4ff6b6a4eff172
+original_contract_path: contracts/0.8.25/vaults/VaultHub.sol
+source_ref: https://github.com/lidofinance/core@5e51ea044b09e1e2606074e1fe4ff6b6a4eff172:contracts/0.8.25/vaults/VaultHub.sol
+lean_target: Benchmark.Cases.Lido.VaulthubLocked.Compile
+spec_target: Benchmark.Cases.Lido.VaulthubLocked.Specs
+proof_target: Benchmark.Cases.Lido.VaulthubLocked.Proofs
+selected_functions:
+  - _locked
+  - getPooledEthBySharesRoundUp
+source_language: solidity
+verity_version: 4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a
+lean_toolchain: leanprover/lean4:v4.22.0
+abstraction_level: protocol_slice
+abstraction_tags:
+  - oracle_elided
+  - rebalance_elided
+  - minting_elided
+  - vault_lifecycle_elided
+  - locked_arithmetic_slice
+abstraction_notes: >
+  The benchmark isolates the pure arithmetic of the VaultHub _locked() function
+  and the axiomatised getPooledEthBySharesRoundUp share-to-ether conversion.
+  All state machine reasoning (minting, burning, rebalancing, oracle updates) is
+  elided. The tasks focus on the solvency inequality from Certora finding F-01
+  and the supporting invariants P-VH-03 and P-VH-04.
+unsupported_feature_codes: []
+notes: >
+  Locked-amount arithmetic slice of Lido VaultHub (V3 vaults branch).
+  Based on the Certora formal verification report (December 2025).
+  F-01 could not be proven by Certora and is the primary benchmark task.
+  P-VH-03 and P-VH-04 were proven by Certora and serve as supporting lemmas.

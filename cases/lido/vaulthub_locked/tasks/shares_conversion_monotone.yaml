@@ -1,0 +1,35 @@
+manifest_kind: task
+schema_version: 1
+task_id: shares_conversion_monotone
+case_id: lido/vaulthub_locked
+split: active
+family_id: lido
+implementation_id: core
+source_ref: https://github.com/lidofinance/core@5e51ea044b09e1e2606074e1fe4ff6b6a4eff172:contracts/0.8.25/vaults/VaultHub.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.Lido.VaulthubLocked.shares_conversion_monotone
+proof_family: functional_correctness
+property_class: accounting_bound
+difficulty: medium
+category: arithmetic-lemma
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/lido/vaulthub_locked/verity/Contract.lean
+  - Benchmark/Cases/Lido/VaulthubLocked/Contract.lean
+specification_files:
+  - cases/lido/vaulthub_locked/verity/Specs.lean
+  - Benchmark/Cases/Lido/VaulthubLocked/Specs.lean
+editable_files:
+  - Benchmark/Generated/Lido/VaulthubLocked/Tasks/SharesConversionMonotone.lean
+reference_solution_module: Benchmark.Cases.Lido.VaulthubLocked.Proofs
+reference_solution_declaration: Benchmark.Cases.Lido.VaulthubLocked.shares_conversion_monotone
+abstraction_level: protocol_slice
+abstraction_notes: >
+  Supporting arithmetic lemma for F-01. Proves that getPooledEthBySharesRoundUp
+  is monotone in the shares argument: if a >= b then the conversion of a is at
+  least the conversion of b. Needed to lift the solvency bound from
+  maxLiabilityShares down to liabilityShares.
+unsupported_feature_codes: []

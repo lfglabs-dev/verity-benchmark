@@ -1,0 +1,17 @@
+manifest_kind: implementation
+schema_version: 1
+family_id: lido
+implementation_id: core
+display_name: Lido Core (V3 Vaults)
+split: active
+status: translated
+upstream_repo: https://github.com/lidofinance/core
+upstream_commit: 5e51ea044b09e1e2606074e1fe4ff6b6a4eff172
+source_language: solidity
+source_artifact_path: contracts/0.8.25/vaults/VaultHub.sol
+case_ids:
+  - lido/vaulthub_locked
+notes: >
+  Implementation entry for the Lido core repository (feat/vaults branch),
+  benchmarking the VaultHub _locked() collateral computation and its
+  solvency invariants.

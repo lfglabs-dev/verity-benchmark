@@ -4,11 +4,11 @@ This report is generated from the benchmark manifests.
 
 ## Summary
 
-- Families: 9
-- Implementations: 9
-- Active cases: 5
-- Buildable active cases: 5
-- Active tasks: 25
+- Families: 10
+- Implementations: 10
+- Active cases: 6
+- Buildable active cases: 6
+- Active tasks: 30
 - Backlog cases: 4
 
 ## Buildable active cases
@@ -42,6 +42,16 @@ This report is generated from the benchmark manifests.
 - Selected functions: `set`, `updateParents`, `draw`
 - Source artifact: `contracts/src/libraries/SortitionTrees.sol`
 - Notes: Sortition-tree slice focused on additive parent invariants, root conservation, interval-based draws, and ID/index correspondence.
+
+### `lido/vaulthub_locked`
+- Family / implementation: `lido` / `core`
+- Stage: `build_green`
+- Status dimensions: translation=`translated`, spec=`frozen`, proof=`partial`
+- Lean target: `Benchmark.Cases.Lido.VaulthubLocked.Compile`
+- Source ref: `https://github.com/lidofinance/core@5e51ea044b09e1e2606074e1fe4ff6b6a4eff172:contracts/0.8.25/vaults/VaultHub.sol`
+- Selected functions: `_locked`, `getPooledEthBySharesRoundUp`
+- Source artifact: `contracts/0.8.25/vaults/VaultHub.sol`
+- Notes: Locked-amount arithmetic slice of Lido VaultHub (V3 vaults branch). Based on the Certora formal verification report (December 2025). F-01 could not be proven by Certora and is the primary benchmark task. P-VH-03 and P-VH-04 were proven by Certora and serve as supporting lemmas.
 
 ### `nexus_mutual/ramm_price_band`
 - Family / implementation: `nexus_mutual` / `smart_contracts`
@@ -228,6 +238,56 @@ This report is generated from the benchmark manifests.
 - Specification files: `cases/kleros/sortition_trees/verity/Specs.lean`, `Benchmark/Cases/Kleros/SortitionTrees/Specs.lean`
 - Editable proof file: `Benchmark/Generated/Kleros/SortitionTrees/Tasks/RootMinusLeftEqualsRightSubtree.lean`
 - Hidden reference solution: `Benchmark.Cases.Kleros.SortitionTrees.Proofs`
+
+### `lido/vaulthub_locked/ceildiv_sandwich`
+- Track / property class / proof family: `proof-only` / `accounting_bound` / `functional_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.Lido.VaulthubLocked.ceildiv_sandwich`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/lido/vaulthub_locked/verity/Contract.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Contract.lean`
+- Specification files: `cases/lido/vaulthub_locked/verity/Specs.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Specs.lean`
+- Editable proof file: `Benchmark/Generated/Lido/VaulthubLocked/Tasks/CeildivSandwich.lean`
+- Hidden reference solution: `Benchmark.Cases.Lido.VaulthubLocked.Proofs`
+
+### `lido/vaulthub_locked/locked_funds_solvency`
+- Track / property class / proof family: `proof-only` / `accounting_bound` / `functional_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.Lido.VaulthubLocked.locked_funds_solvency`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/lido/vaulthub_locked/verity/Contract.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Contract.lean`
+- Specification files: `cases/lido/vaulthub_locked/verity/Specs.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Specs.lean`
+- Editable proof file: `Benchmark/Generated/Lido/VaulthubLocked/Tasks/LockedFundsSolvency.lean`
+- Hidden reference solution: `Benchmark.Cases.Lido.VaulthubLocked.Proofs`
+
+### `lido/vaulthub_locked/max_liability_shares_bound`
+- Track / property class / proof family: `proof-only` / `accounting_bound` / `state_preservation_local_effects`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.Lido.VaulthubLocked.max_liability_shares_bound`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/lido/vaulthub_locked/verity/Contract.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Contract.lean`
+- Specification files: `cases/lido/vaulthub_locked/verity/Specs.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Specs.lean`
+- Editable proof file: `Benchmark/Generated/Lido/VaulthubLocked/Tasks/MaxLiabilitySharesBound.lean`
+- Hidden reference solution: `Benchmark.Cases.Lido.VaulthubLocked.Proofs`
+
+### `lido/vaulthub_locked/reserve_ratio_bounds`
+- Track / property class / proof family: `proof-only` / `accounting_bound` / `state_preservation_local_effects`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.Lido.VaulthubLocked.reserve_ratio_bounds`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/lido/vaulthub_locked/verity/Contract.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Contract.lean`
+- Specification files: `cases/lido/vaulthub_locked/verity/Specs.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Specs.lean`
+- Editable proof file: `Benchmark/Generated/Lido/VaulthubLocked/Tasks/ReserveRatioBounds.lean`
+- Hidden reference solution: `Benchmark.Cases.Lido.VaulthubLocked.Proofs`
+
+### `lido/vaulthub_locked/shares_conversion_monotone`
+- Track / property class / proof family: `proof-only` / `accounting_bound` / `functional_correctness`
+- Readiness: prompt_context=`ready`, editable_proof=`ready`, reference_solution=`ready`
+- Theorem target: `Benchmark.Cases.Lido.VaulthubLocked.shares_conversion_monotone`
+- Evaluation: engine=`lean_proof_generation`, target_kind=`proof_generation`
+- Implementation files: `cases/lido/vaulthub_locked/verity/Contract.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Contract.lean`
+- Specification files: `cases/lido/vaulthub_locked/verity/Specs.lean`, `Benchmark/Cases/Lido/VaulthubLocked/Specs.lean`
+- Editable proof file: `Benchmark/Generated/Lido/VaulthubLocked/Tasks/SharesConversionMonotone.lean`
+- Hidden reference solution: `Benchmark.Cases.Lido.VaulthubLocked.Proofs`
 
 ### `nexus_mutual/ramm_price_band/sync_sets_book_value`
 - Track / property class / proof family: `proof-only` / `price_computation` / `functional_correctness`

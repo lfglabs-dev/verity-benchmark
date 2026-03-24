@@ -1,0 +1,15 @@
+manifest_kind: family
+schema_version: 1
+family_id: lido
+display_name: Lido
+split: active
+status: active
+description: >
+  Benchmark family for Lido protocol slices covering vault collateral locking
+  arithmetic and solvency invariants from the V3 vaults feature branch.
+implementation_ids:
+  - core
+case_ids:
+  - lido/vaulthub_locked
+source_languages:
+  - solidity
