@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: max_liability_shares_bound
+case_id: lido/vaulthub_locked
+split: active
+family_id: lido
+implementation_id: core
+source_ref: https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.Lido.VaulthubLocked.max_liability_shares_bound
+proof_family: state_preservation_local_effects
+property_class: accounting_bound
+difficulty: easy
+category: invariant
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/lido/vaulthub_locked/verity/Contract.lean
+  - Benchmark/Cases/Lido/VaulthubLocked/Contract.lean
+specification_files:
+  - cases/lido/vaulthub_locked/verity/Specs.lean
+  - Benchmark/Cases/Lido/VaulthubLocked/Specs.lean
+editable_files:
+  - Benchmark/Generated/Lido/VaulthubLocked/Tasks/MaxLiabilitySharesBound.lean
+reference_solution_module: Benchmark.Cases.Lido.VaulthubLocked.Proofs
+reference_solution_declaration: Benchmark.Cases.Lido.VaulthubLocked.max_liability_shares_bound
+abstraction_level: protocol_slice
+abstraction_notes: >
+  Certora proven property P-VH-04. maxLiabilityShares is always at least
+  liabilityShares. Used as a supporting lemma for the F-01 solvency proof.
+unsupported_feature_codes: []

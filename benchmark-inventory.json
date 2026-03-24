@@ -10,33 +10,33 @@
     "backlog_tasks": "backlog/*/*/tasks/*.yaml"
   },
   "summary": {
-    "family_count": 9,
-    "implementation_count": 9,
-    "active_case_count": 5,
+    "family_count": 10,
+    "implementation_count": 10,
+    "active_case_count": 6,
     "backlog_case_count": 4,
-    "active_task_count": 25,
+    "active_task_count": 30,
     "backlog_task_count": 8,
-    "buildable_case_count": 7,
-    "runnable_task_count": 33,
+    "buildable_case_count": 8,
+    "runnable_task_count": 38,
     "case_stage_counts": {
-      "build_green": 5,
+      "build_green": 6,
       "candidate": 2,
       "proof_complete": 2
     },
     "translation_status_counts": {
       "blocked": 2,
-      "translated": 7
+      "translated": 8
     },
     "proof_status_counts": {
       "blocked": 2,
       "complete": 2,
-      "partial": 5
+      "partial": 6
     },
     "task_track_counts": {
-      "proof-only": 33
+      "proof-only": 38
     },
     "task_property_class_counts": {
-      "accounting_bound": 3,
+      "accounting_bound": 8,
       "accounting_conservation": 3,
       "accounting_invariant_break": 1,
       "accounting_update": 2,
@@ -58,13 +58,13 @@
     },
     "task_proof_family_counts": {
       "authorization_enablement": 2,
-      "functional_correctness": 8,
+      "functional_correctness": 11,
       "protocol_transition_correctness": 6,
       "refinement_equivalence": 6,
-      "state_preservation_local_effects": 11
+      "state_preservation_local_effects": 13
     },
     "family_split_counts": {
-      "active": 5,
+      "active": 6,
       "backlog": 4
     }
   },
@@ -119,6 +119,23 @@
         "solidity"
       ],
       "manifest_path": "families/kleros/family.yaml"
+    },
+    {
+      "family_id": "lido",
+      "display_name": "Lido",
+      "split": "active",
+      "status": "active",
+      "description": "Benchmark family for Lido protocol slices covering vault collateral locking arithmetic and solvency invariants from the V3 vaults feature branch.",
+      "implementation_ids": [
+        "core"
+      ],
+      "case_ids": [
+        "lido/vaulthub_locked"
+      ],
+      "source_languages": [
+        "solidity"
+      ],
+      "manifest_path": "families/lido/family.yaml"
     },
     {
       "family_id": "nexus_mutual",
@@ -271,6 +288,22 @@
       ],
       "notes": "Active implementation entry for Kleros V2, currently benchmarking a fixed-tree slice of the sortition library.",
       "manifest_path": "families/kleros/implementations/kleros_v2/implementation.yaml"
+    },
+    {
+      "family_id": "lido",
+      "implementation_id": "core",
+      "display_name": "Lido Core (V3 Vaults)",
+      "split": "active",
+      "status": "translated",
+      "upstream_repo": "https://github.com/lidofinance/core",
+      "upstream_commit": "96738395ca3bffd6513700a45d4c9389662c5835",
+      "source_language": "solidity",
+      "source_artifact_path": "contracts/0.8.25/vaults/VaultHub.sol",
+      "case_ids": [
+        "lido/vaulthub_locked"
+      ],
+      "notes": "Implementation entry for the Lido core repository (master), benchmarking the VaultHub _locked() collateral computation and its solvency invariants.",
+      "manifest_path": "families/lido/implementations/core/implementation.yaml"
     },
     {
       "family_id": "nexus_mutual",
@@ -494,6 +527,48 @@
       "unsupported_feature_codes": [],
       "spec_target": "Benchmark.Cases.Kleros.SortitionTrees.Specs",
       "proof_target": "Benchmark.Cases.Kleros.SortitionTrees.Proofs"
+    },
+    {
+      "case_id": "lido/vaulthub_locked",
+      "project": "lido",
+      "case_name": "vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/case.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "stage": "build_green",
+      "translation_status": "translated",
+      "spec_status": "frozen",
+      "proof_status": "partial",
+      "source_language": "solidity",
+      "upstream_repo": "https://github.com/lidofinance/core",
+      "upstream_commit": "96738395ca3bffd6513700a45d4c9389662c5835",
+      "original_contract_path": "contracts/0.8.25/vaults/VaultHub.sol",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "selected_functions": [
+        "_locked",
+        "getPooledEthBySharesRoundUp"
+      ],
+      "lean_target": "Benchmark.Cases.Lido.VaulthubLocked.Compile",
+      "failure_reason": null,
+      "notes": "Locked-amount arithmetic slice of Lido VaultHub (V3 vaults branch). Based on the Certora formal verification report (December 2025). F-01 could not be proven by Certora and is the primary benchmark task. P-VH-03 and P-VH-04 were proven by Certora and serve as supporting lemmas.",
+      "buildable": true,
+      "verity_commit": "4ebe4931d25e5a1594fcd3f43ff040ecc3c4225a",
+      "lean_toolchain": "leanprover/lean4:v4.22.0",
+      "abstraction_level": "protocol_slice",
+      "abstraction_tags": [
+        "oracle_elided",
+        "rebalance_elided",
+        "minting_elided",
+        "vault_lifecycle_elided",
+        "locked_arithmetic_slice"
+      ],
+      "abstraction_notes": "The benchmark isolates the pure arithmetic of the VaultHub _locked() function and the axiomatised getPooledEthBySharesRoundUp share-to-ether conversion. All state machine reasoning (minting, burning, rebalancing, oracle updates) is elided. The tasks focus on the solvency inequality from Certora finding F-01 and the supporting invariants P-VH-03 and P-VH-04.",
+      "unsupported_feature_codes": [],
+      "spec_target": "Benchmark.Cases.Lido.VaulthubLocked.Specs",
+      "proof_target": "Benchmark.Cases.Lido.VaulthubLocked.Proofs"
     },
     {
       "case_id": "nexus_mutual/ramm_price_band",
@@ -1462,6 +1537,231 @@
       }
     },
     {
+      "task_ref": "lido/vaulthub_locked/ceildiv_sandwich",
+      "task_id": "ceildiv_sandwich",
+      "case_id": "lido/vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/tasks/ceildiv_sandwich.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "arithmetic-lemma",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Lido.VaulthubLocked.ceildiv_sandwich",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/lido/vaulthub_locked/verity/Contract.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/lido/vaulthub_locked/verity/Specs.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Lido/VaulthubLocked/Tasks/CeildivSandwich.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "Supporting arithmetic lemma for F-01. Proves that ceil(x/d) * d >= x for positive d. This is the key bound that connects the ceiling division in the reserve computation back to the original liability amount.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Lido.VaulthubLocked.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "lido/vaulthub_locked/locked_funds_solvency",
+      "task_id": "locked_funds_solvency",
+      "case_id": "lido/vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/tasks/locked_funds_solvency.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "arithmetic-invariant",
+      "difficulty": "hard",
+      "theorem_name": "Benchmark.Cases.Lido.VaulthubLocked.locked_funds_solvency",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/lido/vaulthub_locked/verity/Contract.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/lido/vaulthub_locked/verity/Specs.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Lido/VaulthubLocked/Tasks/LockedFundsSolvency.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "Certora finding F-01. The locked amount multiplied by the reserve ratio complement is at least the liability multiplied by total basis points. Requires a case split on whether the reserve-ratio-based reserve or the minimal reserve dominates, plus the ceilDiv sandwich bound and share conversion monotonicity.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Lido.VaulthubLocked.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "lido/vaulthub_locked/max_liability_shares_bound",
+      "task_id": "max_liability_shares_bound",
+      "case_id": "lido/vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/tasks/max_liability_shares_bound.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "invariant",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.Lido.VaulthubLocked.max_liability_shares_bound",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/lido/vaulthub_locked/verity/Contract.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/lido/vaulthub_locked/verity/Specs.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Lido/VaulthubLocked/Tasks/MaxLiabilitySharesBound.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "Certora proven property P-VH-04. maxLiabilityShares is always at least liabilityShares. Used as a supporting lemma for the F-01 solvency proof.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Lido.VaulthubLocked.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "lido/vaulthub_locked/reserve_ratio_bounds",
+      "task_id": "reserve_ratio_bounds",
+      "case_id": "lido/vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/tasks/reserve_ratio_bounds.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "invariant",
+      "difficulty": "easy",
+      "theorem_name": "Benchmark.Cases.Lido.VaulthubLocked.reserve_ratio_bounds",
+      "proof_family": "state_preservation_local_effects",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/lido/vaulthub_locked/verity/Contract.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/lido/vaulthub_locked/verity/Specs.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Lido/VaulthubLocked/Tasks/ReserveRatioBounds.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "Certora proven property P-VH-03. The reserve ratio in basis points is strictly between 0 and TOTAL_BASIS_POINTS (10000). Used as a supporting lemma for F-01.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Lido.VaulthubLocked.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
+      "task_ref": "lido/vaulthub_locked/shares_conversion_monotone",
+      "task_id": "shares_conversion_monotone",
+      "case_id": "lido/vaulthub_locked",
+      "suite": "active",
+      "schema_version": 1,
+      "manifest_path": "cases/lido/vaulthub_locked/tasks/shares_conversion_monotone.yaml",
+      "split": "active",
+      "family_id": "lido",
+      "implementation_id": "core",
+      "source_ref": "https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol",
+      "task_interface_version": 2,
+      "track": "proof-only",
+      "property_class": "accounting_bound",
+      "category": "arithmetic-lemma",
+      "difficulty": "medium",
+      "theorem_name": "Benchmark.Cases.Lido.VaulthubLocked.shares_conversion_monotone",
+      "proof_family": "functional_correctness",
+      "translation_status": "translated",
+      "proof_status": "partial",
+      "implementation_files": [
+        "cases/lido/vaulthub_locked/verity/Contract.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Contract.lean"
+      ],
+      "specification_files": [
+        "cases/lido/vaulthub_locked/verity/Specs.lean",
+        "Benchmark/Cases/Lido/VaulthubLocked/Specs.lean"
+      ],
+      "editable_files": [
+        "Benchmark/Generated/Lido/VaulthubLocked/Tasks/SharesConversionMonotone.lean"
+      ],
+      "abstraction_level": "protocol_slice",
+      "abstraction_notes": "Supporting arithmetic lemma for F-01. Proves that getPooledEthBySharesRoundUp is monotone in the shares argument: if a >= b then the conversion of a is at least the conversion of b. Needed to lift the solvency bound from maxLiabilityShares down to liabilityShares.",
+      "unsupported_feature_codes": [],
+      "reference_solution_module": "Benchmark.Cases.Lido.VaulthubLocked.Proofs",
+      "evaluation": {
+        "engine": "lean_proof_generation",
+        "target_kind": "proof_generation"
+      },
+      "readiness": {
+        "prompt_context": "ready",
+        "editable_proof": "ready",
+        "reference_solution": "ready"
+      }
+    },
+    {
       "task_ref": "nexus_mutual/ramm_price_band/sync_sets_book_value",
       "task_id": "sync_sets_book_value",
       "case_id": "nexus_mutual/ramm_price_band",
@@ -2229,5 +2529,5 @@
       }
     }
   ],
-  "generated_at": "2026-03-22T21:50:39.135308+00:00"
+  "generated_at": "2026-03-24T16:18:15.648174+00:00"
 }
