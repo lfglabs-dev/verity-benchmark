@@ -1,7 +1,9 @@
+import Verity.Specs.Common
 import Benchmark.Cases.Lido.VaulthubLocked.Contract
 
 namespace Benchmark.Cases.Lido.VaulthubLocked
 
+open Verity
 open Verity.EVM.Uint256
 
 /-
@@ -15,6 +17,14 @@ open Verity.EVM.Uint256
 
   P-VH-04 (Certora proven): maxLiabilityShares >= liabilityShares
   P-VH-03 (Certora proven): 0 < reserveRatioBP < TOTAL_BASIS_POINTS
+
+  Storage layout (from verity_contract VaultHubLocked):
+    slot 0: maxLiabilityShares
+    slot 1: liabilityShares
+    slot 2: minimalReserve
+    slot 3: reserveRatioBP
+    slot 4: totalPooledEther
+    slot 5: totalShares
 -/
 
 /--

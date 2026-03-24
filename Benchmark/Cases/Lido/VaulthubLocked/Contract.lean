@@ -15,7 +15,7 @@ open Verity.Stdlib.Math
   `getPooledEthBySharesRoundUp` as an axiomatised share-to-ether conversion.
   Oracle, rebalance, and minting machinery are elided.
 
-  Upstream: lidofinance/core (feat/vaults branch)
+  Upstream: lidofinance/core (master)
   File: contracts/0.8.25/vaults/VaultHub.sol
 -/
 
@@ -38,9 +38,9 @@ noncomputable def getPooledEthBySharesRoundUp
   ceilDiv (mul shares totalPooledEther) totalShares
 
 /--
-  The core _locked function from VaultHub.sol.
-  Given liability shares, a minimal reserve, and a reserve ratio in basis points,
-  returns the amount of ether that must be locked on the vault.
+  Pure arithmetic core of the _locked function from VaultHub.sol (3-param overload).
+  Given max liability shares, a minimal reserve, a reserve ratio in basis points,
+  and the Lido protocol state, returns the amount of ether that must be locked.
 
   Solidity source:
     uint256 liability = _getPooledEthBySharesRoundUp(_liabilityShares);
@@ -56,5 +56,33 @@ noncomputable def locked
   let reserve := ceilDiv (mul liability reserveRatioBP) (sub TOTAL_BASIS_POINTS reserveRatioBP)
   let effectiveReserve := if reserve ≥ minimalReserve then reserve else minimalReserve
   add liability effectiveReserve
+
+verity_contract VaultHubLocked where
+  storage
+    -- VaultRecord fields
+    maxLiabilityShares : Uint256 := slot 0
+    liabilityShares : Uint256 := slot 1
+    minimalReserve : Uint256 := slot 2
+    -- VaultConnection field
+    reserveRatioBP : Uint256 := slot 3
+    -- Lido protocol state (axiomatised external reads)
+    totalPooledEther : Uint256 := slot 4
+    totalShares : Uint256 := slot 5
+
+  /--
+    Contract-level view of _locked: reads vault state from storage and
+    delegates to the pure `locked` function.
+
+    This models the 2-param overload:
+      function _locked(VaultConnection storage, VaultRecord storage)
+    which reads maxLiabilityShares, minimalReserve, reserveRatioBP from storage.
+  -/
+  function getLocked () : Uint256 := do
+    let maxLS ← getStorage maxLiabilityShares
+    let minRes ← getStorage minimalReserve
+    let rrBP ← getStorage reserveRatioBP
+    let tpe ← getStorage totalPooledEther
+    let ts ← getStorage totalShares
+    return (locked maxLS minRes rrBP tpe ts)
 
 end Benchmark.Cases.Lido.VaulthubLocked
