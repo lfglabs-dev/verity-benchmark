@@ -16,7 +16,7 @@ from typing import Any
 from urllib import error, request
 
 from benchmark_config import load_benchmark_agent_defaults
-from interactive_runtime import TaskProofRuntime, tool_result_json, extract_contract_simp_terms
+from interactive_runtime import TaskProofRuntime, tool_result_json, extract_contract_simp_terms, classify_failure
 from task_runner import ROOT, load_task_record, resolve_task_manifest
 
 AGENT_RESULTS_DIR = ROOT / "results" / "agent_runs"
@@ -596,42 +596,6 @@ def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[di
         {"role": "user", "content": build_user_prompt(task, interactive=config.mode == "interactive")},
     ]
 
-
-def classify_failure(details: str) -> str:
-    """Classify a Lean checker failure into a coarse category for dispatch."""
-    if not details:
-        return "unknown"
-    if "unknown identifier" in details.lower() or "Unknown identifier" in details:
-        return "unknown_identifier"
-    if "unknown constant" in details.lower():
-        return "unknown_identifier"
-    if "unsolved goals" in details.lower():
-        return "unsolved_goals"
-    if "type mismatch" in details.lower():
-        return "type_mismatch"
-    if "tactic 'split' failed" in details:
-        return "split_failed"
-    if "no goals to be solved" in details:
-        return "no_goals"
-    if "expected type must not contain free variables" in details:
-        return "free_variables"
-    if "declaration uses 'sorry'" in details.lower() or "declaration uses 'admit'" in details.lower():
-        return "placeholder"
-    if "unknown tactic" in details.lower():
-        return "unknown_tactic"
-    if "function expected" in details.lower():
-        return "type_error"
-    if "application type mismatch" in details.lower():
-        return "type_error"
-    if "simp made no progress" in details.lower():
-        return "simp_no_progress"
-    if "failed to unfold" in details.lower():
-        return "unfold_failed"
-    if "dsimp made no progress" in details.lower():
-        return "simp_no_progress"
-    if "tactic 'rfl' failed" in details:
-        return "rfl_failed"
-    return "other"
 
 
 
@@ -1621,7 +1585,6 @@ def execute_interactive_agent_task(
     response: dict[str, Any] = {}
     response_text = ""
     tool_calls_used = 0
-    consecutive_lean_failures = 0
     proof_attempts = 0
     consecutive_search_turns = 0
     consecutive_length_stops = 0
@@ -1695,7 +1658,6 @@ def execute_interactive_agent_task(
                 # Failed candidate without tool calls: feed error back
                 failure_mode = evaluation.get("failure_mode", "")
                 if failure_mode == "lean_check_failed":
-                    consecutive_lean_failures += 1
                     details = str(evaluation.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
                     guidance = build_repair_guidance(details, failure_mode=failure_mode)
                     repair_msg = (
@@ -1775,7 +1737,6 @@ def execute_interactive_agent_task(
             )
             if tool_name == "run_lean_check" and result.get("failure_mode") == "lean_check_failed":
                 saw_lean_failure = True
-                consecutive_lean_failures += 1
             elif tool_name in ("run_lean_check", "try_tactic_at_hole") and result.get("status") == "passed":
                 # Normalize to evaluation schema (try_tactic_at_hole returns tactic/details without failure_mode)
                 evaluation = dict(result)
@@ -1787,8 +1748,6 @@ def execute_interactive_agent_task(
         if turn_had_proof_action:
             proof_attempts += 1
             consecutive_search_turns = 0
-            if not saw_lean_failure:
-                consecutive_lean_failures = 0
         else:
             consecutive_search_turns += 1
             if consecutive_search_turns >= 2:

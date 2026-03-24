@@ -10,12 +10,6 @@ from typing import Any
 
 from task_runner import ROOT, run_command as lean_run_command
 
-# Optional: PyPantograph for structured tactic execution
-try:
-    import pantograph  # type: ignore[import-untyped]
-    PANTOGRAPH_AVAILABLE = True
-except ImportError:
-    PANTOGRAPH_AVAILABLE = False
 
 PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
 HOLE_PATTERN = re.compile(r"\?(?:_|\w+)")
@@ -164,7 +158,7 @@ class TaskProofRuntime:
             "status": "failed",
             "tactic": tactic.strip(),
             "details": evaluation.get("details", "")[:2000],
-            "failure_class": _classify_failure(str(evaluation.get("details", ""))),
+            "failure_class": classify_failure(str(evaluation.get("details", ""))),
         }
 
     def evaluate_current(self, *, check_goals: bool = False) -> dict[str, Any]:
@@ -382,7 +376,7 @@ class TaskProofRuntime:
     def _annotate_check_result(self, result: dict[str, Any]) -> dict[str, Any]:
         """Annotate a failed check result with failure classification and repair hints."""
         details = str(result.get("details", ""))
-        failure_class = _classify_failure(details)
+        failure_class = classify_failure(details)
         hints = _build_check_hints(failure_class, details)
         annotated = dict(result)
         annotated["failure_class"] = failure_class
@@ -583,7 +577,7 @@ def extract_contract_simp_terms(task: dict[str, Any]) -> list[str]:
     return terms
 
 
-def _classify_failure(details: str) -> str:
+def classify_failure(details: str) -> str:
     """Classify a Lean checker failure into a coarse category."""
     if not details:
         return "unknown"
@@ -600,6 +594,8 @@ def _classify_failure(details: str) -> str:
         return "no_goals"
     if "expected type must not contain free variables" in details:
         return "free_variables"
+    if "declaration uses 'sorry'" in lower or "declaration uses 'admit'" in lower:
+        return "placeholder"
     if "unknown tactic" in lower:
         return "unknown_tactic"
     if "function expected" in lower or "application type mismatch" in lower:
