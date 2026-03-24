@@ -53,6 +53,10 @@ def normalize_string_list(path: Path, key: str, value: object) -> list[str]:
     return [str(item).strip() for item in value]
 
 
+def lean_module_path(module_name: str) -> Path:
+    return ROOT.joinpath(*module_name.split(".")).with_suffix(".lean")
+
+
 def evaluation_ready(
     case_entry: dict,
     editable_files: list[str],
@@ -67,6 +71,7 @@ def evaluation_ready(
         bool(editable_files and theorem_name and reference_solution_module)
         and translation_status in RUNNABLE_TRANSLATION_STATUSES
         and proof_status in RUNNABLE_PROOF_STATUSES
+        and lean_module_path(reference_solution_module).is_file()
     )
 
 
@@ -332,10 +337,10 @@ def write_inventory(
             "backlog_case_count": len(backlog_cases),
             "active_task_count": len(active_tasks),
             "backlog_task_count": len(backlog_tasks),
-            "buildable_case_count": sum(1 for entry in active_cases if entry["buildable"]),
+            "buildable_case_count": sum(1 for entry in all_cases if entry["buildable"]),
             "runnable_task_count": sum(
                 1
-                for entry in active_tasks
+                for entry in all_tasks
                 if entry["readiness"]["editable_proof"] == "ready"
             ),
             "case_stage_counts": summary_counts(all_cases, "stage"),

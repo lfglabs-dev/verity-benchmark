@@ -24,4 +24,8 @@ def syncPriceBand_sets_sell_price_spec
   let bv := div (mul 1000000000000000000 capital_) supply_
   s'.storage 4 = div (mul bv 9900) 10000
 
+def syncPriceBand_sell_le_buy_spec
+    (_s s' : ContractState) : Prop :=
+  s'.storage 4 ≤ s'.storage 3
+
 end Benchmark.Cases.NexusMutual.RammPriceBand

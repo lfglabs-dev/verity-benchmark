@@ -60,4 +60,16 @@ theorem syncPriceBand_sets_sell_price
     syncPriceBand_sets_sell_price_spec capital_ supply_ s s' := by
   simpa [syncPriceBand_sets_sell_price_spec] using (syncPriceBand_slot_write capital_ supply_ s hSupply).2.2.2
 
+/--
+The sell spot price never exceeds the buy spot price,
+provided the book-value multiplication does not overflow.
+-/
+theorem syncPriceBand_sell_le_buy
+    (capital_ supply_ : Uint256) (s : ContractState)
+    (hSupply : supply_ != 0)
+    (hNoOverflow : (div (mul 1000000000000000000 capital_) supply_).val * 10100 < modulus) :
+    let s' := ((RammPriceBand.syncPriceBand capital_ supply_).run s).snd
+    syncPriceBand_sell_le_buy_spec s s' := by
+  sorry
+
 end Benchmark.Cases.NexusMutual.RammPriceBand

@@ -51,6 +51,7 @@ python3 harness/agent_runner.py list --suite active
 python3 harness/default_agent.py profiles
 python3 harness/default_agent.py describe --profile default
 python3 harness/default_agent.py probe --profile default --ensure-model
+python3 scripts/analyze_benchmark_run.py attempts results/agent_runs/reference/default/ethereum__deposit_contract_minimal__deposit_count.json
 ./scripts/run_default_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ./scripts/run_custom_agent.sh ethereum/deposit_contract_minimal/deposit_count
 ```

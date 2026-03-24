@@ -11,6 +11,17 @@ if [[ "${VERITY_BENCHMARK_DOTENVX_LOADED:-}" == "1" ]]; then
   exec "$@"
 fi
 
+if [[ "${VERITY_BENCHMARK_ALLOW_PROCESS_SECRET_OVERRIDES:-}" != "1" ]]; then
+  for managed_var in \
+    OPENROUTER_API_KEY \
+    VERITY_BENCHMARK_AGENT_API_KEY \
+    VERITY_BENCHMARK_AGENT_BASE_URL \
+    VERITY_BENCHMARK_AGENT_MODEL
+  do
+    unset "$managed_var"
+  done
+fi
+
 env_args=()
 
 if [[ -f .env ]]; then

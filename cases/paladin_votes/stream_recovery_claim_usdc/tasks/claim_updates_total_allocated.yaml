@@ -1,0 +1,33 @@
+manifest_kind: task
+schema_version: 1
+task_id: claim_updates_total_allocated
+case_id: paladin_votes/stream_recovery_claim_usdc
+split: active
+family_id: paladin_votes
+implementation_id: stream_recovery_claim
+source_ref: https://github.com/Figu3/sonic-earn-recovery-system@699cbbc79def374cab9739e451acbbf866293d12:src/StreamRecoveryClaim.sol
+task_interface_version: 2
+theorem_name: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_total_allocated
+proof_family: protocol_transition_correctness
+property_class: accounting_update
+difficulty: easy
+category: accounting
+track: proof-only
+translation_status: translated
+proof_status: partial
+evaluation_engine: lean_proof_generation
+implementation_files:
+  - cases/paladin_votes/stream_recovery_claim_usdc/verity/Contract.lean
+  - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Contract.lean
+specification_files:
+  - cases/paladin_votes/stream_recovery_claim_usdc/verity/Specs.lean
+  - Benchmark/Cases/PaladinVotes/StreamRecoveryClaimUsdc/Specs.lean
+editable_files:
+  - Benchmark/Generated/PaladinVotes/StreamRecoveryClaimUsdc/Tasks/ClaimUpdatesTotalAllocated.lean
+reference_solution_module: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.Proofs
+reference_solution_declaration: Benchmark.Cases.PaladinVotes.StreamRecoveryClaimUsdc.claimUsdc_updates_total_allocated
+abstraction_level: protocol_slice
+abstraction_notes: >
+  This task isolates the compensating decrease in remaining allocated USDC on
+  the successful claim path.
+unsupported_feature_codes: []

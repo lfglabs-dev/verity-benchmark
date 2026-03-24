@@ -34,27 +34,27 @@ private theorem claimUsdc_slot_writes
       add (s.storage 1) (div (mul shareWad (s.storage 0)) 1000000000000000000) <= s.storage 0 := by
     simpa [computedClaimAmount] using hBound
   constructor
-  · simp [amount, StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
+  · simp [StreamRecoveryClaimUsdc.claimUsdc, hWaiver, hActive, hFresh',
       hBound', StreamRecoveryClaimUsdc.roundUsdcTotal, StreamRecoveryClaimUsdc.roundUsdcClaimed,
       StreamRecoveryClaimUsdc.totalUsdcAllocated, StreamRecoveryClaimUsdc.roundActive,
       StreamRecoveryClaimUsdc.hasSignedWaiver, StreamRecoveryClaimUsdc.hasClaimedUsdc, getMapping,
       getStorage, setMapping, setStorage, msgSender, Verity.require, Verity.bind, Bind.bind,
       Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
   constructor
-  · simp [amount, StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
+  · simp [StreamRecoveryClaimUsdc.claimUsdc, hWaiver, hActive, hFresh',
       hBound', StreamRecoveryClaimUsdc.roundUsdcTotal, StreamRecoveryClaimUsdc.roundUsdcClaimed,
       StreamRecoveryClaimUsdc.totalUsdcAllocated, StreamRecoveryClaimUsdc.roundActive,
       StreamRecoveryClaimUsdc.hasSignedWaiver, StreamRecoveryClaimUsdc.hasClaimedUsdc, getMapping,
       getStorage, setMapping, setStorage, msgSender, Verity.require, Verity.bind, Bind.bind,
       Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
   constructor
-  · simp [amount, StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
+  · simp [StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
       hBound', StreamRecoveryClaimUsdc.roundUsdcTotal, StreamRecoveryClaimUsdc.roundUsdcClaimed,
       StreamRecoveryClaimUsdc.totalUsdcAllocated, StreamRecoveryClaimUsdc.roundActive,
       StreamRecoveryClaimUsdc.hasSignedWaiver, StreamRecoveryClaimUsdc.hasClaimedUsdc, getMapping,
       getStorage, setMapping, setStorage, msgSender, Verity.require, Verity.bind, Bind.bind,
       Verity.pure, Pure.pure, Contract.run, ContractResult.snd]
-  · simp [amount, StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
+  · simp [StreamRecoveryClaimUsdc.claimUsdc, computedClaimAmount, hWaiver, hActive, hFresh',
       hBound', StreamRecoveryClaimUsdc.roundUsdcTotal, StreamRecoveryClaimUsdc.roundUsdcClaimed,
       StreamRecoveryClaimUsdc.totalUsdcAllocated, StreamRecoveryClaimUsdc.roundActive,
       StreamRecoveryClaimUsdc.hasSignedWaiver, StreamRecoveryClaimUsdc.hasClaimedUsdc, getMapping,
@@ -74,6 +74,36 @@ theorem claimUsdc_marks_user_claimed
     claimUsdc_marks_claimed_spec s s' := by
   unfold claimUsdc_marks_claimed_spec
   exact (claimUsdc_slot_writes shareWad s hWaiver hActive hFresh hBound).2.1
+
+/--
+Executing `claimUsdc` on the successful path increases `roundUsdcClaimed`
+by exactly the computed claim amount.
+-/
+theorem claimUsdc_updates_round_claimed
+    (shareWad : Uint256) (s : ContractState)
+    (hWaiver : s.storageMap 4 s.sender != 0)
+    (hActive : s.storage 3 != 0)
+    (hFresh : s.storageMap 5 s.sender = 0)
+    (hBound : add (s.storage 1) (computedClaimAmount shareWad s) <= s.storage 0) :
+    let s' := ((StreamRecoveryClaimUsdc.claimUsdc shareWad true).run s).snd
+    claimUsdc_updates_round_claimed_spec shareWad s s' := by
+  unfold claimUsdc_updates_round_claimed_spec
+  exact (claimUsdc_slot_writes shareWad s hWaiver hActive hFresh hBound).2.2.1
+
+/--
+Executing `claimUsdc` on the successful path decreases `totalUsdcAllocated`
+by exactly the computed claim amount.
+-/
+theorem claimUsdc_updates_total_allocated
+    (shareWad : Uint256) (s : ContractState)
+    (hWaiver : s.storageMap 4 s.sender != 0)
+    (hActive : s.storage 3 != 0)
+    (hFresh : s.storageMap 5 s.sender = 0)
+    (hBound : add (s.storage 1) (computedClaimAmount shareWad s) <= s.storage 0) :
+    let s' := ((StreamRecoveryClaimUsdc.claimUsdc shareWad true).run s).snd
+    claimUsdc_updates_total_allocated_spec shareWad s s' := by
+  unfold claimUsdc_updates_total_allocated_spec
+  exact (claimUsdc_slot_writes shareWad s hWaiver hActive hFresh hBound).2.2.2
 
 /--
 Executing `claimUsdc` on the successful path preserves the round bound.

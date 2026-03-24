@@ -14,7 +14,7 @@ difficulty: medium
 category: arithmetic-invariant
 track: proof-only
 translation_status: translated
-proof_status: blocked
+proof_status: complete
 evaluation_engine: lean_proof_generation
 implementation_files:
   - backlog/uniswap_v2/pair_fee_adjusted_swap/verity/Contract.lean

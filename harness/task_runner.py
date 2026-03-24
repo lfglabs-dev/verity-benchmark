@@ -50,6 +50,10 @@ def lean_module_name(rel_path: str) -> str:
     return ".".join(path.with_suffix("").parts)
 
 
+def lean_module_path(module_name: str) -> Path:
+    return ROOT.joinpath(*module_name.split(".")).with_suffix(".lean")
+
+
 def editable_ready(task: dict[str, Any]) -> bool:
     return (
         task["stage"] in RUNNABLE_STAGES
@@ -67,6 +71,7 @@ def reference_solution_ready(task: dict[str, Any]) -> bool:
         and task["translation_status"] == "translated"
         and task["proof_status"] in PROOF_READY_STATUSES
         and bool(reference["module"] and reference["declaration"])
+        and lean_module_path(reference["module"]).is_file()
     )
 
 

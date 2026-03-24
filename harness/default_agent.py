@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -29,6 +30,7 @@ PLACEHOLDER_PATTERN = re.compile(r"\b(sorry|admit|axiom)\b")
 MAX_ERROR_FEEDBACK_CHARS = 6000
 MAX_REASONING_SNIPPET_CHARS = 4000
 ADAPTER_PROTOCOL_VERSION = 1
+THINK_BLOCK_PATTERN = re.compile(r"(?s)<think>(.*?)</think>\s*")
 
 
 @dataclass(frozen=True)
@@ -633,14 +635,226 @@ def build_repair_messages(
 
 
 def reasoning_excerpt(response: dict[str, Any]) -> str:
+    reasoning = extract_response_content(response)["provider_reasoning_text"]
+    return reasoning[:MAX_REASONING_SNIPPET_CHARS]
+
+
+def response_message(response: dict[str, Any]) -> dict[str, Any]:
     choices = response.get("choices")
     if not isinstance(choices, list) or not choices:
-        return ""
+        return {}
     message = choices[0].get("message", {})
+    return message if isinstance(message, dict) else {}
+
+
+def extract_response_content(response: dict[str, Any]) -> dict[str, str]:
+    message = response_message(response)
+    reasoning_parts: list[str] = []
     reasoning_content = message.get("reasoning_content")
-    if isinstance(reasoning_content, str):
-        return reasoning_content.strip()[:MAX_REASONING_SNIPPET_CHARS]
-    return ""
+    if isinstance(reasoning_content, str) and reasoning_content.strip():
+        reasoning_parts.append(reasoning_content.strip())
+
+    raw_segments: list[str] = []
+    content = message.get("content")
+    if isinstance(content, str):
+        raw_segments.append(content.strip())
+        reasoning_parts.extend(match.strip() for match in THINK_BLOCK_PATTERN.findall(content) if match.strip())
+    elif isinstance(content, list):
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type")
+            text = item.get("text")
+            if item_type == "text" and isinstance(text, str):
+                raw_segments.append(text.strip())
+                reasoning_parts.extend(match.strip() for match in THINK_BLOCK_PATTERN.findall(text) if match.strip())
+            elif isinstance(text, str) and item_type in {"reasoning", "thinking"} and text.strip():
+                reasoning_parts.append(text.strip())
+
+    raw_text = "\n".join(segment for segment in raw_segments if segment).strip()
+    return {
+        "response_text_raw": raw_text,
+        "response_text": THINK_BLOCK_PATTERN.sub("", raw_text).strip(),
+        "provider_reasoning_text": "\n\n".join(part for part in reasoning_parts if part).strip(),
+    }
+
+
+def first_choice(response: dict[str, Any]) -> dict[str, Any]:
+    choices = response.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return {}
+    choice = choices[0]
+    return choice if isinstance(choice, dict) else {}
+
+
+def stable_digest(payload: object) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def prompt_chars(messages: list[dict[str, Any]]) -> int:
+    total = 0
+    for message in messages:
+        content = message.get("content")
+        if isinstance(content, str):
+            total += len(content)
+    return total
+
+
+def attempt_has_candidate_state(attempt: dict[str, Any] | None) -> bool:
+    if not isinstance(attempt, dict):
+        return False
+    candidate_text = attempt.get("candidate_file_contents")
+    if isinstance(candidate_text, str) and candidate_text.strip():
+        return True
+    evaluation = attempt.get("evaluation")
+    if not isinstance(evaluation, dict):
+        return False
+    status = evaluation.get("status")
+    failure_mode = evaluation.get("failure_mode")
+    return bool((isinstance(status, str) and status) or (isinstance(failure_mode, str) and failure_mode))
+
+
+def latest_candidate_attempt(attempts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for attempt in reversed(attempts):
+        if attempt_has_candidate_state(attempt):
+            return attempt
+    return None
+
+
+def build_attempt_trace(
+    *,
+    messages: list[dict[str, Any]],
+    response: dict[str, Any],
+    response_content: dict[str, str],
+    candidate_text: str,
+    evaluation: dict[str, Any] | None,
+    previous_attempt: dict[str, Any] | None,
+    latency_seconds: float | None,
+) -> dict[str, Any]:
+    choice = first_choice(response)
+    usage = response.get("usage")
+    usage_payload = usage if isinstance(usage, dict) else {}
+    previous_trace = previous_attempt.get("trace", {}) if isinstance(previous_attempt, dict) else {}
+    previous_candidate = str(previous_attempt.get("candidate_file_contents", "")) if isinstance(previous_attempt, dict) else ""
+    failure_mode = evaluation.get("failure_mode") if isinstance(evaluation, dict) else None
+    status = evaluation.get("status") if isinstance(evaluation, dict) else None
+    return {
+        "prompt_message_count": len(messages),
+        "prompt_chars": prompt_chars(messages),
+        "prompt_sha256": stable_digest(messages),
+        "response_model": response.get("model"),
+        "finish_reason": choice.get("finish_reason"),
+        "usage": usage_payload,
+        "latency_seconds": round(latency_seconds, 3) if isinstance(latency_seconds, (int, float)) else None,
+        "response_text_chars": len(response_content["response_text"]),
+        "response_text_raw_chars": len(response_content["response_text_raw"]),
+        "provider_reasoning_chars": len(response_content["provider_reasoning_text"]),
+        "candidate_chars": len(candidate_text),
+        "candidate_sha256": stable_digest(candidate_text),
+        "status": status,
+        "failure_mode": failure_mode,
+        "candidate_changed_from_previous": None if previous_attempt is None else candidate_text != previous_candidate,
+        "failure_mode_changed_from_previous": (
+            None if previous_attempt is None else failure_mode != previous_trace.get("failure_mode")
+        ),
+    }
+
+
+def build_attempt_record(
+    *,
+    attempt_index: int,
+    mode: str,
+    messages: list[dict[str, Any]],
+    response: dict[str, Any],
+    candidate_text: str,
+    evaluation: dict[str, Any] | None,
+    previous_attempt: dict[str, Any] | None,
+    latency_seconds: float | None,
+) -> dict[str, Any]:
+    response_content = extract_response_content(response)
+    return {
+        "attempt": attempt_index,
+        "mode": mode,
+        "messages": list(messages),
+        "response": response,
+        "response_text": response_content["response_text"],
+        "response_text_raw": response_content["response_text_raw"],
+        "provider_reasoning_text": response_content["provider_reasoning_text"],
+        "candidate_file_contents": candidate_text,
+        "evaluation": evaluation or {},
+        "trace": build_attempt_trace(
+            messages=list(messages),
+            response=response,
+            response_content=response_content,
+            candidate_text=candidate_text,
+            evaluation=evaluation,
+            previous_attempt=previous_attempt,
+            latency_seconds=latency_seconds,
+        ),
+    }
+
+
+def refresh_attempt_record(
+    attempt: dict[str, Any],
+    *,
+    candidate_text: str,
+    evaluation: dict[str, Any],
+    previous_attempt: dict[str, Any] | None,
+    latency_seconds: float | None = None,
+) -> None:
+    attempt["candidate_file_contents"] = candidate_text
+    attempt["evaluation"] = evaluation
+    prior_trace = attempt.get("trace")
+    attempt["trace"] = build_attempt_trace(
+        messages=list(attempt.get("messages", [])),
+        response=attempt.get("response", {}) if isinstance(attempt.get("response"), dict) else {},
+        response_content={
+            "response_text": str(attempt.get("response_text", "")),
+            "response_text_raw": str(attempt.get("response_text_raw", "")),
+            "provider_reasoning_text": str(attempt.get("provider_reasoning_text", "")),
+        },
+        candidate_text=candidate_text,
+        evaluation=evaluation,
+        previous_attempt=previous_attempt,
+        latency_seconds=(
+            latency_seconds
+            if latency_seconds is not None
+            else prior_trace.get("latency_seconds")
+            if isinstance(prior_trace, dict)
+            else None
+        ),
+    )
+
+
+def build_run_analysis(
+    *,
+    attempts: list[dict[str, Any]],
+    evaluation: dict[str, Any],
+    tool_calls_used: int,
+) -> dict[str, Any]:
+    reasoning_attempts = 0
+    candidate_change_count = 0
+    failure_mode_change_count = 0
+    for attempt in attempts:
+        trace = attempt.get("trace", {})
+        if not isinstance(trace, dict):
+            continue
+        if int(trace.get("provider_reasoning_chars") or 0) > 0:
+            reasoning_attempts += 1
+        if trace.get("candidate_changed_from_previous") is True:
+            candidate_change_count += 1
+        if trace.get("failure_mode_changed_from_previous") is True:
+            failure_mode_change_count += 1
+    return {
+        "attempt_count": len(attempts),
+        "tool_calls_used": tool_calls_used,
+        "reasoning_attempt_count": reasoning_attempts,
+        "candidate_change_count": candidate_change_count,
+        "failure_mode_change_count": failure_mode_change_count,
+        "final_failure_mode": evaluation.get("failure_mode"),
+        "final_status": evaluation.get("status"),
+    }
 
 
 def build_finalization_messages(
@@ -757,33 +971,11 @@ def ensure_configured_model_available(config: ResolvedAgentConfig, model_ids: li
 
 
 def extract_text(response: dict[str, Any]) -> str:
-    choices = response.get("choices")
-    if not isinstance(choices, list) or not choices:
-        return ""
-    message = choices[0].get("message", {})
-    content = message.get("content")
-    if isinstance(content, str):
-        text = content.strip()
-        if text:
-            return re.sub(r"(?s)<think>.*?</think>\s*", "", content).strip()
-    if isinstance(content, list):
-        parts: list[str] = []
-        for item in content:
-            if isinstance(item, dict) and item.get("type") == "text":
-                text = item.get("text")
-                if isinstance(text, str):
-                    parts.append(text)
-        joined = "\n".join(parts).strip()
-        if joined:
-            return re.sub(r"(?s)<think>.*?</think>\s*", "", joined).strip()
-    return ""
+    return extract_response_content(response)["response_text"]
 
 
 def extract_tool_calls(response: dict[str, Any]) -> list[dict[str, Any]]:
-    choices = response.get("choices")
-    if not isinstance(choices, list) or not choices:
-        return []
-    message = choices[0].get("message", {})
+    message = response_message(response)
     tool_calls = message.get("tool_calls")
     if isinstance(tool_calls, list):
         return [item for item in tool_calls if isinstance(item, dict)]
@@ -947,16 +1139,20 @@ def invoke_command_adapter(config: ResolvedAgentConfig, payload: dict[str, Any])
 
 
 def extract_command_candidate(response: dict[str, Any]) -> tuple[str, str]:
+    response_text_raw = response.get("response_text_raw")
+    response_text = response.get("response_text")
     candidate = response.get("candidate_file_contents")
     if isinstance(candidate, str) and candidate.strip():
-        response_text = response.get("response_text")
         if isinstance(response_text, str):
             return response_text, candidate
+        if isinstance(response_text_raw, str):
+            return response_text_raw, candidate
         return candidate, candidate
 
-    response_text = response.get("response_text")
     if isinstance(response_text, str):
         return response_text, extract_candidate_file(response_text)
+    if isinstance(response_text_raw, str):
+        return response_text_raw, extract_candidate_file(response_text_raw)
     return "", ""
 
 
@@ -1232,41 +1428,24 @@ def execute_strict_agent_task(
     }
     attempts: list[dict[str, Any]] = []
 
-    for attempt_index in range(1, config.max_attempts + 1):
-        response = send_chat_completion(config, attempt_messages)
-        response_text = extract_text(response)
-        candidate_text = extract_candidate_file(response_text)
-        evaluation = evaluate_candidate_submission(task, candidate_text)
-        attempts.append(
-            {
-                "attempt": attempt_index,
-                "mode": "strict",
-                "messages": attempt_messages,
-                "response": response,
-                "response_text": response_text,
-                "candidate_file_contents": candidate_text,
-                "evaluation": evaluation,
-            }
+    attempt_start = time.perf_counter()
+    response = send_chat_completion(config, attempt_messages)
+    attempt_latency = time.perf_counter() - attempt_start
+    response_text = extract_text(response)
+    candidate_text = extract_candidate_file(response_text)
+    evaluation = evaluate_candidate_submission(task, candidate_text)
+    attempts.append(
+        build_attempt_record(
+            attempt_index=1,
+            mode="strict",
+            messages=attempt_messages,
+            response=response,
+            candidate_text=candidate_text,
+            evaluation=evaluation,
+            previous_attempt=None,
+            latency_seconds=attempt_latency,
         )
-        if evaluation["status"] == "passed":
-            break
-        if evaluation.get("failure_mode") == "empty_response":
-            attempt_messages = build_finalization_messages(
-                messages,
-                response,
-                attempt_index=attempt_index,
-                max_attempts=config.max_attempts,
-            )
-            continue
-        if evaluation.get("failure_mode") != "lean_check_failed" or not candidate_text.strip():
-            break
-        attempt_messages = build_repair_messages(
-            messages,
-            candidate_text,
-            evaluation,
-            attempt_index=attempt_index,
-            max_attempts=config.max_attempts,
-        )
+    )
     return response, response_text, evaluation, attempts
 
 
@@ -1409,6 +1588,7 @@ def execute_interactive_agent_task(
                 "tool_calls": tool_calls,
             }
         )
+        attempts[-1]["tool_calls"] = tool_calls
         if not tool_calls:
             final_candidate = extract_candidate_file(response_text)
             if final_candidate.strip():
@@ -1550,6 +1730,7 @@ def execute_interactive_agent_task(
             "evaluation": evaluation,
         }
     )
+    attempts[-1]["budget_exhausted"] = True
     return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
 
 
@@ -1602,9 +1783,17 @@ def execute_agent_task(
     )
     result["response"] = response
     result["response_text"] = response_text
+    if config.mode == "custom":
+        result["response_text_raw"] = str(response.get("response_text_raw", response_text))
+        result["provider_reasoning_text"] = str(response.get("provider_reasoning_text", ""))
+    else:
+        response_content = extract_response_content(response)
+        result["response_text_raw"] = response_content["response_text_raw"]
+        result["provider_reasoning_text"] = response_content["provider_reasoning_text"]
     result["candidate_file_contents"] = candidate_text
     result["attempts"] = attempts
     result["tool_calls_used"] = tool_calls_used
+    result["analysis"] = build_run_analysis(attempts=attempts, evaluation=evaluation, tool_calls_used=tool_calls_used)
     validate_result_payload(result, task_ref)
     result_path = write_result(task_ref, config, result)
     return (0 if evaluation["status"] == "passed" else 1), result_path
