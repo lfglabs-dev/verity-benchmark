@@ -16,7 +16,7 @@ from typing import Any
 from urllib import error, request
 
 from benchmark_config import load_benchmark_agent_defaults
-from interactive_runtime import TaskProofRuntime, tool_result_json
+from interactive_runtime import TaskProofRuntime, tool_result_json, extract_contract_simp_terms, classify_failure
 from task_runner import ROOT, load_task_record, resolve_task_manifest
 
 AGENT_RESULTS_DIR = ROOT / "results" / "agent_runs"
@@ -347,10 +347,18 @@ def resolve_mode(config: dict[str, Any], *, profile: str | None) -> str:
 def resolve_run_slug(config: dict[str, Any], *, agent_id: str, profile: str | None) -> str:
     explicit = normalize_string(config.get("run_slug"))
     if explicit:
-        return slugify(explicit)
-    if profile:
-        return slugify(profile)
-    return slugify(agent_id)
+        base = slugify(explicit)
+    elif profile:
+        base = slugify(profile)
+    else:
+        base = slugify(agent_id)
+    # Support repeat-index disambiguation for parallel benchmark runs
+    repeat_idx = os.environ.get("VERITY_REPEAT_INDEX", "")
+    # Sanitize: only allow digits to prevent path traversal
+    repeat_idx = repeat_idx if repeat_idx.isdigit() else ""
+    if repeat_idx and repeat_idx != "1":
+        return f"{base}-r{repeat_idx}"
+    return base
 
 
 def resolve_field(config: dict[str, Any], field: str, *, required: bool) -> str | None:
@@ -467,12 +475,42 @@ def render_file_bundle(paths: list[str]) -> str:
     return "\n\n".join(sections).strip()
 
 
+
+def extract_contract_branches(task: dict[str, Any]) -> list[str]:
+    """Extract conditional branch conditions from contract implementation files."""
+    branches: list[str] = []
+    for rel_path in task.get("implementation_files", []):
+        path = ROOT / rel_path
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        # Match 'if <condition> then' patterns in contract code
+        for m in re.finditer(r"if\s+(.+?)\s+then", content):
+            cond = m.group(1).strip()
+            if cond not in branches:
+                branches.append(cond)
+        # Match 'ite (<condition>)' patterns (e.g., ite (nodeIndex == 3) ...)
+        for m in re.finditer(r"\bite\s+\((.+?)\)", content):
+            cond = m.group(1).strip()
+            if cond not in branches:
+                branches.append(cond)
+    return branches
+
+
 def build_proof_hints(task: dict[str, Any]) -> str:
     family = str(task.get("proof_family", ""))
+    # Extract concrete simp terms from contract files
+    contract_terms = extract_contract_simp_terms(task)
     shared = [
         "Verity execution proofs often need `simp` with the operational definitions, not just the theorem spec.",
-        "Useful simplification symbols are often: `getStorage`, `setStorage`, `Verity.require`, `Verity.bind`, `Bind.bind`, `Verity.pure`, `Pure.pure`, `Contract.run`, and `ContractResult.snd`.",
-        "If `simp` gets stuck on a conditional execution path, prove branch-specific private helper theorems with explicit hypotheses instead of splitting the final post-state directly.",
+        "Useful simplification symbols are often: `getStorage`, `setStorage`, `getMapping`, `setMapping`, `getMappingUint`, `setMappingUint`, `msgSender`, `Verity.require`, `Verity.bind`, `Bind.bind`, `Verity.pure`, `Pure.pure`, `Contract.run`, and `ContractResult.snd`.",
+        "CRITICAL: Include ALL storage field definitions (e.g., `ContractName.depositCount`, `ContractName.chainStarted`) in the simp set so that `.slot` reduces to concrete slot numbers. Without these, simp leaves unresolved `if` expressions.",
+        "CRITICAL: Pass ALL precondition hypotheses (`hCount`, `hMin`, etc.) to simp so it can evaluate `if` branches. Simp needs the hypotheses to reduce conditional execution paths.",
+        "For mapping storage, the contract may use `setMappingUint`/`getMappingUint`. Include `setMappingUint`/`getMappingUint` and the mapping field definitions in simp.",
+        "If the contract has conditional branches (e.g., `if depositAmount >= threshold then ...`), use `by_cases` on each condition BEFORE calling `simp`, not `split` after. CRITICAL: In each `by_cases` branch, repeat the FULL simp set PLUS the case hypothesis. Do NOT use bare `simp [hBig]` - you must include ALL contract definitions, storage fields, and operational symbols in every simp call. Example pattern:\n  ```\n  by_cases hBig : depositAmount >= 32000000000\n  · by_cases hThresh : add (s.storage 1) 1 = 65536\n    · simp [ContractName.fn, ContractName.field1, ContractName.field2, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig, hThresh]\n    · simp [ContractName.fn, ContractName.field1, ContractName.field2, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig, hThresh]\n  · simp [ContractName.fn, ContractName.field1, getStorage, setStorage, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd, hCount, hMin, hBig]\n  ```",
+        "If `simp` leaves unsolved goals because a hypothesis (e.g., `hBound`) uses a spec helper name while the goal has it unfolded, use `simp_all` instead of `simp`. `simp_all` rewrites hypotheses into the goal context, allowing it to match and discharge conditions that `simp` alone cannot.",
+        "IMPORTANT: Verity contracts compile conditions like `x < y` into `decide (x < y) = true`. Do NOT use `decide_True` or `decide_False` - these identifiers do not exist. Instead, pass the precondition hypotheses (e.g., `hCount`, `hMin`) directly to `simp` and it will handle the `decide` reduction automatically.",
+        "For negated branch conditions in `by_cases`: when `h : ¬ (x >= c)`, you can derive `have hLt : x < c := Nat.lt_of_not_ge h` and vice versa with `Nat.not_le_of_lt`. But usually just passing `h` to `simp` is sufficient.",
         "If helpful, add imports required for proof automation, for example `import Verity.Proofs.Stdlib.Automation`.",
     ]
     family_specific: list[str] = []
@@ -487,7 +525,7 @@ def build_proof_hints(task: dict[str, Any]) -> str:
         ]
     elif family == "authorization_enablement":
         family_specific = [
-            "For authorization theorems, unfold the spec and simplify the guarded execution path using the permission hypotheses.",
+            "For authorization theorems, unfold the spec then use `simp_all` (NOT `simp`) with the full simp set including all spec helpers. `simp_all` rewrites hypotheses into the goal, resolving require-guard conditions automatically. Do NOT use `dsimp` + `simp only` - use a single `simp_all` call.",
         ]
     elif family == "refinement_equivalence":
         family_specific = [
@@ -498,17 +536,34 @@ def build_proof_hints(task: dict[str, Any]) -> str:
             "For functional-correctness theorems, unfold the spec to the mathematical target form before simplifying the execution result.",
         ]
     lines = ["Public proof hints:"] + [f"- {item}" for item in [*shared, *family_specific]]
+    full_simp_set = ", ".join(contract_terms) if contract_terms else ""
+    if full_simp_set:
+        full_simp_set += ", "
+    full_simp_set += "getStorage, setStorage, getMapping, setMapping, getMappingUint, setMappingUint, msgSender, Verity.require, Verity.bind, Bind.bind, Verity.pure, Pure.pure, Contract.run, ContractResult.snd"
+    if contract_terms:
+        lines.append(f"\nFull simp set for this task (copy-paste this into EVERY simp call, including inside by_cases branches):")
+        lines.append(f"  [{full_simp_set}]")
+        lines.append(f"  IMPORTANT: Inside each `by_cases` branch, use `simp [{full_simp_set}, <all_hypotheses>]`. Never use bare `simp [h]`.")
+    # Extract and show branch conditions
+    branches = extract_contract_branches(task)
+    if branches:
+        lines.append(f"\nConditional branches in this contract (use `by_cases` on each relevant condition before simp):")
+        for i, branch in enumerate(branches):
+            lines.append(f"  {i+1}. `{branch}`")
     return "\n".join(lines)
 
 
 def build_user_prompt(task: dict[str, Any], *, interactive: bool) -> str:
     editable_file = task["editable_files"][0]
     mode_instructions = (
-        "You are in interactive mode.\n"
+        "You are in interactive mode with verification tools.\n"
         "All implementation, specification, and editable proof files are already provided below. "
         "Do NOT re-read them with read_public_file — start working immediately.\n"
         "Workflow: call write_editable_proof with your complete proof file, then call run_lean_check to verify.\n"
-        "If the check fails, read the error, fix the proof, and repeat write_editable_proof + run_lean_check.\n"
+        "If the check fails, read the failure_class and repair_hints in the result.\n"
+        "For unknown_identifier errors: use search_public_defs to find correct names.\n"
+        "For unsolved_goals: use inspect_lean_goals with a ?_ hole to see the exact goal, then write targeted tactics.\n"
+        "Fix the specific error, write the corrected proof, and re-check. Do not rewrite from scratch unless the approach is fundamentally wrong.\n"
         "Only use read_public_file or search_public_defs if you need a definition not shown below.\n"
         "Do not ask for or attempt arbitrary shell access, arbitrary filesystem access, or files outside this task.\n"
     ) if interactive else (
@@ -544,8 +599,13 @@ def build_messages(config: ResolvedAgentConfig, task: dict[str, Any]) -> list[di
     ]
 
 
+
+
 def build_repair_guidance(details: str, failure_mode: str | None = None) -> str:
     hints: list[str] = []
+    failure_class = classify_failure(details)
+
+    # Failure-mode-specific hints (from main)
     if failure_mode == "empty_response":
         hints.append(
             "- Your previous reply did not include a usable Lean file. Return only the complete Lean proof file."
@@ -566,48 +626,71 @@ def build_repair_guidance(details: str, failure_mode: str | None = None) -> str:
         hints.append(
             "- Only import task-public modules. Remove any non-public `Benchmark.Cases` imports."
         )
-    if "tactic 'split' failed" in details:
+
+    # Failure-class-specific hints (from our branch, more targeted)
+    if failure_class == "split_failed":
         hints.append(
             "- Do not `split` the final post-state blindly. Prove branch-specific helper theorems first, then use `by_cases` plus `simpa`."
         )
-    if "no goals to be solved" in details:
+    if failure_class == "no_goals":
         hints.append(
             "- A previous `simp` likely closed the goal already. Remove trailing tactics after the goal is solved."
         )
-    if "expected type must not contain free variables" in details:
+    if failure_class == "free_variables":
         hints.append(
             "- Do not use `native_decide` or `decide` on goals that still contain parameters. First reduce to concrete equalities."
         )
-    if "unknown constant" in details or "Unknown identifier" in details or "unknown identifier" in details:
+    if failure_class == "unknown_identifier":
         hints.append(
             "- You are referencing a lemma or constant that does not exist in this Lean 4 environment. "
             "Do not guess lemma names. Instead, use `simp` with the relevant definitions, `omega` for arithmetic, "
             "or `decide`/`native_decide` for decidable propositions. Remove all references to unknown names."
         )
-    if "unsolved goals" in details and "match" in details:
         hints.append(
-            "- The remaining goal contains a `match` expression. Use `split` to case-split on the match, "
-            "then solve each branch separately. If the match is on a ContractResult, try "
-            "`simp only [...]` to reduce it first, or use `cases` on the matched expression."
+            "- Use the `search_public_defs` tool to find correct definition names from the specification and implementation files."
         )
-    if "unsolved goals" in details and "if " in details:
+    if failure_class == "unsolved_goals":
+        if "match" in details:
+            hints.append(
+                "- The remaining goal contains a `match` expression. Use `split` to case-split on the match, "
+                "then solve each branch separately. If the match is on a ContractResult, try "
+                "`simp only [...]` to reduce it first, or use `cases` on the matched expression."
+            )
+        if "if " in details:
+            hints.append(
+                "- The remaining goal contains an `if` expression. Use `by_cases h : <condition>` to split on the condition, "
+                "then `simp [h, ...]` in each branch. Do NOT use `split` after simp or `native_decide`/`decide` on goals with free variables."
+            )
+        if "match" not in details and "if " not in details:
+            hints.append(
+                "- Unsolved goals remain. Check that `simp` is given all necessary definitions and hypotheses."
+            )
         hints.append(
-            "- The remaining goal contains an `if` expression. Use `by_cases h : <condition>` to split on the condition, "
-            "then `simp [h, ...]` in each branch. Alternatively, add the condition's hypothesis to the `simp` call."
+            "- Try `inspect_lean_goals` with a `?_` hole to see the exact goal state, then write targeted tactics."
         )
-    if "unsolved goals" in details and "match" not in details and "if " not in details:
+    if failure_class == "rfl_failed":
+        if "match" in details or "if " in details:
+            hints.append(
+                "- rfl failed because the goal has unresolved `if`/`match` expressions. Use `by_cases` on each unresolved condition BEFORE simp, not `split` after. Pass all case hypotheses to simp. For nested conditions, nest `by_cases`."
+            )
+        else:
+            hints.append(
+                "- rfl failed. Try replacing `rfl` with `simp` or adding more definitions to the simp set."
+            )
+    if failure_class == "type_mismatch":
         hints.append(
-            "- Unsolved goals remain. Check that `simp` is given all necessary definitions and hypotheses."
+            "- Check that your proof term has the expected type. Unfold definitions to align both sides."
         )
-    if "type mismatch" in details:
+    if failure_class == "unknown_tactic":
         hints.append(
-            "- A type mismatch often means the proof term or tactic result does not match the goal. Re-read the spec and ensure your proof targets the correct type."
+            "- Use standard Lean 4 / Mathlib tactics. Remove any tactic the checker does not recognize."
         )
-    if "simp made no progress" in details:
+    if failure_class == "simp_no_progress":
         hints.append(
             "- `simp` made no progress with the given arguments. Add more definitions to unfold, "
             "or the simp arguments may already be fully reduced. Try removing the unproductive simp call."
         )
+    # Additional hints from main for patterns not covered by failure_class
     if "failed to infer binder type" in details:
         hints.append(
             "- Lean cannot infer a binder type. Add explicit type annotations to your helper lemma parameters."
@@ -617,7 +700,7 @@ def build_repair_guidance(details: str, failure_mode: str | None = None) -> str:
             "- Syntax error. Ensure the theorem body uses `:= by` followed by tactics. "
             "Do not use `:=` with a term-mode proof unless you are certain of the syntax."
         )
-    if "Function expected at" in details or "unknown identifier" in details:
+    if "Function expected at" in details:
         hints.append(
             "- Use `s.storage 0` (function application) not `s.storage[0]` or `s.storage.0`. "
             "ContractState.storage is a function `Nat → Uint256`."
@@ -1003,6 +1086,13 @@ def extract_tool_calls(response: dict[str, Any]) -> list[dict[str, Any]]:
     if isinstance(tool_calls, list):
         return [item for item in tool_calls if isinstance(item, dict)]
     return []
+
+
+def _looks_like_lean(text: str) -> bool:
+    """Check if text looks like Lean code rather than natural-language explanation."""
+    # Use word-boundary-aware patterns to avoid matching English words like "simple", "exactly"
+    lean_keywords = ("import ", "theorem ", "def ", "lemma ", "namespace ", "open ", ":= by", "simp [", "simp\n", "exact ")
+    return any(kw in text for kw in lean_keywords)
 
 
 def extract_candidate_file(response_text: str) -> str:
@@ -1486,74 +1576,6 @@ def execute_strict_agent_task(
     return response, response_text, evaluation, attempts
 
 
-RESTART_AFTER_CONSECUTIVE_FAILURES = 6
-
-
-def _compact_interactive_transcript(
-    transcript: list[dict[str, Any]],
-    base_message_count: int,
-    proof_text: str,
-    error_details: str,
-    attempt_index: int,
-    max_attempts: int,
-    consecutive_failures: int = 0,
-) -> list[dict[str, Any]]:
-    """Compact transcript by keeping base messages + first exploration + compact repair.
-
-    We preserve the initial exploration (file reads, searches) but drop intermediate
-    failed write-check cycles to prevent context pollution and save tokens.
-    The latest failed proof and error are injected as a single user message.
-
-    After RESTART_AFTER_CONSECUTIVE_FAILURES consecutive lean check failures, we drop
-    the failed proof from the repair message and instead instruct the model to try a
-    completely different proof strategy (a "restart").
-    """
-    # Find the first write_editable_proof call to split exploration from repair
-    cutoff = len(transcript)
-    for i, msg in enumerate(transcript):
-        if i < base_message_count:
-            continue
-        if msg.get("role") == "assistant":
-            tool_calls = msg.get("tool_calls", [])
-            for tc in tool_calls:
-                fn = tc.get("function", {})
-                if fn.get("name") == "write_editable_proof":
-                    cutoff = i
-                    break
-            if cutoff < len(transcript):
-                break
-
-    # Keep base messages + exploration phase (up to first write), then add repair
-    kept = transcript[:cutoff]
-
-    if consecutive_failures >= RESTART_AFTER_CONSECUTIVE_FAILURES:
-        # Strategy restart: don't show the failed proof, ask for a fresh approach
-        repair_msg = (
-            f"You have failed {consecutive_failures} consecutive Lean check attempts "
-            f"(attempt {attempt_index} of {max_attempts}).\n"
-            "Your current approach is not working. Try a fundamentally different proof strategy:\n"
-            "- If you were using `simp` with many definitions, try proving with `by_cases` and smaller helper lemmas.\n"
-            "- If you were using `by_cases`, try a direct `simp` with all relevant definitions.\n"
-            "- If you were using named lemmas, switch to `omega`, `decide`, or `native_decide`.\n"
-            "- Consider unfolding the spec first with `unfold` before applying tactics.\n\n"
-            f"Last error:\n{error_details[:2000]}\n\n"
-            "Submit a completely new proof using write_editable_proof, then call run_lean_check.\n"
-        )
-    else:
-        guidance = build_repair_guidance(error_details)
-        repair_msg = (
-            f"Your proof attempt (attempt {attempt_index} of {max_attempts}) failed the Lean checker.\n"
-            "Fix the proof and resubmit using write_editable_proof, then call run_lean_check.\n\n"
-            f"Failed proof:\n```lean\n{proof_text.rstrip()}\n```\n\n"
-            f"Lean checker output:\n{error_details}\n"
-        )
-        if guidance:
-            repair_msg += f"\nRepair guidance:\n{guidance}\n"
-
-    kept.append({"role": "user", "content": repair_msg})
-    return kept
-
-
 def execute_interactive_agent_task(
     config: ResolvedAgentConfig,
     task: dict[str, Any],
@@ -1566,8 +1588,6 @@ def execute_interactive_agent_task(
     response: dict[str, Any] = {}
     response_text = ""
     tool_calls_used = 0
-    last_lean_error: str | None = None
-    consecutive_lean_failures = 0
     proof_attempts = 0
     consecutive_search_turns = 0
     consecutive_length_stops = 0
@@ -1628,7 +1648,9 @@ def execute_interactive_agent_task(
         attempts[-1]["tool_calls"] = tool_calls
         if not tool_calls:
             final_candidate = extract_candidate_file(response_text)
-            if final_candidate.strip():
+            # Only overwrite the stored proof if the response looks like Lean code,
+            # not natural-language explanation.
+            if final_candidate.strip() and _looks_like_lean(final_candidate):
                 runtime.write_editable_proof(final_candidate)
                 proof_attempts += 1
                 evaluation = runtime.evaluate_current()
@@ -1636,16 +1658,20 @@ def execute_interactive_agent_task(
                 attempts[-1]["evaluation"] = evaluation
                 if evaluation["status"] == "passed":
                     return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
-                # Failed candidate without tool calls: compact and retry
+                # Failed candidate without tool calls: feed error back
                 failure_mode = evaluation.get("failure_mode", "")
                 if failure_mode == "lean_check_failed":
-                    consecutive_lean_failures += 1
                     details = str(evaluation.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
-                    transcript = _compact_interactive_transcript(
-                        transcript, len(base_messages), runtime.current_proof_text, details,
-                        proof_attempts, config.max_attempts,
-                        consecutive_failures=consecutive_lean_failures,
+                    guidance = build_repair_guidance(details, failure_mode=failure_mode)
+                    repair_msg = (
+                        f"Your proof did not pass (attempt {proof_attempts} of {config.max_attempts}).\n"
+                        f"Lean checker output:\n{details}\n"
                     )
+                    if guidance:
+                        repair_msg += f"\nRepair guidance:\n{guidance}\n"
+                    repair_msg += "\nUse write_editable_proof to write a corrected proof, then run_lean_check to verify."
+                    transcript.append({"role": "assistant", "content": response_text or ""})
+                    transcript.append({"role": "user", "content": repair_msg})
                 elif failure_mode in ("placeholder_detected", "theorem_statement_mismatch"):
                     retry_msg = (
                         f"Your response did not produce a valid proof candidate (proof attempt {proof_attempts} of {config.max_attempts}, "
@@ -1695,7 +1721,7 @@ def execute_interactive_agent_task(
             arguments = parse_tool_arguments(function_call.get("arguments"))
             result = runtime.execute_tool(tool_name, arguments)
             tool_calls_used += 1
-            if tool_name in ("write_editable_proof", "run_lean_check"):
+            if tool_name in ("write_editable_proof", "run_lean_check", "try_tactic_at_hole"):
                 turn_had_proof_action = True
             transcript.append(
                 {
@@ -1713,11 +1739,11 @@ def execute_interactive_agent_task(
                 }
             )
             if tool_name == "run_lean_check" and result.get("failure_mode") == "lean_check_failed":
-                last_lean_error = str(result.get("details", ""))[:MAX_ERROR_FEEDBACK_CHARS]
                 saw_lean_failure = True
-                consecutive_lean_failures += 1
-            elif tool_name == "run_lean_check" and result.get("status") == "passed":
-                evaluation = result
+            elif tool_name in ("run_lean_check", "try_tactic_at_hole") and result.get("status") == "passed":
+                # Normalize to evaluation schema (try_tactic_at_hole returns tactic/details without failure_mode)
+                evaluation = dict(result)
+                evaluation.setdefault("failure_mode", None)
                 attempts[-1]["candidate_file_contents"] = runtime.current_proof_text
                 attempts[-1]["evaluation"] = evaluation
                 return response, response_text, runtime.current_proof_text, evaluation, attempts, tool_calls_used
@@ -1725,8 +1751,6 @@ def execute_interactive_agent_task(
         if turn_had_proof_action:
             proof_attempts += 1
             consecutive_search_turns = 0
-            if not saw_lean_failure:
-                consecutive_lean_failures = 0
         else:
             consecutive_search_turns += 1
             if consecutive_search_turns >= 2:
@@ -1742,13 +1766,8 @@ def execute_interactive_agent_task(
                 )
                 consecutive_search_turns = 0
 
-        # After processing all tool calls, compact transcript if we saw a lean failure
-        if saw_lean_failure and last_lean_error:
-            transcript = _compact_interactive_transcript(
-                transcript, len(base_messages), runtime.current_proof_text, last_lean_error,
-                proof_attempts, config.max_attempts,
-                consecutive_failures=consecutive_lean_failures,
-            )
+        # Tool results are already in the transcript from the tool-call loop above.
+        # No transcript compaction — the model benefits from seeing its full history.
 
     evaluation = runtime.evaluate_current()
     if evaluation.get("failure_mode") == "empty_response":

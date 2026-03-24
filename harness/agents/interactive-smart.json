@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "agent_id": "interactive-smart",
+  "mode": "interactive",
+  "track": "custom",
+  "run_slug": "interactive-smart",
+  "adapter": "openai_compatible",
+  "base_url": null,
+  "base_url_env": "VERITY_BENCHMARK_AGENT_BASE_URL",
+  "model": "builtin/smart",
+  "model_env": null,
+  "api_key": null,
+  "api_key_env": "VERITY_BENCHMARK_AGENT_API_KEY",
+  "chat_completions_path": "/chat/completions",
+  "models_path": "/models",
+  "system_prompt_files": [
+    "harness/PROMPT.md",
+    "harness/POLICY.md",
+    "harness/TOOLS.md",
+    "harness/PROOF_PATTERNS.md"
+  ],
+  "temperature": 0.0,
+  "max_completion_tokens": 2000,
+  "max_attempts": 16,
+  "max_tool_calls": 24,
+  "headers": {},
+  "header_envs": {},
+  "extra_body": {
+    "thinking": {
+      "type": "disabled"
+    }
+  },
+  "request_timeout_seconds": 120
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "agent_id": "combined-lean-tools",
+  "track": "custom",
+  "run_slug": "combined-lean-tools",
+  "adapter": "openai_compatible",
+  "base_url": "https://openrouter.ai/api/v1",
+  "model": "google/gemini-3.1-flash-lite-preview",
+  "api_key_env": "OPENROUTER_API_KEY",
+  "chat_completions_path": "/chat/completions",
+  "models_path": "/models",
+  "system_prompt_files": [
+    "harness/PROMPT.md",
+    "harness/POLICY.md",
+    "harness/TOOLS.md",
+    "harness/PROOF_PATTERNS.md"
+  ],
+  "mode": "interactive",
+  "temperature": 0.0,
+  "max_completion_tokens": 2000,
+  "max_attempts": 12,
+  "max_tool_calls": 24,
+  "headers": {},
+  "header_envs": {},
+  "extra_body": {},
+  "request_timeout_seconds": 120
+}
