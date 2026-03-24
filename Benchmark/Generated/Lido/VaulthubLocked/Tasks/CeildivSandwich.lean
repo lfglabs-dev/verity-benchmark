@@ -11,7 +11,8 @@ ceiling division in the reserve computation back to the original amount.
 -/
 theorem ceildiv_sandwich
     (x d : Uint256)
-    (hd : d > 0) :
+    (hd : d > 0)
+    (hNoOverflow : (ceilDiv x d).val * d.val < modulus) :
     ceildiv_sandwich_spec x d := by
   -- Replace this placeholder with a complete Lean proof.
   exact ?_

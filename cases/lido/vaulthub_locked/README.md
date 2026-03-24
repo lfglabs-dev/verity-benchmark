@@ -2,7 +2,7 @@
 
 Source:
 - `lidofinance/core` (feat/vaults branch)
-- commit `5e51ea044b09e1e2606074e1fe4ff6b6a4eff172`
+- commit `96738395ca3bffd6513700a45d4c9389662c5835`
 - file `contracts/0.8.25/vaults/VaultHub.sol`
 
 Focus:

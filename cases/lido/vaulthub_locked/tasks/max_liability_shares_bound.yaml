@@ -5,7 +5,7 @@ case_id: lido/vaulthub_locked
 split: active
 family_id: lido
 implementation_id: core
-source_ref: https://github.com/lidofinance/core@5e51ea044b09e1e2606074e1fe4ff6b6a4eff172:contracts/0.8.25/vaults/VaultHub.sol
+source_ref: https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol
 task_interface_version: 2
 theorem_name: Benchmark.Cases.Lido.VaulthubLocked.max_liability_shares_bound
 proof_family: state_preservation_local_effects

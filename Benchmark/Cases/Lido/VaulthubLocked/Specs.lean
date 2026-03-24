@@ -70,22 +70,27 @@ def reserve_ratio_bounds_spec
 
 /--
   Supporting lemma: ceilDiv sandwich bound.
-  For any x and d > 0: ceilDiv(x, d) * d >= x.
+  For any x and d > 0, provided the product does not overflow:
+  ceilDiv(x, d) * d >= x.
   This is a key arithmetic fact used in the F-01 proof.
 -/
 def ceildiv_sandwich_spec
     (x d : Uint256) : Prop :=
-  d > 0 → mul (ceilDiv x d) d ≥ x
+  d > 0 →
+  (ceilDiv x d).val * d.val < modulus →
+  mul (ceilDiv x d) d ≥ x
 
 /--
   Supporting lemma: getPooledEthBySharesRoundUp is monotone in shares.
-  If a >= b then getPooledEthBySharesRoundUp(a) >= getPooledEthBySharesRoundUp(b).
+  If a >= b then getPooledEthBySharesRoundUp(a) >= getPooledEthBySharesRoundUp(b),
+  provided the larger multiplication does not overflow.
   This relies on ceilDiv monotonicity.
 -/
 def shares_conversion_monotone_spec
     (a b : Uint256)
     (totalPooledEther totalShares : Uint256) : Prop :=
   a ≥ b →
+  a.val * totalPooledEther.val < modulus →
   getPooledEthBySharesRoundUp a totalPooledEther totalShares ≥
   getPooledEthBySharesRoundUp b totalPooledEther totalShares
 

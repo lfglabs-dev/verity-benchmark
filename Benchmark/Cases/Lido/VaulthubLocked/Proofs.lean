@@ -32,10 +32,11 @@ open Verity.EVM.Uint256
 -/
 theorem ceildiv_sandwich
     (x d : Uint256)
-    (hd : d > 0) :
+    (hd : d > 0)
+    (hNoOverflow : (ceilDiv x d).val * d.val < modulus) :
     ceildiv_sandwich_spec x d := by
   unfold ceildiv_sandwich_spec
-  intro _
+  intro _ _
   sorry
 
 /--
@@ -44,10 +45,11 @@ theorem ceildiv_sandwich
 theorem shares_conversion_monotone
     (a b : Uint256)
     (totalPooledEther totalShares : Uint256)
-    (hTS : totalShares > 0) :
+    (hTS : totalShares > 0)
+    (hNoOverflow : a.val * totalPooledEther.val < modulus) :
     shares_conversion_monotone_spec a b totalPooledEther totalShares := by
   unfold shares_conversion_monotone_spec
-  intro _
+  intro _ _
   sorry
 
 /--
