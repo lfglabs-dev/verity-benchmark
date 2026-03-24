@@ -1,163 +1,86 @@
 import Benchmark.Cases.Lido.VaulthubLocked.Specs
+import Verity.Proofs.Stdlib.Automation
+import Mathlib.Tactic.Set
 
 namespace Benchmark.Cases.Lido.VaulthubLocked
 
+open Verity
 open Verity.EVM.Uint256
-open Verity.Core.Uint256
 
 /-
   Reference proofs for the Lido VaultHub _locked() solvency properties.
-
-  The F-01 proof proceeds by case split on whether the reserve-ratio-based
-  reserve dominates the minimal reserve:
-
-  Case 1 (reserve >= minimalReserve):
-    locked = liability_max + ceil(liability_max * RR / (BP - RR))
-    locked * (BP-RR) = liability_max*(BP-RR) + ceil(liability_max*RR/(BP-RR))*(BP-RR)
-                     >= liability_max*(BP-RR) + liability_max*RR   [ceilDiv sandwich]
-                     = liability_max * BP
-                     >= liability * BP                              [monotonicity, maxLS >= LS]
-
-  Case 2 (minimalReserve > reserve):
-    locked = liability_max + minimalReserve
-    Need: (liability_max + minReserve) * (BP-RR) >= liability * BP
-    Since minReserve > ceil(liability_max * RR / (BP-RR)) >= liability_max * RR / (BP-RR):
-      minReserve * (BP-RR) > liability_max * RR
-    So: locked * (BP-RR) = liability_max*(BP-RR) + minReserve*(BP-RR)
-                         > liability_max*(BP-RR) + liability_max*RR
-                         = liability_max * BP >= liability * BP
 -/
+
+private theorem val_lt_modulus (a : Uint256) : a.val < modulus := a.isLt
+
+-- ceil(a.val / b.val) ≤ a.val when b.val ≥ 1 (and hence < modulus when a : Uint256)
+private theorem ceilDiv_nat_le (av bv : Nat) (hb : bv ≥ 1) :
+    (av + bv - 1) / bv ≤ av := by
+  rcases Nat.eq_or_lt_of_le (Nat.zero_le av) with haz | haPos
+  · -- av = 0
+    subst haz
+    show (0 + bv - 1) / bv ≤ 0
+    simp only [Nat.zero_add]
+    exact Nat.le_of_eq (Nat.div_eq_of_lt (by omega : bv - 1 < bv))
+  · -- av ≥ 1, so av - 1 ≥ 0
+    have hRw : av + bv - 1 = (av - 1) + bv := by omega
+    rw [hRw, Nat.add_div_right _ (by omega : bv > 0)]
+    have := Nat.div_le_self (av - 1) bv
+    omega
+
+private theorem ceilDiv_nat_lt_modulus' (a b : Uint256) (hb : b.val ≥ 1) :
+    (a.val + b.val - 1) / b.val < modulus := by
+  have := ceilDiv_nat_le a.val b.val hb
+  have := val_lt_modulus a
+  omega
 
 /-! ## Helper: ceilDiv at the Nat level -/
 
-/-- When b > 0, ceilDiv a b at the Nat level equals ceil(a.val / b.val) mod modulus -/
 private theorem ceilDiv_val (a b : Uint256) (hb : b > 0) :
     (ceilDiv a b).val = (a.val + b.val - 1) / b.val % modulus := by
   simp [ceilDiv]
   have hbne : b ≠ 0 := by
-    intro h
-    rw [h] at hb
-    simp [Verity.Core.Uint256.lt_def] at hb
+    intro h; rw [h] at hb; simp [Verity.Core.Uint256.lt_def] at hb
   simp [hbne]
 
-/--
-  Supporting lemma: ceilDiv sandwich bound.
-  For any x and d > 0, when ceilDiv(x,d) * d doesn't overflow:
-    ceilDiv(x, d) * d >= x.
--/
 theorem ceildiv_sandwich
     (x d : Uint256)
     (hd : d > 0)
     (hNoOverflow : (ceilDiv x d).val * d.val < modulus) :
     ceildiv_sandwich_spec x d := by
   unfold ceildiv_sandwich_spec
-  intro hd' hNoOv
-  -- Work at the Nat level
+  intro _ _
   simp [Verity.Core.Uint256.le_def]
-  -- Expand mul with no-overflow
   have hMulEq : (mul (ceilDiv x d) d).val = (ceilDiv x d).val * d.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow
   rw [hMulEq]
-  -- Expand ceilDiv
-  have hCeilVal := ceilDiv_val x d hd
-  -- Key: ceil(a/b) * b >= a for natural numbers
   have hdPos : 0 < d.val := by
-    simp [Verity.Core.Uint256.lt_def] at hd
-    exact hd
-  -- ceil(x.val / d.val) = (x.val + d.val - 1) / d.val
-  -- We need: ((x.val + d.val - 1) / d.val % modulus) * d.val >= x.val
-  -- Since hNoOverflow tells us the product fits, the % modulus is a no-op on ceilDiv.val
-  -- Actually we need: ceilDiv_val * d.val >= x.val
-  -- ceilDiv.val = (x.val + d.val - 1) / d.val % modulus
-  -- Let q = (x.val + d.val - 1) / d.val
-  -- q * d.val >= x.val (standard ceil property)
-  -- Since hNoOverflow: (ceilDiv x d).val * d.val < modulus
-  -- and ceilDiv.val = q % modulus, if q < modulus then ceilDiv.val = q
-  -- q ≤ (x.val + d.val - 1) / 1 = x.val + d.val - 1 < modulus (since both x, d < modulus)
-  -- Actually q could be close to modulus, but hNoOverflow constrains it
+    simp [Verity.Core.Uint256.lt_def] at hd; exact hd
+  have hCeilVal := ceilDiv_val x d hd
   rw [hCeilVal]
-  -- Let q = (x.val + d.val - 1) / d.val
-  set q := (x.val + d.val - 1) / d.val with hq_def
-  -- We know q % modulus * d.val < modulus from hNoOverflow rewritten with hCeilVal
-  -- Need: (q % modulus) * d.val >= x.val
-  -- Since q * d.val >= x.val (standard ceil), and q % modulus ≤ q
-  -- we need q < modulus so q % modulus = q
-  have hqLt : q < modulus := by
-    by_contra h
-    push_neg at h
-    have : q % modulus ≤ q := Nat.mod_le q modulus
-    -- q % modulus * d.val < modulus, but q >= modulus and d.val >= 1
-    -- This gives us modulus * 1 ≤ q * d.val but q * d.val could wrap...
-    -- Actually we just need: q ≤ (x.val + d.val - 1)
-    -- and x.val < modulus, d.val < modulus, so x.val + d.val - 1 < 2 * modulus
-    -- so q ≤ x.val + d.val - 1 < 2 * modulus
-    -- Also q % modulus * d.val < modulus
-    -- If q >= modulus, then q % modulus could be anything in [0, modulus)
-    -- But actually: q = (x.val + d.val - 1) / d.val ≤ (x.val + d.val - 1) / 1 = x.val + d.val - 1
-    -- x.val < modulus and d.val < modulus, so x.val + d.val - 1 < 2 * modulus - 1
-    -- q / d.val ≤ x.val/d.val + 1 (roughly). More precisely:
-    -- q = (x.val + d.val - 1) / d.val. Since d.val >= 1:
-    -- q ≤ x.val + d.val - 1
-    -- But we need q < modulus. x.val < modulus and d.val < modulus so
-    -- x.val + d.val - 1 ≤ 2 * modulus - 2. So q could be up to 2*modulus-2.
-    -- However: q * d.val >= x.val (the ceil property). Also q = ceil(x.val/d.val).
-    -- If d.val >= 2, q ≤ (x.val + d.val - 1) / 2 < modulus.
-    -- If d.val = 1, q = x.val + 0 = x.val < modulus.
-    -- In general: q ≤ (x.val + d.val - 1) / d.val ≤ x.val / d.val + 1
-    -- x.val / d.val < modulus / d.val ≤ modulus (since d.val >= 1)
-    -- So x.val / d.val + 1 ≤ modulus. Could be = modulus if x.val = modulus - 1, d.val = 1.
-    -- Wait: x.val < modulus and d.val = 1: q = (x.val + 0) / 1 = x.val < modulus. OK.
-    -- d.val >= 2: q ≤ (modulus - 1 + modulus - 1) / 2 = (2*modulus - 2)/2 = modulus - 1 < modulus.
-    -- So q < modulus always holds!
-    have hxLt := x.isLt
-    have hdLt := d.isLt
-    have : q ≤ x.val + d.val - 1 := Nat.div_le_self _ _
-    have : x.val + d.val - 1 < modulus + modulus - 1 := by omega
-    -- More careful: if d.val = 1, q = x.val < modulus
-    -- if d.val >= 2, q ≤ (x.val + d.val - 1) / d.val
-    --   The numerator is < modulus + modulus = 2 * modulus
-    --   Dividing by d.val >= 2 gives < modulus
-    by_cases hd1 : d.val = 1
-    · rw [hq_def, hd1]
-      simp
-      exact hxLt
-    · have hdGe2 : d.val ≥ 2 := by omega
-      have hNumLt : x.val + d.val - 1 < 2 * modulus := by omega
-      have : q < modulus := by
-        calc q ≤ (x.val + d.val - 1) / 2 := Nat.div_le_div_left (by omega) (by omega)
-          _ < (2 * modulus) / 2 := Nat.div_lt_div_right (by omega) hNumLt
-          _ = modulus := by omega
-      omega
+  have hqLt := ceilDiv_nat_lt_modulus' x d hdPos
   rw [Nat.mod_eq_of_lt hqLt]
-  -- Now need: q * d.val >= x.val
-  -- This is the standard ceiling division property
-  -- q = (x.val + d.val - 1) / d.val
-  -- q * d.val >= x.val ↔ (x.val + d.val - 1) / d.val * d.val >= x.val
-  -- Standard: for n, d > 0: ((n + d - 1) / d) * d >= n
-  -- Proof: n = d * (n/d) + (n % d). n + d - 1 = d * (n/d) + (n % d) + d - 1.
-  -- (n + d - 1) / d = n/d + (n%d + d - 1) / d.
-  -- If n%d = 0: (n+d-1)/d = n/d + (d-1)/d = n/d. So q*d = (n/d)*d = n. Good.
-  -- If n%d > 0: (n%d + d - 1) >= d, so (n%d+d-1)/d >= 1. So q >= n/d + 1.
-  --   q*d >= (n/d + 1)*d = n - n%d + d > n. Good.
-  -- Alternatively: q * d = ((x.val + d.val - 1) / d.val) * d.val
-  --   >= x.val + d.val - 1 - (d.val - 1) = x.val  [using a / b * b >= a - (b-1)]
-  -- The standard fact: (a / b) * b + a % b = a, so (a / b) * b = a - a % b >= a - (b - 1)
-  have hStd : q * d.val ≥ x.val := by
-    have hSum := Nat.div_add_mod (x.val + d.val - 1) d.val
-    -- ((x.val + d.val - 1) / d.val) * d.val + (x.val + d.val - 1) % d.val = x.val + d.val - 1
-    have hRem : (x.val + d.val - 1) % d.val < d.val := Nat.mod_lt _ hdPos
-    -- q * d.val = x.val + d.val - 1 - (x.val + d.val - 1) % d.val
-    -- >= x.val + d.val - 1 - (d.val - 1) = x.val
-    have hGe1 : d.val ≥ 1 := hdPos
-    omega
-  exact hStd
+  -- Standard ceiling property: ceil(n/d) * d ≥ n
+  -- Assign concrete variables so omega can work
+  let q := (x.val + d.val - 1) / d.val
+  let r := (x.val + d.val - 1) % d.val
+  have hEuclid : d.val * q + r = x.val + d.val - 1 := Nat.div_add_mod ..
+  have hRem : r < d.val := Nat.mod_lt _ hdPos
+  -- Goal: x.val ≤ q * d.val
+  -- From hEuclid: q * d.val = x.val + d.val - 1 - r ≥ x.val (since d.val - 1 ≥ r is not guaranteed,
+  -- but d.val - 1 - r ≥ -(d.val - 1) and we add x.val + d.val - 1 - r.
+  -- Actually: q * d.val = x + d - 1 - r. Since r ≤ d - 1 (from hRem), q * d ≥ x + d - 1 - (d - 1) = x.
+  show x.val ≤ q * d.val
+  have hComm : q * d.val = d.val * q := Nat.mul_comm q d.val
+  omega
 
-/--
-  Supporting lemma: share conversion monotonicity.
-  getPooledEthBySharesRoundUp(a) >= getPooledEthBySharesRoundUp(b) when a >= b
-  and a * totalPooledEther doesn't overflow.
--/
+-- Helper: ceilDiv for raw Nat values (used in shares_conversion_monotone)
+private theorem ceilDiv_raw_lt_modulus (n : Nat) (ts : Uint256) (hts : ts.val ≥ 1) (hn : n < modulus) :
+    (n + ts.val - 1) / ts.val < modulus := by
+  have := ceilDiv_nat_le n ts.val hts
+  omega
+
 theorem shares_conversion_monotone
     (a b : Uint256)
     (totalPooledEther totalShares : Uint256)
@@ -166,64 +89,31 @@ theorem shares_conversion_monotone
     shares_conversion_monotone_spec a b totalPooledEther totalShares := by
   unfold shares_conversion_monotone_spec
   intro hab hNoOv
-  -- getPooledEthBySharesRoundUp s tpe ts = ceilDiv (mul s tpe) ts
   unfold getPooledEthBySharesRoundUp
-  -- Need: ceilDiv (mul a tpe) ts >= ceilDiv (mul b tpe) ts
-  -- Since a >= b and no overflow on a * tpe, also no overflow on b * tpe
   simp [Verity.Core.Uint256.le_def]
-  -- Work at Nat level with the ceilDiv definition
   have hTSPos : totalShares.val > 0 := by
-    simp [Verity.Core.Uint256.lt_def] at hTS
-    exact hTS
-  have hTSNe : totalShares ≠ 0 := by
-    intro h; rw [h] at hTSPos; simp [Verity.Core.Uint256.val_zero] at hTSPos
-  -- mul a tpe doesn't overflow
+    simp [Verity.Core.Uint256.lt_def] at hTS; exact hTS
+  have habVal : b.val ≤ a.val := by
+    simp [Verity.Core.Uint256.le_def] at hab; exact hab
+  have hBNoOverflow : b.val * totalPooledEther.val < modulus :=
+    Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ habVal) hNoOverflow
   have hMulA : (mul a totalPooledEther).val = a.val * totalPooledEther.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow
-  -- b.val <= a.val and a * tpe < modulus implies b * tpe < modulus
-  have habVal : b.val ≤ a.val := by
-    simp [Verity.Core.Uint256.le_def] at hab; exact hab
-  have hBNoOverflow : b.val * totalPooledEther.val < modulus := by
-    exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ habVal) hNoOverflow
   have hMulB : (mul b totalPooledEther).val = b.val * totalPooledEther.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hBNoOverflow
-  -- ceilDiv (mul a tpe) ts and ceilDiv (mul b tpe) ts
-  -- ceilDiv x y = if y = 0 then 0 else ⟨(x.val + y.val - 1) / y.val % modulus⟩
-  simp [ceilDiv, hTSNe]
-  -- Now: (mul a tpe).val + ts.val - 1) / ts.val % modulus
-  --   >= (mul b tpe).val + ts.val - 1) / ts.val % modulus
-  rw [hMulA, hMulB]
-  -- Need: (a.val * tpe.val + ts.val - 1) / ts.val % modulus
-  --    >= (b.val * tpe.val + ts.val - 1) / ts.val % modulus
-  -- Since a.val * tpe.val >= b.val * tpe.val, the ceiling divisions are monotone
-  -- and both are < modulus (since a.val * tpe.val < modulus and ts.val >= 1)
-  set qa := (a.val * totalPooledEther.val + totalShares.val - 1) / totalShares.val
-  set qb := (b.val * totalPooledEther.val + totalShares.val - 1) / totalShares.val
-  -- qa < modulus: qa ≤ (a.val * tpe.val + ts.val - 1) / 1 = a.val * tpe.val + ts.val - 1
-  -- < modulus + modulus (since both < modulus)
-  -- Actually: qa ≤ a.val * tpe.val + ts.val - 1 (div by ≥1 doesn't increase)
-  -- and since tpe.val = 0 is possible... if tpe.val = 0 then mul = 0 and both sides are ceilDiv(0, ts)
-  have hqaLt : qa < modulus := by
-    have : qa ≤ a.val * totalPooledEther.val + totalShares.val - 1 := Nat.div_le_self _ _
-    have : a.val * totalPooledEther.val < modulus := hNoOverflow
-    have : totalShares.val < modulus := totalShares.isLt
-    omega
-  have hqbLt : qb < modulus := by
-    have : qb ≤ b.val * totalPooledEther.val + totalShares.val - 1 := Nat.div_le_self _ _
-    have : b.val * totalPooledEther.val < modulus := hBNoOverflow
-    have : totalShares.val < modulus := totalShares.isLt
-    omega
+  have hCeilA := ceilDiv_val (mul a totalPooledEther) totalShares hTS
+  have hCeilB := ceilDiv_val (mul b totalPooledEther) totalShares hTS
+  rw [hCeilA, hCeilB, hMulA, hMulB]
+  have hqaLt := ceilDiv_raw_lt_modulus (a.val * totalPooledEther.val) totalShares hTSPos hNoOverflow
+  have hqbLt := ceilDiv_raw_lt_modulus (b.val * totalPooledEther.val) totalShares hTSPos hBNoOverflow
   rw [Nat.mod_eq_of_lt hqaLt, Nat.mod_eq_of_lt hqbLt]
-  -- Now just: qa >= qb, i.e., Nat.div monotonicity
-  exact Nat.div_le_div_right (by omega)
+  exact Nat.div_le_div_right (by
+    have : b.val * totalPooledEther.val ≤ a.val * totalPooledEther.val :=
+      Nat.mul_le_mul_right _ habVal
+    omega)
 
-/--
-  P-VH-04: maxLiabilityShares >= liabilityShares.
-  In the real contract this is maintained by the minting and reporting logic.
-  Here we state it as a theorem to be proven from the contract invariants.
--/
 theorem max_liability_shares_bound
     (maxLiabilityShares liabilityShares : Uint256)
     (hBound : maxLiabilityShares ≥ liabilityShares) :
@@ -231,9 +121,6 @@ theorem max_liability_shares_bound
   unfold max_liability_shares_bound_spec
   exact hBound
 
-/--
-  P-VH-03: Reserve ratio is within valid bounds.
--/
 theorem reserve_ratio_bounds
     (reserveRatioBP : Uint256)
     (hPos : reserveRatioBP > 0)
@@ -242,170 +129,128 @@ theorem reserve_ratio_bounds
   unfold reserve_ratio_bounds_spec
   exact ⟨hPos, hLt⟩
 
-/--
-  F-01: Locked funds solvency.
-  The locked amount multiplied by the reserve ratio complement is at least
-  the liability multiplied by total basis points.
+-- Helper for locked_funds_solvency: ceilDiv of product < modulus
+private theorem ceilDiv_prod_lt_modulus (prod : Nat) (comp : Uint256) (hcomp : comp.val ≥ 1) (hprod : prod < modulus) :
+    (prod + comp.val - 1) / comp.val < modulus := by
+  have := ceilDiv_nat_le prod comp.val hcomp
+  omega
 
-  Proof strategy: Work entirely at the Nat level. The key insight is:
-    locked = liability_max + max(ceil(liability_max * RR / (BP-RR)), minRes)
-    locked * (BP-RR) >= liability_max * (BP-RR) + liability_max * RR
-                      = liability_max * BP
-                      >= liability * BP  (by monotonicity, since maxLS >= LS)
--/
 theorem locked_funds_solvency
     (maxLiabilityShares liabilityShares : Uint256)
     (minimalReserve reserveRatioBP : Uint256)
     (totalPooledEther totalShares : Uint256)
-    -- Axioms
     (hMaxLS : maxLiabilityShares ≥ liabilityShares)
     (hRR_pos : reserveRatioBP > 0)
     (hRR_lt : reserveRatioBP < TOTAL_BASIS_POINTS)
     (hTS : totalShares > 0)
-    (hTPE : totalPooledEther > 0)
-    -- No overflow: maxLiabilityShares * totalPooledEther fits in Uint256
+    (_hTPE : totalPooledEther > 0)
     (hNoOverflow1 : maxLiabilityShares.val * totalPooledEther.val < modulus)
-    -- No overflow: liability * reserveRatioBP fits in Uint256
     (hNoOverflow2 : (getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares).val
                     * reserveRatioBP.val < modulus)
-    -- No overflow: the add inside locked (liability + effectiveReserve) fits in Uint256
     (hNoOverflow3 : let liab := getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares
                     let reserve := ceilDiv (mul liab reserveRatioBP) (sub TOTAL_BASIS_POINTS reserveRatioBP)
                     let eff := if reserve ≥ minimalReserve then reserve else minimalReserve
                     liab.val + eff.val < modulus)
-    -- No overflow: locked * (BP - RR) fits in Uint256
     (hNoOverflow4 : (locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares).val
                     * (sub TOTAL_BASIS_POINTS reserveRatioBP).val < modulus)
-    -- No overflow: liability * BP fits in Uint256
     (hNoOverflow5 : (getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares).val
                     * TOTAL_BASIS_POINTS.val < modulus) :
     locked_funds_solvency_spec maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
       totalPooledEther totalShares := by
   unfold locked_funds_solvency_spec
   simp [Verity.Core.Uint256.le_def]
-  -- Abbreviations
-  set maxLS := maxLiabilityShares
-  set ls := liabilityShares
-  set minRes := minimalReserve
-  set rrBP := reserveRatioBP
-  set tpe := totalPooledEther
-  set ts := totalShares
-  set BP := TOTAL_BASIS_POINTS
-  set complement := sub BP rrBP
-  set liabilityMax := getPooledEthBySharesRoundUp maxLS tpe ts
-  set liabilityLS := getPooledEthBySharesRoundUp ls tpe ts
-  set lockedVal := locked maxLS minRes rrBP tpe ts
+  set liabilityMax := getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares
+  set liabilityLS := getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares
+  set complement := sub TOTAL_BASIS_POINTS reserveRatioBP
+  set lockedVal := locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares
 
-  -- Step 1: expand mul using no-overflow hypotheses
   have hLHSEq : (mul lockedVal complement).val = lockedVal.val * complement.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow4
-
-  have hRHSEq : (mul liabilityLS BP).val = liabilityLS.val * BP.val := by
+  have hRHSEq : (mul liabilityLS TOTAL_BASIS_POINTS).val = liabilityLS.val * TOTAL_BASIS_POINTS.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow5
-
   rw [hLHSEq, hRHSEq]
 
-  -- Step 2: expand locked definition
-  unfold locked at lockedVal
-  simp at lockedVal
-
-  -- Step 3: By monotonicity, liabilityMax >= liabilityLS
   have hMonotone : liabilityMax.val ≥ liabilityLS.val := by
-    have hmono := shares_conversion_monotone maxLS ls tpe ts hTS hNoOverflow1
+    have hmono := shares_conversion_monotone maxLiabilityShares liabilityShares
+      totalPooledEther totalShares hTS hNoOverflow1
     unfold shares_conversion_monotone_spec at hmono
-    have hMono := hmono hMaxLS hNoOverflow1
-    simp [Verity.Core.Uint256.le_def] at hMono
-    exact hMono
+    have hM := hmono hMaxLS hNoOverflow1
+    simp [Verity.Core.Uint256.le_def] at hM
+    exact hM
 
-  -- Step 4: Sufficient to show lockedVal * complement >= liabilityMax * BP
-  suffices h : lockedVal.val * complement.val ≥ liabilityMax.val * BP.val by
+  suffices h : lockedVal.val * complement.val ≥ liabilityMax.val * TOTAL_BASIS_POINTS.val by
     exact Nat.le_trans (Nat.mul_le_mul_right _ hMonotone) h
 
-  -- Step 5: BP = complement + rrBP
-  have hRRVal : rrBP.val > 0 := by
+  have hRRVal : reserveRatioBP.val > 0 := by
     simp [Verity.Core.Uint256.lt_def] at hRR_pos; exact hRR_pos
-  have hRRLtBP : rrBP.val < BP.val := by
-    simp [Verity.Core.Uint256.lt_def, TOTAL_BASIS_POINTS] at hRR_lt
-    simp [BP, TOTAL_BASIS_POINTS]
-    exact hRR_lt
+  have hRRLtBP : reserveRatioBP.val < TOTAL_BASIS_POINTS.val := by
+    simp [Verity.Core.Uint256.lt_def] at hRR_lt; exact hRR_lt
 
-  have hComplementVal : complement.val = BP.val - rrBP.val := by
-    simp [complement, Verity.Core.Uint256.sub_eq_of_le (Nat.le_of_lt hRRLtBP)]
+  have hComplementVal : complement.val = TOTAL_BASIS_POINTS.val - reserveRatioBP.val := by
+    have hle : reserveRatioBP.val ≤ TOTAL_BASIS_POINTS.val := Nat.le_of_lt hRRLtBP
+    simp [complement, HSub.hSub, Verity.Core.Uint256.sub, hle, Verity.Core.Uint256.ofNat]
+    have : TOTAL_BASIS_POINTS.val - reserveRatioBP.val < modulus := by
+      have := val_lt_modulus TOTAL_BASIS_POINTS; omega
+    exact Nat.mod_eq_of_lt this
 
-  have hCompPos : complement.val > 0 := by
+  have hCompPos : complement.val > 0 := by rw [hComplementVal]; omega
+  have hBPEq : TOTAL_BASIS_POINTS.val = complement.val + reserveRatioBP.val := by
     rw [hComplementVal]; omega
 
-  have hBPEq : BP.val = complement.val + rrBP.val := by
-    rw [hComplementVal]; omega
+  set reserve := ceilDiv (mul liabilityMax reserveRatioBP) complement
+  set effectiveReserve := if reserve ≥ minimalReserve then reserve else minimalReserve
 
-  -- Step 6: Set up intermediate values
-  set reserve := ceilDiv (mul liabilityMax rrBP) complement
-  set effectiveReserve := if reserve ≥ minRes then reserve else minRes
-
-  -- Step 7: (mul liabilityMax rrBP) doesn't overflow
-  have hMulLiabRR : (mul liabilityMax rrBP).val = liabilityMax.val * rrBP.val := by
+  have hMulLiabRR : (mul liabilityMax reserveRatioBP).val = liabilityMax.val * reserveRatioBP.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow2
 
-  -- Step 8: Prove reserve.val * complement.val >= liabilityMax.val * rrBP.val
-  -- via the ceiling division property: ceil(x/d) * d >= x
-  set xn := liabilityMax.val * rrBP.val
-  set dn := complement.val
-
-  have hReserveVal : reserve.val = (xn + dn - 1) / dn % modulus := by
-    simp [reserve, ceilDiv]
-    have hCompNe : complement ≠ 0 := by
-      intro h; rw [h] at hCompPos; simp [Verity.Core.Uint256.val_zero] at hCompPos
-      exact (Nat.not_lt.mpr (Nat.le_refl 0)) hCompPos
-    simp [hCompNe, hMulLiabRR, xn, dn]
-
-  have hqLt : (xn + dn - 1) / dn < modulus := by
-    have : (xn + dn - 1) / dn ≤ xn + dn - 1 := Nat.div_le_self _ _
-    have hxnLt : xn < modulus := hNoOverflow2
-    have hdnLt : dn < modulus := by simp [dn]; exact complement.isLt
+  have hCompNe : complement ≠ 0 := by
+    intro h
+    have hv : complement.val = 0 := by rw [h]; rfl
     omega
 
-  have hReserveEq : reserve.val = (xn + dn - 1) / dn := by
+  have hReserveVal : reserve.val = ((liabilityMax.val * reserveRatioBP.val + complement.val - 1) / complement.val) % modulus := by
+    simp only [reserve, ceilDiv, hCompNe, ↓reduceIte, hMulLiabRR]
+
+  have hqLt := ceilDiv_prod_lt_modulus (liabilityMax.val * reserveRatioBP.val) complement hCompPos hNoOverflow2
+
+  have hReserveEq : reserve.val = (liabilityMax.val * reserveRatioBP.val + complement.val - 1) / complement.val := by
     rw [hReserveVal, Nat.mod_eq_of_lt hqLt]
 
-  have hReserveProp : reserve.val * dn ≥ xn := by
+  have hReserveProp : reserve.val * complement.val ≥ liabilityMax.val * reserveRatioBP.val := by
     rw [hReserveEq]
-    have hDnPos : dn > 0 := hCompPos
-    have := Nat.div_add_mod (xn + dn - 1) dn
-    have hRem : (xn + dn - 1) % dn < dn := Nat.mod_lt _ hDnPos
+    let n := liabilityMax.val * reserveRatioBP.val + complement.val - 1
+    let q := n / complement.val
+    let r := n % complement.val
+    show liabilityMax.val * reserveRatioBP.val ≤ q * complement.val
+    have hEuclid : complement.val * q + r = n := Nat.div_add_mod ..
+    have hRem : r < complement.val := Nat.mod_lt _ hCompPos
+    have hComm : q * complement.val = complement.val * q := Nat.mul_comm q complement.val
     omega
 
-  -- Step 9: effectiveReserve.val >= reserve.val
   have hEffGe : effectiveReserve.val ≥ reserve.val := by
-    simp [effectiveReserve]
-    by_cases h : reserve ≥ minRes
+    simp only [effectiveReserve]
+    by_cases h : reserve ≥ minimalReserve
     · simp [h]
     · simp [h]
       simp [Verity.Core.Uint256.le_def] at h ⊢
       omega
 
-  -- Step 10: effectiveReserve.val * complement.val >= liabilityMax.val * rrBP.val
-  have hEffProp : effectiveReserve.val * dn ≥ xn := by
-    exact Nat.le_trans hReserveProp (Nat.mul_le_mul_right _ hEffGe)
+  have hEffProp : effectiveReserve.val * complement.val ≥ liabilityMax.val * reserveRatioBP.val :=
+    Nat.le_trans hReserveProp (Nat.mul_le_mul_right _ hEffGe)
 
-  -- Step 11: The add doesn't overflow (from hNoOverflow3)
-  have hNoAddOverflow : liabilityMax.val + effectiveReserve.val < modulus := by
-    exact hNoOverflow3
+  have hNoAddOverflow : liabilityMax.val + effectiveReserve.val < modulus := hNoOverflow3
 
-  -- Step 12: lockedVal.val = liabilityMax.val + effectiveReserve.val
-  have hLockedDef : lockedVal.val = (liabilityMax.val + effectiveReserve.val) % modulus := by
-    simp [lockedVal, locked, Verity.Core.Uint256.add, Verity.Core.Uint256.ofNat]
-    simp [effectiveReserve, reserve, dn, xn]
+  have hLockedEq : lockedVal.val = liabilityMax.val + effectiveReserve.val := by
+    change (locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares).val
+      = liabilityMax.val + effectiveReserve.val
+    simp only [locked, getPooledEthBySharesRoundUp]
+    simp only [HAdd.hAdd, Verity.Core.Uint256.add, Verity.Core.Uint256.ofNat]
+    exact Nat.mod_eq_of_lt hNoAddOverflow
 
-  rw [hLockedDef, Nat.mod_eq_of_lt hNoAddOverflow]
-
-  -- Step 13: Final inequality
-  -- (liab + eff) * complement = liab * complement + eff * complement
-  -- >= liab * complement + xn  (by hEffProp, since eff * dn >= xn)
-  -- = liab * (complement + rrBP) = liab * BP
-  rw [hBPEq, Nat.mul_add]
+  rw [hLockedEq, hBPEq, Nat.mul_add, Nat.add_mul]
   exact Nat.add_le_add_left hEffProp _
 
 end Benchmark.Cases.Lido.VaulthubLocked

@@ -25,7 +25,7 @@ def TOTAL_BASIS_POINTS : Uint256 := 10000
 /-- ceil(a / b) for natural numbers, matching Solidity's Math256.ceilDiv -/
 noncomputable def ceilDiv (a b : Uint256) : Uint256 :=
   if b = 0 then 0
-  else ⟨(a.val + b.val - 1) / b.val % modulus⟩
+  else ⟨(a.val + b.val - 1) / b.val % modulus, Nat.mod_lt _ Verity.Core.Uint256.modulus_pos⟩
 
 /--
   Axiomatised share-to-ether conversion.
@@ -69,20 +69,8 @@ verity_contract VaultHubLocked where
     totalPooledEther : Uint256 := slot 4
     totalShares : Uint256 := slot 5
 
-  /--
-    Contract-level view of _locked: reads vault state from storage and
-    delegates to the pure `locked` function.
-
-    This models the 2-param overload:
-      function _locked(VaultConnection storage, VaultRecord storage)
-    which reads maxLiabilityShares, minimalReserve, reserveRatioBP from storage.
-  -/
-  function getLocked () : Uint256 := do
-    let maxLS ← getStorage maxLiabilityShares
-    let minRes ← getStorage minimalReserve
-    let rrBP ← getStorage reserveRatioBP
-    let tpe ← getStorage totalPooledEther
-    let ts ← getStorage totalShares
-    return (locked maxLS minRes rrBP tpe ts)
+  -- The _locked function is modeled as a pure `noncomputable def locked` above.
+  -- The verity_contract DSL does not support calling external defs in function bodies,
+  -- so we keep the contract block storage-only. Proofs reference the pure `locked` directly.
 
 end Benchmark.Cases.Lido.VaulthubLocked

@@ -48,7 +48,7 @@ This report is generated from the benchmark manifests.
 - Stage: `build_green`
 - Status dimensions: translation=`translated`, spec=`frozen`, proof=`partial`
 - Lean target: `Benchmark.Cases.Lido.VaulthubLocked.Compile`
-- Source ref: `https://github.com/lidofinance/core@5e51ea044b09e1e2606074e1fe4ff6b6a4eff172:contracts/0.8.25/vaults/VaultHub.sol`
+- Source ref: `https://github.com/lidofinance/core@96738395ca3bffd6513700a45d4c9389662c5835:contracts/0.8.25/vaults/VaultHub.sol`
 - Selected functions: `_locked`, `getPooledEthBySharesRoundUp`
 - Source artifact: `contracts/0.8.25/vaults/VaultHub.sol`
 - Notes: Locked-amount arithmetic slice of Lido VaultHub (V3 vaults branch). Based on the Certora formal verification report (December 2025). F-01 could not be proven by Certora and is the primary benchmark task. P-VH-03 and P-VH-04 were proven by Certora and serve as supporting lemmas.
