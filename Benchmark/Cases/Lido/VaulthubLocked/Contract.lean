@@ -22,32 +22,35 @@ open Verity.Stdlib.Math
 /-- Total basis points constant (10000) -/
 def TOTAL_BASIS_POINTS : Uint256 := 10000
 
-/-- ceil(a / b) for natural numbers, matching Solidity's Math256.ceilDiv -/
-noncomputable def ceilDiv (a b : Uint256) : Uint256 :=
-  if b = 0 then 0
-  else ⟨(a.val + b.val - 1) / b.val % modulus, Nat.mod_lt _ Verity.Core.Uint256.modulus_pos⟩
+/--
+  Overflow-safe ceiling division, matching Solidity's Math256.ceilDiv / OpenZeppelin:
+    a == 0 ? 0 : (a - 1) / b + 1
+  Uses EVM-level sub/div/add rather than Nat-level arithmetic.
+-/
+def ceilDiv (a b : Uint256) : Uint256 :=
+  if a = 0 then 0
+  else add (div (sub a 1) b) 1
 
 /--
-  Axiomatised share-to-ether conversion.
-  In the real contract: ceil(shares * totalPooledEther / totalShares)
-  We treat totalPooledEther and totalShares as implicit parameters
-  and model the conversion as a function from shares to ether.
+  Share-to-ether conversion matching Lido's getPooledEthBySharesRoundUp:
+    Math256.ceilDiv(shares * totalPooledEther, totalShares)
+  We treat totalPooledEther and totalShares as parameters.
 -/
-noncomputable def getPooledEthBySharesRoundUp
+def getPooledEthBySharesRoundUp
     (shares : Uint256) (totalPooledEther totalShares : Uint256) : Uint256 :=
   ceilDiv (mul shares totalPooledEther) totalShares
 
 /--
   Pure arithmetic core of the _locked function from VaultHub.sol (3-param overload).
-  Given max liability shares, a minimal reserve, a reserve ratio in basis points,
+  Given liability shares, a minimal reserve, a reserve ratio in basis points,
   and the Lido protocol state, returns the amount of ether that must be locked.
 
-  Solidity source:
+  Solidity source (VaultHub.sol:1283-1295):
     uint256 liability = _getPooledEthBySharesRoundUp(_liabilityShares);
     uint256 reserve = Math256.ceilDiv(liability * _reserveRatioBP, TOTAL_BASIS_POINTS - _reserveRatioBP);
     return liability + Math256.max(reserve, _minimalReserve);
 -/
-noncomputable def locked
+def locked
     (liabilityShares : Uint256)
     (minimalReserve : Uint256)
     (reserveRatioBP : Uint256)
@@ -69,8 +72,7 @@ verity_contract VaultHubLocked where
     totalPooledEther : Uint256 := slot 4
     totalShares : Uint256 := slot 5
 
-  -- The _locked function is modeled as a pure `noncomputable def locked` above.
-  -- The verity_contract DSL does not support calling external defs in function bodies,
-  -- so we keep the contract block storage-only. Proofs reference the pure `locked` directly.
+  -- The _locked function uses ceilDiv which is defined as a pure def above.
+  -- Proofs reference the pure `locked` directly.
 
 end Benchmark.Cases.Lido.VaulthubLocked
