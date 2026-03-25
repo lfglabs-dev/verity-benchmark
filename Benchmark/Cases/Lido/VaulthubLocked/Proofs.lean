@@ -9,11 +9,20 @@ open Verity.EVM.Uint256
 
 /-
   Reference proofs for the Lido VaultHub _locked() solvency properties.
+  Adapted for the EVM-faithful ceilDiv: a = 0 ? 0 : (a - 1) / b + 1
 -/
 
 private theorem val_lt_modulus (a : Uint256) : a.val < modulus := a.isLt
 
--- ceil(a.val / b.val) ≤ a.val when b.val ≥ 1 (and hence < modulus when a : Uint256)
+/-! ## Nat-level helpers for ceiling division -/
+
+-- Nat identity: (a - 1) / b + 1 = (a + b - 1) / b  for a > 0, b > 0
+private theorem ceildiv_nat_identity (a b : Nat) (ha : a > 0) (hb : b > 0) :
+    (a - 1) / b + 1 = (a + b - 1) / b := by
+  have h : a + b - 1 = (a - 1) + b := by omega
+  rw [h, Nat.add_div_right _ hb]
+
+-- ceil(a / b) ≤ a when b ≥ 1 (expressed using the (a+b-1)/b form)
 private theorem ceilDiv_nat_le (av bv : Nat) (hb : bv ≥ 1) :
     (av + bv - 1) / bv ≤ av := by
   rcases Nat.eq_or_lt_of_le (Nat.zero_le av) with haz | haPos
@@ -28,20 +37,86 @@ private theorem ceilDiv_nat_le (av bv : Nat) (hb : bv ≥ 1) :
     have := Nat.div_le_self (av - 1) bv
     omega
 
+-- (a - 1) / b + 1 ≤ a when a > 0 and b ≥ 1
+private theorem ceilDiv_evm_le (av bv : Nat) (ha : av > 0) (hb : bv ≥ 1) :
+    (av - 1) / bv + 1 ≤ av := by
+  rw [ceildiv_nat_identity av bv ha (by omega)]
+  exact ceilDiv_nat_le av bv hb
+
+-- (a - 1) / b + 1 < modulus when a : Uint256 and b ≥ 1
+private theorem ceilDiv_evm_lt_modulus (a b : Uint256) (ha : a.val > 0) (hb : b.val ≥ 1) :
+    (a.val - 1) / b.val + 1 < modulus := by
+  have := ceilDiv_evm_le a.val b.val ha hb
+  have := val_lt_modulus a
+  omega
+
+-- (a + b - 1) / b < modulus (old form, used in some helpers)
 private theorem ceilDiv_nat_lt_modulus' (a b : Uint256) (hb : b.val ≥ 1) :
     (a.val + b.val - 1) / b.val < modulus := by
   have := ceilDiv_nat_le a.val b.val hb
   have := val_lt_modulus a
   omega
 
-/-! ## Helper: ceilDiv at the Nat level -/
+/-! ## Helper: ceilDiv val-level unfolding -/
 
+-- When a.val > 0 and b > 0, (ceilDiv a b).val = (a.val - 1) / b.val + 1
+private theorem ceilDiv_val_pos (a b : Uint256) (ha : a.val > 0) (hb : b.val > 0) :
+    (ceilDiv a b).val = (a.val - 1) / b.val + 1 := by
+  have haNe : a ≠ 0 := by
+    intro h; rw [h] at ha; simp [Verity.Core.Uint256.val_zero] at ha
+  -- Unfold ceilDiv, eliminate the if-branch
+  simp only [ceilDiv, haNe, ↓reduceIte]
+  -- Goal: (add (div (sub a 1) b) 1).val = (a.val - 1) / b.val + 1
+  -- Step 1: (sub a 1).val = a.val - 1 (since a.val > 0, no underflow)
+  have hSubVal : (sub a 1).val = a.val - 1 := by
+    have h1le : (1 : Uint256).val ≤ a.val := by
+      simp [Verity.Core.Uint256.val_one]; omega
+    have := sub_eq_of_le h1le
+    simp [Verity.Core.Uint256.val_one] at this
+    exact this
+  -- Step 2: (div (sub a 1) b).val = (a.val - 1) / b.val
+  have hDivVal : (div (sub a 1) b).val = (a.val - 1) / b.val := by
+    have hbne : b.val ≠ 0 := by omega
+    simp only [HDiv.hDiv, Verity.Core.Uint256.div, hbne, ↓reduceIte, Verity.Core.Uint256.ofNat, hSubVal]
+    have hDivLt : (a.val - 1) / b.val < modulus := by
+      have := Nat.div_le_self (a.val - 1) b.val
+      have := val_lt_modulus a
+      omega
+    exact Nat.mod_eq_of_lt hDivLt
+  -- Step 3: (add (div ...) 1).val = (a.val - 1) / b.val + 1
+  have hAddLt : (a.val - 1) / b.val + 1 < modulus :=
+    ceilDiv_evm_lt_modulus a b ha (by omega)
+  simp only [HAdd.hAdd, Verity.Core.Uint256.add, Verity.Core.Uint256.ofNat, hDivVal,
+             Verity.Core.Uint256.val_one]
+  exact Nat.mod_eq_of_lt hAddLt
+
+-- When a = 0, (ceilDiv a b).val = 0
+private theorem ceilDiv_val_zero (b : Uint256) :
+    (ceilDiv 0 b).val = 0 := by
+  simp [ceilDiv]
+
+-- Combined: (ceilDiv a b).val matches the (a+b-1)/b form when b > 0
+-- This bridges the new EVM-level ceilDiv back to the old Nat-level expression
+private theorem ceilDiv_val_eq_nat (a b : Uint256) (hb : b.val > 0) :
+    (ceilDiv a b).val = (a.val + b.val - 1) / b.val := by
+  by_cases ha : a.val = 0
+  · -- a = 0: ceilDiv 0 b = 0, and (0 + b - 1) / b = (b-1)/b = 0
+    have haEq : a = 0 := by
+      ext; simp [ha, Verity.Core.Uint256.val_zero]
+    rw [haEq, ceilDiv_val_zero]
+    simp only [Verity.Core.Uint256.val_zero, Nat.zero_add]
+    exact (Nat.div_eq_of_lt (by omega)).symm
+  · -- a > 0
+    have haPos : a.val > 0 := Nat.pos_of_ne_zero ha
+    rw [ceilDiv_val_pos a b haPos hb]
+    rw [ceildiv_nat_identity a.val b.val haPos hb]
+
+-- Legacy-compatible form with mod (the mod is a no-op since value < modulus)
 private theorem ceilDiv_val (a b : Uint256) (hb : b > 0) :
     (ceilDiv a b).val = (a.val + b.val - 1) / b.val % modulus := by
-  simp [ceilDiv]
-  have hbne : b ≠ 0 := by
-    intro h; rw [h] at hb; simp [Verity.Core.Uint256.lt_def] at hb
-  simp [hbne]
+  have hbPos : b.val > 0 := by simp [Verity.Core.Uint256.lt_def] at hb; exact hb
+  rw [ceilDiv_val_eq_nat a b hbPos]
+  exact (Nat.mod_eq_of_lt (ceilDiv_nat_lt_modulus' a b (by omega))).symm
 
 theorem ceildiv_sandwich
     (x d : Uint256)
@@ -62,23 +137,12 @@ theorem ceildiv_sandwich
   have hqLt := ceilDiv_nat_lt_modulus' x d hdPos
   rw [Nat.mod_eq_of_lt hqLt]
   -- Standard ceiling property: ceil(n/d) * d ≥ n
-  -- Assign concrete variables so omega can work
   let q := (x.val + d.val - 1) / d.val
   let r := (x.val + d.val - 1) % d.val
   have hEuclid : d.val * q + r = x.val + d.val - 1 := Nat.div_add_mod ..
   have hRem : r < d.val := Nat.mod_lt _ hdPos
-  -- Goal: x.val ≤ q * d.val
-  -- From hEuclid: q * d.val = x.val + d.val - 1 - r ≥ x.val (since d.val - 1 ≥ r is not guaranteed,
-  -- but d.val - 1 - r ≥ -(d.val - 1) and we add x.val + d.val - 1 - r.
-  -- Actually: q * d.val = x + d - 1 - r. Since r ≤ d - 1 (from hRem), q * d ≥ x + d - 1 - (d - 1) = x.
   show x.val ≤ q * d.val
   have hComm : q * d.val = d.val * q := Nat.mul_comm q d.val
-  omega
-
--- Helper: ceilDiv for raw Nat values (used in shares_conversion_monotone)
-private theorem ceilDiv_raw_lt_modulus (n : Nat) (ts : Uint256) (hts : ts.val ≥ 1) (hn : n < modulus) :
-    (n + ts.val - 1) / ts.val < modulus := by
-  have := ceilDiv_nat_le n ts.val hts
   omega
 
 theorem shares_conversion_monotone
@@ -103,12 +167,10 @@ theorem shares_conversion_monotone
   have hMulB : (mul b totalPooledEther).val = b.val * totalPooledEther.val := by
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hBNoOverflow
-  have hCeilA := ceilDiv_val (mul a totalPooledEther) totalShares hTS
-  have hCeilB := ceilDiv_val (mul b totalPooledEther) totalShares hTS
+  -- Use the bridge lemma to get back to the (n + d - 1) / d form
+  have hCeilA := ceilDiv_val_eq_nat (mul a totalPooledEther) totalShares hTSPos
+  have hCeilB := ceilDiv_val_eq_nat (mul b totalPooledEther) totalShares hTSPos
   rw [hCeilA, hCeilB, hMulA, hMulB]
-  have hqaLt := ceilDiv_raw_lt_modulus (a.val * totalPooledEther.val) totalShares hTSPos hNoOverflow
-  have hqbLt := ceilDiv_raw_lt_modulus (b.val * totalPooledEther.val) totalShares hTSPos hBNoOverflow
-  rw [Nat.mod_eq_of_lt hqaLt, Nat.mod_eq_of_lt hqbLt]
   exact Nat.div_le_div_right (by
     have : b.val * totalPooledEther.val ≤ a.val * totalPooledEther.val :=
       Nat.mul_le_mul_right _ habVal
@@ -128,12 +190,6 @@ theorem reserve_ratio_bounds
     reserve_ratio_bounds_spec reserveRatioBP := by
   unfold reserve_ratio_bounds_spec
   exact ⟨hPos, hLt⟩
-
--- Helper for locked_funds_solvency: ceilDiv of product < modulus
-private theorem ceilDiv_prod_lt_modulus (prod : Nat) (comp : Uint256) (hcomp : comp.val ≥ 1) (hprod : prod < modulus) :
-    (prod + comp.val - 1) / comp.val < modulus := by
-  have := ceilDiv_nat_le prod comp.val hcomp
-  omega
 
 theorem locked_funds_solvency
     (maxLiabilityShares liabilityShares : Uint256)
@@ -206,18 +262,10 @@ theorem locked_funds_solvency
     simp [HMul.hMul, Verity.Core.Uint256.mul, Verity.Core.Uint256.ofNat]
     exact Nat.mod_eq_of_lt hNoOverflow2
 
-  have hCompNe : complement ≠ 0 := by
-    intro h
-    have hv : complement.val = 0 := by rw [h]; rfl
-    omega
-
-  have hReserveVal : reserve.val = ((liabilityMax.val * reserveRatioBP.val + complement.val - 1) / complement.val) % modulus := by
-    simp only [reserve, ceilDiv, hCompNe, ↓reduceIte, hMulLiabRR]
-
-  have hqLt := ceilDiv_prod_lt_modulus (liabilityMax.val * reserveRatioBP.val) complement hCompPos hNoOverflow2
-
+  -- Use the bridge lemma to convert EVM ceilDiv to the Nat-level (n+d-1)/d form
   have hReserveEq : reserve.val = (liabilityMax.val * reserveRatioBP.val + complement.val - 1) / complement.val := by
-    rw [hReserveVal, Nat.mod_eq_of_lt hqLt]
+    simp only [reserve]
+    rw [ceilDiv_val_eq_nat (mul liabilityMax reserveRatioBP) complement hCompPos, hMulLiabRR]
 
   have hReserveProp : reserve.val * complement.val ≥ liabilityMax.val * reserveRatioBP.val := by
     rw [hReserveEq]
