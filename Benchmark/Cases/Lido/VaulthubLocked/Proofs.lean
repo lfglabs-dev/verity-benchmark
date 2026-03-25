@@ -71,8 +71,9 @@ private theorem ceilDiv_val_pos (a b : Uint256) (ha : a.val > 0) (hb : b.val > 0
   have hSubVal : (sub a 1).val = a.val - 1 := by
     have h1le : (1 : Uint256).val ≤ a.val := by
       simp [Verity.Core.Uint256.val_one]; omega
-    simp only [HSub.hSub, Verity.Core.Uint256.sub, h1le, ↓reduceIte, Verity.Core.Uint256.ofNat]
-    exact Nat.mod_eq_of_lt (by have := val_lt_modulus a; omega)
+    have := sub_eq_of_le h1le
+    simp [Verity.Core.Uint256.val_one] at this
+    exact this
   -- Step 2: (div (sub a 1) b).val = (a.val - 1) / b.val
   have hDivVal : (div (sub a 1) b).val = (a.val - 1) / b.val := by
     have hbne : b.val ≠ 0 := by omega
