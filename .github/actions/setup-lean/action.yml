@@ -191,16 +191,12 @@ runs:
         echo "required=${required}" >> "$GITHUB_OUTPUT"
 
     - name: Fetch mathlib compiled cache
-      id: fetch-mathlib-cache
       if: steps.hydration.outputs.required == 'true'
       shell: bash
-      run: lake exe cache get
-      continue-on-error: true
-
-    - name: Retry mathlib cache fetch on transient failures
-      if: steps.hydration.outputs.required == 'true' && steps.fetch-mathlib-cache.outcome != 'success'
-      shell: bash
       run: |
+        if lake exe cache get; then
+          exit 0
+        fi
         for delay in 5 15; do
           echo "::warning::lake exe cache get failed; retrying in ${delay}s"
           sleep "${delay}"
@@ -209,27 +205,6 @@ runs:
           fi
         done
         echo "::warning::Unable to download mathlib compiled cache after retries; continuing with source builds."
-
-    - name: Resolve Lake dependencies
-      id: lake-resolve
-      if: steps.hydration.outputs.required == 'true'
-      shell: bash
-      run: lake update
-      continue-on-error: true
-
-    - name: Retry Lake dependency resolution on transient failures
-      if: steps.hydration.outputs.required == 'true' && steps.lake-resolve.outcome != 'success'
-      shell: bash
-      run: |
-        for delay in 5 15; do
-          echo "::warning::lake update failed; retrying in ${delay}s"
-          sleep "${delay}"
-          if lake update; then
-            exit 0
-          fi
-        done
-        echo "::error::Unable to resolve Lake dependencies after retries"
-        exit 1
 
 outputs:
   cache-hit:
