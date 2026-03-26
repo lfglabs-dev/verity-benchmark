@@ -176,6 +176,8 @@ if [[ "$RUN_LIVE_AGENT_CHECKS" == "1" && -n "${VERITY_BENCHMARK_AGENT_BASE_URL:-
   python3 harness/agent_runner.py run ethereum/deposit_contract_minimal/deposit_count --config harness/default-agent.example.json
 fi
 
+python3 scripts/check_reference_solutions.py
+python3 scripts/check_verity_pin_staleness.py --warn-only
 python3 scripts/validate_manifests.py
 python3 scripts/generate_metadata.py
 ./scripts/run_all.sh
