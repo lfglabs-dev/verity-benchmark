@@ -2,6 +2,7 @@ import Benchmark.Cases.Lido.VaulthubLocked.Specs
 
 namespace Benchmark.Cases.Lido.VaulthubLocked
 
+open Verity
 open Verity.EVM.Uint256
 
 /--

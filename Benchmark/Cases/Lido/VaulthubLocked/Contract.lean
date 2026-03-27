@@ -71,8 +71,25 @@ verity_contract VaultHubLocked where
     -- Lido protocol state (axiomatised external reads)
     totalPooledEther : Uint256 := slot 4
     totalShares : Uint256 := slot 5
+    -- Cached result of the `_locked` computation for the benchmark run.
+    lockedAmount : Uint256 := slot 6
 
-  -- The _locked function uses ceilDiv which is defined as a pure def above.
-  -- Proofs reference the pure `locked` directly.
+  function syncLocked () : Uint256 := do
+    let maxLiabilityShares_ ← getStorage maxLiabilityShares
+    let minimalReserve_ ← getStorage minimalReserve
+    let reserveRatioBP_ ← getStorage reserveRatioBP
+    let totalPooledEther_ ← getStorage totalPooledEther
+    let totalShares_ ← getStorage totalShares
+
+    let liabilityProduct := mul maxLiabilityShares_ totalPooledEther_
+    let liability := ite (liabilityProduct == 0) 0 (add (div (sub liabilityProduct 1) totalShares_) 1)
+    let reserveInput := mul liability reserveRatioBP_
+    let reserveDenominator := sub 10000 reserveRatioBP_
+    let reserve := ite (reserveInput == 0) 0 (add (div (sub reserveInput 1) reserveDenominator) 1)
+    let effectiveReserve := ite (reserve >= minimalReserve_) reserve minimalReserve_
+    let amount := add liability effectiveReserve
+
+    setStorage lockedAmount amount
+    return amount
 
 end Benchmark.Cases.Lido.VaulthubLocked
