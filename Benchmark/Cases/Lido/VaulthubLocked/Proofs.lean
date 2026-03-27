@@ -14,6 +14,32 @@ open Verity.EVM.Uint256
 
 private theorem val_lt_modulus (a : Uint256) : a.val < modulus := a.isLt
 
+private theorem syncLocked_exec
+    (maxLiabilityShares liabilityShares : Uint256)
+    (minimalReserve reserveRatioBP : Uint256)
+    (totalPooledEther totalShares : Uint256) :
+    let r := lockedRunResult maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
+      totalPooledEther totalShares
+    r.fst = locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares ∧
+    r.snd.storage 6 = locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares := by
+  constructor
+  · simp [lockedRunResult, vaultState, VaultHubLocked.syncLocked, locked,
+      TOTAL_BASIS_POINTS,
+      getPooledEthBySharesRoundUp, ceilDiv,
+      VaultHubLocked.maxLiabilityShares, VaultHubLocked.minimalReserve,
+      VaultHubLocked.reserveRatioBP, VaultHubLocked.totalPooledEther,
+      VaultHubLocked.totalShares, VaultHubLocked.lockedAmount,
+      defaultState, getStorage, setStorage, Verity.bind, Bind.bind, Verity.pure,
+      Pure.pure, Contract.run, ContractResult.fst]
+  · simp [lockedRunResult, vaultState, VaultHubLocked.syncLocked, locked,
+      TOTAL_BASIS_POINTS,
+      getPooledEthBySharesRoundUp, ceilDiv,
+      VaultHubLocked.maxLiabilityShares, VaultHubLocked.minimalReserve,
+      VaultHubLocked.reserveRatioBP, VaultHubLocked.totalPooledEther,
+      VaultHubLocked.totalShares, VaultHubLocked.lockedAmount,
+      defaultState, getStorage, setStorage, Verity.bind, Bind.bind, Verity.pure,
+      Pure.pure, Contract.run, ContractResult.snd]
+
 /-! ## Nat-level helpers for ceiling division -/
 
 -- Nat identity: (a - 1) / b + 1 = (a + b - 1) / b  for a > 0, b > 0
@@ -191,7 +217,7 @@ theorem reserve_ratio_bounds
   unfold reserve_ratio_bounds_spec
   exact ⟨hPos, hLt⟩
 
-theorem locked_funds_solvency
+private theorem locked_funds_solvency_math
     (maxLiabilityShares liabilityShares : Uint256)
     (minimalReserve reserveRatioBP : Uint256)
     (totalPooledEther totalShares : Uint256)
@@ -211,9 +237,11 @@ theorem locked_funds_solvency
                     * (sub TOTAL_BASIS_POINTS reserveRatioBP).val < modulus)
     (hNoOverflow5 : (getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares).val
                     * TOTAL_BASIS_POINTS.val < modulus) :
-    locked_funds_solvency_spec maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
-      totalPooledEther totalShares := by
-  unfold locked_funds_solvency_spec
+    mul (locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares)
+      (sub TOTAL_BASIS_POINTS reserveRatioBP)
+      ≥
+    mul (getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares)
+      TOTAL_BASIS_POINTS := by
   simp [Verity.Core.Uint256.le_def]
   set liabilityMax := getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares
   set liabilityLS := getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares
@@ -300,5 +328,34 @@ theorem locked_funds_solvency
 
   rw [hLockedEq, hBPEq, Nat.mul_add, Nat.add_mul]
   exact Nat.add_le_add_left hEffProp _
+
+theorem locked_funds_solvency
+    (maxLiabilityShares liabilityShares : Uint256)
+    (minimalReserve reserveRatioBP : Uint256)
+    (totalPooledEther totalShares : Uint256)
+    (hMaxLS : maxLiabilityShares ≥ liabilityShares)
+    (hRR_pos : reserveRatioBP > 0)
+    (hRR_lt : reserveRatioBP < TOTAL_BASIS_POINTS)
+    (hTS : totalShares > 0)
+    (_hTPE : totalPooledEther > 0)
+    (hNoOverflow1 : maxLiabilityShares.val * totalPooledEther.val < modulus)
+    (hNoOverflow2 : (getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares).val
+                    * reserveRatioBP.val < modulus)
+    (hNoOverflow3 : let liab := getPooledEthBySharesRoundUp maxLiabilityShares totalPooledEther totalShares
+                    let reserve := ceilDiv (mul liab reserveRatioBP) (sub TOTAL_BASIS_POINTS reserveRatioBP)
+                    let eff := if reserve ≥ minimalReserve then reserve else minimalReserve
+                    liab.val + eff.val < modulus)
+    (hNoOverflow4 : (locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares).val
+                    * (sub TOTAL_BASIS_POINTS reserveRatioBP).val < modulus)
+    (hNoOverflow5 : (getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares).val
+                    * TOTAL_BASIS_POINTS.val < modulus) :
+    locked_funds_solvency_spec maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
+      totalPooledEther totalShares := by
+  rcases syncLocked_exec maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
+    totalPooledEther totalShares with ⟨_, hStored⟩
+  simpa [locked_funds_solvency_spec, lockedPostState, hStored] using
+    (locked_funds_solvency_math maxLiabilityShares liabilityShares minimalReserve reserveRatioBP
+    totalPooledEther totalShares hMaxLS hRR_pos hRR_lt hTS _hTPE hNoOverflow1 hNoOverflow2
+    hNoOverflow3 hNoOverflow4 hNoOverflow5)
 
 end Benchmark.Cases.Lido.VaulthubLocked

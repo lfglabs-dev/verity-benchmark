@@ -27,26 +27,58 @@ open Verity.EVM.Uint256
     slot 5: totalShares
 -/
 
+def vaultState
+    (maxLiabilityShares liabilityShares : Uint256)
+    (minimalReserve reserveRatioBP : Uint256)
+    (totalPooledEther totalShares : Uint256) : ContractState :=
+  ContractState.mk
+    (fun
+      | 0 => maxLiabilityShares
+      | 1 => liabilityShares
+      | 2 => minimalReserve
+      | 3 => reserveRatioBP
+      | 4 => totalPooledEther
+      | 5 => totalShares
+      | _ => 0)
+    defaultState.transientStorage
+    defaultState.storageAddr
+    defaultState.storageMap
+    defaultState.storageMapUint
+    defaultState.storageMap2
+    defaultState.storageArray
+    defaultState.sender
+    defaultState.thisAddress
+    defaultState.msgValue
+    defaultState.blockTimestamp
+    defaultState.blockNumber
+    defaultState.chainId
+    defaultState.knownAddresses
+    defaultState.events
+
+def lockedRunResult
+    (maxLiabilityShares liabilityShares : Uint256)
+    (minimalReserve reserveRatioBP : Uint256)
+    (totalPooledEther totalShares : Uint256) : ContractResult Uint256 :=
+  (VaultHubLocked.syncLocked).run
+    (vaultState maxLiabilityShares liabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares)
+
+def lockedPostState
+    (maxLiabilityShares liabilityShares : Uint256)
+    (minimalReserve reserveRatioBP : Uint256)
+    (totalPooledEther totalShares : Uint256) : ContractState :=
+  (lockedRunResult maxLiabilityShares liabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares).snd
+
 /--
-  F-01: Locked funds solvency.
-  The amount locked on a vault, multiplied by the complement of the reserve ratio,
-  is at least as large as the liability (for the current liability shares) multiplied
-  by the full basis points.
-
-  This ensures that the vault always locks enough collateral to cover its
-  stETH obligations with the required reserve buffer.
-
-  In symbols (all in Uint256 arithmetic):
-    locked(maxLS, minRes, RR, TPE, TS) * (BP - RR)
-      >= getPooledEthBySharesRoundUp(LS, TPE, TS) * BP
-
-  where maxLS >= LS (P-VH-04) and 0 < RR < BP (P-VH-03).
+  F-01: Locked funds solvency after executing the benchmark's Verity contract.
+  `syncLocked` reads the vault/Lido state from storage, computes `_locked`, and
+  stores the result in slot 6.
 -/
 def locked_funds_solvency_spec
     (maxLiabilityShares liabilityShares : Uint256)
     (minimalReserve reserveRatioBP : Uint256)
     (totalPooledEther totalShares : Uint256) : Prop :=
-  let lockedAmount := locked maxLiabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares
+  let s' := lockedPostState maxLiabilityShares liabilityShares minimalReserve reserveRatioBP totalPooledEther totalShares
+  let lockedAmount := s'.storage 6
   let liability := getPooledEthBySharesRoundUp liabilityShares totalPooledEther totalShares
   let complement := sub TOTAL_BASIS_POINTS reserveRatioBP
   mul lockedAmount complement ≥ mul liability TOTAL_BASIS_POINTS
